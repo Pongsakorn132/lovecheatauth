@@ -538,6 +538,11 @@
                     <span id="pinKeyNameDisplay" class="text-[11px] text-cyan-400 font-medium"></span>
                 </div>
 
+                <div id="pinSessionNotice" class="hidden text-[11px] text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded-xl p-2 font-mono flex items-center justify-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    <span id="pinSessionNoticeText">Active Session &bull; กรอกเฉพาะ PIN เพื่อเข้าสู่ระบบ</span>
+                </div>
+
                 <!-- 6 PIN Input Boxes -->
                 <div id="clientPinBoxes" class="flex justify-center gap-2 py-2">
                     <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="0">
@@ -1106,6 +1111,7 @@
 
         let apiAdminKey = '';
         let apiAdminPin = '';
+        let apiSessionToken = localStorage.getItem('kawaii_session_token') || '';
         let pendingConnectKey = '';
 
         function updateAuthUI() {
@@ -1116,7 +1122,10 @@
             if (isAuthorized) {
                 if (btnConnect) btnConnect.classList.add('hidden');
                 if (btnDisconnect) btnDisconnect.classList.remove('hidden');
-                if (keyInput) keyInput.disabled = true;
+                if (keyInput) {
+                    keyInput.disabled = true;
+                    if (apiAdminKey) keyInput.value = apiAdminKey;
+                }
             } else {
                 if (btnConnect) btnConnect.classList.remove('hidden');
                 if (btnDisconnect) btnDisconnect.classList.add('hidden');
@@ -1125,13 +1134,29 @@
             updateActionButtons();
         }
 
-        function disconnectClient() {
+        async function disconnectClient() {
+            if (apiSessionToken) {
+                try {
+                    await fetch('/api/auth/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Client-Session': apiSessionToken
+                        },
+                        body: JSON.stringify({ session_token: apiSessionToken })
+                    });
+                } catch (e) {}
+            }
+            apiSessionToken = '';
             apiAdminKey = '';
             apiAdminPin = '';
+            pendingConnectKey = '';
             isAuthorized = false;
             currentAppId = null;
             const keyInput = document.getElementById('clientKeyInput');
             if (keyInput) keyInput.value = '';
+            localStorage.removeItem('kawaii_session_token');
+            sessionStorage.removeItem('kawaii_pin_unlocked');
             localStorage.removeItem('kawaii_client_key');
             localStorage.removeItem('kawaii_client_pin');
             updateAuthUI();
@@ -1189,6 +1214,9 @@
                 options.headers['X-Admin-Pin'] = pin;
                 options.headers['X-Client-PIN'] = pin;
             }
+            if (apiSessionToken) {
+                options.headers['X-Client-Session'] = apiSessionToken;
+            }
             if (options.body && typeof options.body === 'object') {
                 options.headers['Content-Type'] = 'application/json';
                 options.body = JSON.stringify(options.body);
@@ -1219,10 +1247,18 @@
 
                 if (res.success && res.require_pin) {
                     pendingConnectKey = key;
+                    if (res.session_token) {
+                        apiSessionToken = res.session_token;
+                        localStorage.setItem('kawaii_session_token', apiSessionToken);
+                    }
                     const keyDisp = document.getElementById('pinTargetKeyDisplay');
                     const nameDisp = document.getElementById('pinKeyNameDisplay');
                     if (keyDisp) keyDisp.textContent = key;
                     if (nameDisp) nameDisp.textContent = res.name || 'Verified Key';
+
+                    const sessionNotice = document.getElementById('pinSessionNotice');
+                    if (sessionNotice) sessionNotice.classList.add('hidden');
+
                     clearClientPinBoxes();
                     openModal('clientPinModal');
                     initClientPinHandlers();
@@ -1299,21 +1335,34 @@
             }
 
             try {
+                const payload = {
+                    client_key: pendingConnectKey,
+                    pin: pin,
+                    session_token: apiSessionToken || undefined
+                };
                 const res = await fetch('/api/auth/verify-client-key', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ client_key: pendingConnectKey, pin })
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Client-Session': apiSessionToken || ''
+                    },
+                    body: JSON.stringify(payload)
                 }).then(r => r.json());
 
                 if (res.success) {
-                    apiAdminKey = pendingConnectKey;
+                    apiAdminKey = res.client_key || pendingConnectKey;
                     apiAdminPin = pin;
+                    if (res.session_token) {
+                        apiSessionToken = res.session_token;
+                        localStorage.setItem('kawaii_session_token', apiSessionToken);
+                    }
+                    sessionStorage.setItem('kawaii_pin_unlocked', '1');
                     localStorage.removeItem('kawaii_client_key');
                     localStorage.removeItem('kawaii_client_pin');
                     isAuthorized = true;
                     closeModal('clientPinModal');
                     updateAuthUI();
-                    showToast('Connected successfully with Client Key!', 'success');
+                    showToast('Connected successfully with Client Key! (Session valid 6 hours)', 'success');
                     await refreshData();
                 } else {
                     shakeClientPinBoxes();
@@ -2509,21 +2558,102 @@
             }, 150);
         }
 
-        // Initial Load: Require Connect on entry every time (Client Key input starts completely empty)
-        isAuthorized = false;
-        apiAdminKey = '';
-        apiAdminPin = '';
-        const keyInputEl = document.getElementById('clientKeyInput');
-        if (keyInputEl) {
-            keyInputEl.value = '';
+        function formatSessionTime(seconds) {
+            const s = Math.max(0, Math.floor(seconds || 0));
+            const hours = Math.floor(s / 3600);
+            const mins = Math.floor((s % 3600) / 60);
+            if (hours > 0) {
+                return `${hours}h ${mins}m`;
+            }
+            return `${mins}m`;
         }
-        localStorage.removeItem('kawaii_client_key');
-        localStorage.removeItem('kawaii_client_pin');
-        updateAuthUI();
-        updateEngineStatus(false, 'DISCONNECTED');
-        clearAllData('Please enter your Client Key above and click Connect to authenticate.');
-        const appSelectEl = document.getElementById('appSelect');
-        if (appSelectEl) appSelectEl.innerHTML = '<option value="">Connect with Client Key first</option>';
+
+        function setInitialDisconnectedState(msg = 'Please enter your Client Key above and click Connect to authenticate.') {
+            isAuthorized = false;
+            apiAdminKey = '';
+            apiAdminPin = '';
+            const keyInputEl = document.getElementById('clientKeyInput');
+            if (keyInputEl) {
+                keyInputEl.value = '';
+            }
+            localStorage.removeItem('kawaii_client_key');
+            localStorage.removeItem('kawaii_client_pin');
+            updateAuthUI();
+            updateEngineStatus(false, 'DISCONNECTED');
+            clearAllData(msg);
+            const appSelectEl = document.getElementById('appSelect');
+            if (appSelectEl) appSelectEl.innerHTML = '<option value="">Connect with Client Key first</option>';
+        }
+
+        async function checkAuthSession() {
+            const token = localStorage.getItem('kawaii_session_token');
+            if (!token) {
+                setInitialDisconnectedState();
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/auth/session', {
+                    method: 'GET',
+                    headers: {
+                        'X-Client-Session': token
+                    }
+                }).then(r => r.json());
+
+                if (res.success) {
+                    const isTabAlreadyUnlocked = sessionStorage.getItem('kawaii_pin_unlocked') === '1';
+
+                    if (res.authed && isTabAlreadyUnlocked) {
+                        // User is actively browsing or refreshing within the same tab session
+                        apiSessionToken = res.session_token || token;
+                        apiAdminKey = res.client_key;
+                        apiAdminPin = res.client_pin || '';
+                        isAuthorized = true;
+                        updateAuthUI();
+                        showToast(`Session active (${formatSessionTime(res.session_time_left)} remaining)`, 'success');
+                        await refreshData();
+                    } else {
+                        // User entered the site afresh within 6 hours! Only enter 6-PIN!
+                        apiSessionToken = res.session_token || token;
+                        pendingConnectKey = res.client_key;
+
+                        const keyDisp = document.getElementById('pinTargetKeyDisplay');
+                        const nameDisp = document.getElementById('pinKeyNameDisplay');
+                        if (keyDisp) keyDisp.textContent = res.client_key;
+                        if (nameDisp) nameDisp.textContent = res.name || 'Remembered Session';
+
+                        const sessionNotice = document.getElementById('pinSessionNotice');
+                        const sessionNoticeText = document.getElementById('pinSessionNoticeText');
+                        if (sessionNotice && sessionNoticeText) {
+                            sessionNotice.classList.remove('hidden');
+                            sessionNoticeText.textContent = `Active Session (เหลือเวลา ${formatSessionTime(res.session_time_left)}) \u2022 กรอกเฉพาะ PIN เพื่อเข้าสู่ระบบ`;
+                        }
+
+                        setInitialDisconnectedState('Session active (within 6h). กรุณากรอก PIN 6 หลักเพื่อเข้าใช้งาน');
+                        clearClientPinBoxes();
+                        openModal('clientPinModal');
+                        initClientPinHandlers();
+                        setTimeout(() => focusClientPinBox(0), 200);
+                        showToast(`เซสชันยังไม่หมดอายุ (เหลือ ${formatSessionTime(res.session_time_left)}). กรุณากรอก PIN 6 หลัก`, 'info');
+                    }
+                } else {
+                    // Session expired (> 6 hours) or invalid
+                    localStorage.removeItem('kawaii_session_token');
+                    sessionStorage.removeItem('kawaii_pin_unlocked');
+                    apiSessionToken = '';
+                    setInitialDisconnectedState('Session expired (> 6 hours). Please enter Client Key and click Connect.');
+                    if (res.need_connect) {
+                        showToast('Session หมดอายุเกิน 6 ชั่วโมงแล้ว กรุณา Connect ด้วย Client Key ใหม่อีกครั้ง', 'warning');
+                    }
+                }
+            } catch (err) {
+                console.error('Session check error:', err);
+                setInitialDisconnectedState();
+            }
+        }
+
+        // Initialize session check on page load
+        checkAuthSession();
     </script>
 </body>
 </html>

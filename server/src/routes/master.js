@@ -81,8 +81,111 @@ function handleMasterRequest(req, res, url, body) {
     const clientIp = req.socket?.remoteAddress || '127.0.0.1';
 
     // ==========================================
-    // 1. Client Key 2-Factor Authentication
+    // 1. Client Key 2-Factor Authentication & 6-Hour Sessions
     // ==========================================
+
+    // API to check Session / Authed Status: /api/auth/session
+    if (pathname === '/api/auth/session' && (method === 'GET' || method === 'POST')) {
+        const sessionToken = req.headers['x-client-session'] || req.headers['x-session-token'] || url.searchParams.get('session_token') || body?.session_token;
+        const clientKey = req.headers['x-client-key'] || req.headers['x-admin-key'] || url.searchParams.get('client_key') || body?.client_key;
+        const clientPin = req.headers['x-client-pin'] || req.headers['x-admin-pin'] || url.searchParams.get('client_pin') || body?.client_pin;
+
+        // Clean up expired sessions
+        db.prepare('DELETE FROM client_auth_sessions WHERE expires_at < ?').run(now);
+
+        if (sessionToken) {
+            const sess = db.prepare('SELECT * FROM client_auth_sessions WHERE session_token = ?').get(sessionToken);
+            if (!sess) {
+                return sendJson(res, 200, {
+                    success: false,
+                    authed: false,
+                    need_connect: true,
+                    message: 'Session not found or expired (> 6 hours). Please connect Client Key.'
+                });
+            }
+
+            if (sess.expires_at < now) {
+                db.prepare('DELETE FROM client_auth_sessions WHERE id = ?').run(sess.id);
+                return sendJson(res, 200, {
+                    success: false,
+                    authed: false,
+                    need_connect: true,
+                    message: 'Session has expired (> 6 hours). Please connect Client Key again.'
+                });
+            }
+
+            const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(sess.client_key);
+            if (!ck || ck.status !== 'active' || (ck.expires_at > 0 && ck.expires_at < now)) {
+                db.prepare('DELETE FROM client_auth_sessions WHERE id = ?').run(sess.id);
+                return sendJson(res, 200, {
+                    success: false,
+                    authed: false,
+                    need_connect: true,
+                    message: 'Client Key associated with this session is no longer active.'
+                });
+            }
+
+            const timeLeft = Math.max(0, sess.expires_at - now);
+
+            if (sess.is_pin_unlocked === 1) {
+                return sendJson(res, 200, {
+                    success: true,
+                    authed: true,
+                    client_key: ck.key,
+                    client_pin: ck.pin,
+                    name: ck.name || 'Client',
+                    session_token: sess.session_token,
+                    session_expires_at: sess.expires_at,
+                    session_time_left: timeLeft,
+                    message: 'Session is active and authenticated.'
+                });
+            } else {
+                return sendJson(res, 200, {
+                    success: true,
+                    authed: false,
+                    pin_required: true,
+                    client_key: ck.key,
+                    name: ck.name || 'Client',
+                    session_token: sess.session_token,
+                    session_expires_at: sess.expires_at,
+                    session_time_left: timeLeft,
+                    message: 'Session active within 6 hours. Please enter 6-digit PIN to authenticate.'
+                });
+            }
+        }
+
+        // Direct check using client key + PIN
+        if (clientKey) {
+            const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(clientKey);
+            if (ck && ck.status === 'active' && (ck.expires_at === 0 || ck.expires_at >= now)) {
+                if (clientPin && ck.pin === String(clientPin).trim()) {
+                    return sendJson(res, 200, {
+                        success: true,
+                        authed: true,
+                        client_key: ck.key,
+                        name: ck.name || 'Client',
+                        message: 'Client Key and PIN verified.'
+                    });
+                } else if (!clientPin) {
+                    return sendJson(res, 200, {
+                        success: true,
+                        authed: false,
+                        pin_required: true,
+                        client_key: ck.key,
+                        name: ck.name || 'Client',
+                        message: '6-digit PIN required.'
+                    });
+                }
+            }
+        }
+
+        return sendJson(res, 200, {
+            success: false,
+            authed: false,
+            need_connect: true,
+            message: 'No active session or not authenticated. Please connect Client Key.'
+        });
+    }
 
     // Step 1: Check Client Key
     if (pathname === '/api/auth/check-client-key' && method === 'POST') {
@@ -105,26 +208,49 @@ function handleMasterRequest(req, res, url, body) {
             return sendJson(res, 403, { success: false, message: 'This Client Key has expired. Please contact support.' });
         }
 
+        // Create 6-hour session token
+        const sessionToken = 'csess_' + crypto.randomBytes(32).toString('hex');
+        const sessionExpiresAt = now + (6 * 3600); // 6 hours
+        db.prepare(`
+            INSERT INTO client_auth_sessions (id, session_token, client_key, expires_at, is_pin_unlocked, created_at)
+            VALUES (?, ?, ?, ?, 0, ?)
+        `).run(crypto.randomUUID(), sessionToken, ck.key, sessionExpiresAt, now);
+
         return sendJson(res, 200, {
             success: true,
             require_pin: true,
+            session_token: sessionToken,
+            session_expires_at: sessionExpiresAt,
+            session_time_left: 6 * 3600,
             key: ck.key,
             name: ck.name || 'Client',
-            message: 'Client Key verified. Please enter your 6-digit PIN.'
+            message: 'Client Key verified. Session created for 6 hours. Please enter your 6-digit PIN.'
         });
     }
 
     // Step 2: Verify Client PIN
     if (pathname === '/api/auth/verify-client-key' && method === 'POST') {
-        const { client_key, pin } = body || {};
-        if (!client_key || !pin) {
-            return sendJson(res, 400, { success: false, message: 'Client Key and 6-digit PIN are required' });
+        const { client_key, pin, session_token } = body || {};
+        if (!pin) {
+            return sendJson(res, 400, { success: false, message: '6-digit PIN is required' });
         }
 
-        const trimmedKey = client_key.trim();
-        const trimmedPin = String(pin).trim();
+        let targetKey = client_key ? client_key.trim() : null;
+        let activeSessionToken = session_token || req.headers['x-client-session'] || req.headers['x-session-token'];
 
-        const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(trimmedKey);
+        if (activeSessionToken && !targetKey) {
+            const sess = db.prepare('SELECT * FROM client_auth_sessions WHERE session_token = ? AND expires_at >= ?').get(activeSessionToken, now);
+            if (sess) {
+                targetKey = sess.client_key;
+            }
+        }
+
+        if (!targetKey) {
+            return sendJson(res, 400, { success: false, message: 'Client Key or session token is required' });
+        }
+
+        const trimmedPin = String(pin).trim();
+        const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(targetKey);
         if (!ck) {
             return sendJson(res, 404, { success: false, message: 'Invalid Client Key' });
         }
@@ -144,15 +270,41 @@ function handleMasterRequest(req, res, url, body) {
         // Update login stats
         db.prepare('UPDATE client_keys SET last_login = ?, last_ip = ? WHERE id = ?').run(now, clientIp, ck.id);
 
+        const finalSessionExpiresAt = now + (6 * 3600);
+        if (activeSessionToken) {
+            // Unlock existing session and refresh 6 hours
+            db.prepare('UPDATE client_auth_sessions SET is_pin_unlocked = 1, expires_at = ? WHERE session_token = ?').run(finalSessionExpiresAt, activeSessionToken);
+        } else {
+            // Create new unlocked 6-hour session
+            activeSessionToken = 'csess_' + crypto.randomBytes(32).toString('hex');
+            db.prepare(`
+                INSERT INTO client_auth_sessions (id, session_token, client_key, expires_at, is_pin_unlocked, created_at)
+                VALUES (?, ?, ?, ?, 1, ?)
+            `).run(crypto.randomUUID(), activeSessionToken, ck.key, finalSessionExpiresAt, now);
+        }
+
         return sendJson(res, 200, {
             success: true,
+            authed: true,
             message: 'Authenticated successfully',
+            session_token: activeSessionToken,
+            session_expires_at: finalSessionExpiresAt,
+            session_time_left: 6 * 3600,
             client_key: ck.key,
             client_pin: ck.pin,
             name: ck.name || 'Client',
             expires_at: ck.expires_at,
             is_lifetime: ck.expires_at === 0
         });
+    }
+
+    // Client Logout / Disconnect: /api/auth/logout
+    if (pathname === '/api/auth/logout' && method === 'POST') {
+        const sessionToken = req.headers['x-client-session'] || req.headers['x-session-token'] || body?.session_token;
+        if (sessionToken) {
+            db.prepare('DELETE FROM client_auth_sessions WHERE session_token = ?').run(sessionToken);
+        }
+        return sendJson(res, 200, { success: true, message: 'Logged out from Client Key session' });
     }
 
     // ==========================================

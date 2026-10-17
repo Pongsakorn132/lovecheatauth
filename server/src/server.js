@@ -56,7 +56,7 @@ const server = http.createServer((req, res) => {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Admin-Key, X-Admin-Pin, X-Client-Key, X-Client-Pin, X-Seller-Key, X-Master-Token, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Admin-Key, X-Admin-Pin, X-Client-Key, X-Client-Pin, X-Client-Session, X-Seller-Key, X-Master-Token, Authorization');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);

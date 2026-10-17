@@ -47,6 +47,7 @@ function handleAdminRequest(req, res, url, body) {
     const now = Math.floor(Date.now() / 1000);
     const clientIp = req.socket?.remoteAddress || '127.0.0.1';
 
+    const clientSession = req.headers['x-client-session'] || req.headers['x-session-token'];
     const clientKey = req.headers['x-client-key'] || req.headers['x-admin-key'] || url.searchParams.get('client_key') || url.searchParams.get('admin_key');
     const clientPin = req.headers['x-client-pin'] || req.headers['x-admin-pin'] || url.searchParams.get('client_pin') || url.searchParams.get('admin_pin');
     const sellerKey = req.headers['x-seller-key'] || url.searchParams.get('seller_key') || (body && typeof body === 'object' ? body.seller_key : null);
@@ -55,7 +56,17 @@ function handleAdminRequest(req, res, url, body) {
     let isSeller = false;
     let sellerApp = null;
 
-    if (clientKey) {
+    if (clientSession) {
+        const sess = db.prepare('SELECT * FROM client_auth_sessions WHERE session_token = ? AND expires_at >= ? AND is_pin_unlocked = 1').get(clientSession, now);
+        if (sess) {
+            const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(sess.client_key);
+            if (ck && ck.status === 'active' && (ck.expires_at === 0 || ck.expires_at >= now)) {
+                isAdmin = true;
+            }
+        }
+    }
+
+    if (!isAdmin && clientKey) {
         const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(clientKey);
         if (ck) {
             if (ck.status !== 'active') {
