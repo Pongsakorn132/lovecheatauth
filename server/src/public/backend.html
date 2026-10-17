@@ -857,7 +857,7 @@
                         ? `<span class="px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800 text-[10px] font-bold">EXPIRED</span>`
                         : k.status === 'active'
                         ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">ACTIVE</span>`
-                        : `<span class="px-2 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px]">${escapeHtml(k.status)}</span>`;
+                        : `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[10px] font-bold">${escapeHtml(k.status ? k.status.toUpperCase() : 'UNUSED')}</span>`;
 
                     const isPinRevealed = revealedPins.has(k.id);
                     const pinDisplay = isPinRevealed ? escapeHtml(k.pin) : '••••••';
