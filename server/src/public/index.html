@@ -88,21 +88,21 @@
     <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-8">
         
         <!-- App Selection Bar -->
-        <div class="glass-panel p-5 rounded-xl flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <span class="text-sm font-medium text-gray-300">Active Application:</span>
-                <select id="appSelect" onchange="onAppChanged()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm font-mono text-pink-300 focus:outline-none focus:border-pink-500 min-w-[200px]">
+        <div class="glass-panel p-4 sm:p-5 rounded-xl flex items-center justify-between gap-4 overflow-x-auto">
+            <div class="flex items-center gap-2.5 shrink-0">
+                <span class="text-xs sm:text-sm font-medium text-gray-300 whitespace-nowrap">Active Application:</span>
+                <select id="appSelect" onchange="onAppChanged()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-mono text-pink-300 focus:outline-none focus:border-pink-500 min-w-[150px] max-w-[220px]">
                     <option value="">Waiting for Client Key connection...</option>
                 </select>
-                <button id="btnNewApp" onclick="openModal('newAppModal')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-medium rounded-lg text-white transition flex items-center gap-1.5">
+                <button id="btnNewApp" onclick="openModal('newAppModal')" class="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-medium rounded-lg text-white transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                     <span>+ New App</span>
                 </button>
-                <button id="btnDeleteApp" onclick="deleteCurrentApp()" class="px-3 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5 hidden">
+                <button id="btnDeleteApp" onclick="deleteCurrentApp()" class="px-2.5 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5 shrink-0 whitespace-nowrap hidden">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     <span>Delete App</span>
                 </button>
             </div>
-            <div id="appInfoBar" class="text-xs font-mono text-gray-400 flex items-center gap-4"></div>
+            <div id="appInfoBar" class="text-xs font-mono text-gray-400 flex items-center gap-3 shrink-0 whitespace-nowrap"></div>
         </div>
 
         <!-- Metric Cards -->
@@ -512,7 +512,7 @@
 
     <!-- Modal: Client 2-Factor 6-PIN Verification -->
     <div id="clientPinModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('clientPinModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-[460px] space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <!-- Header -->
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
@@ -538,9 +538,9 @@
                     <span id="pinKeyNameDisplay" class="text-[11px] text-cyan-400 font-medium"></span>
                 </div>
 
-                <div id="pinSessionNotice" class="hidden text-[11px] text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded-xl p-2 font-mono flex items-center justify-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-                    <span id="pinSessionNoticeText">Active Session &bull; กรอกเฉพาะ PIN เพื่อเข้าสู่ระบบ</span>
+                <div id="pinSessionNotice" class="hidden text-xs text-amber-300 bg-amber-950/40 border border-amber-800/60 rounded-xl px-3.5 py-2 font-mono flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden">
+                    <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0"></span>
+                    <span id="pinSessionNoticeText" class="whitespace-nowrap">Active Session &bull; กรอกเฉพาะ PIN เพื่อเข้าสู่ระบบ</span>
                 </div>
 
                 <!-- 6 PIN Input Boxes -->
@@ -1548,12 +1548,12 @@
             const appName = selectedOpt ? selectedOpt.dataset.name : '';
 
             document.getElementById('appInfoBar').innerHTML = `
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-1.5 whitespace-nowrap">
                     <span>ID: <code class="text-pink-300 font-mono select-all">${escapeHtml(currentAppId)}</code></span>
                     <button onclick="copyToClipboard('${escapeHtml(currentAppId)}', this)" class="px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 text-xs transition">Copy ID</button>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span>Secret: <code class="text-gray-400 font-mono tracking-widest select-none">****************</code></span>
+                <div class="flex items-center gap-1.5 whitespace-nowrap">
+                    <span>Secret: <code class="text-gray-400 font-mono tracking-widest select-none">********</code></span>
                     <button id="btnInfoCopySecret" onclick="copyToClipboard('${escapeHtml(secret)}', this)" class="px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 text-xs transition">Copy Secret</button>
                 </div>
             `;
