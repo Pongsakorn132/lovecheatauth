@@ -112,25 +112,38 @@
 
         <!-- TAB 1: Licenses -->
         <section id="keysTab" class="space-y-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-lg font-semibold text-white">License Keys</h3>
-                <button id="btnGenKey" onclick="openModal('genKeyModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-pink-900/30">
-                    + Generate Keys
-                </button>
+                <div id="keysActionsGroup" class="flex flex-wrap items-center gap-2">
+                    <button onclick="deleteSelectedKeys()" class="px-3 py-1.5 bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg text-xs font-medium transition">
+                        Delete Selected
+                    </button>
+                    <button onclick="deleteUsedKeys()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-xs font-medium transition">
+                        Delete Used
+                    </button>
+                    <button onclick="deleteAllKeys()" class="px-3 py-1.5 bg-gray-800 hover:bg-red-900/60 border border-gray-700 hover:border-red-800 text-gray-300 hover:text-red-300 rounded-lg text-xs font-medium transition">
+                        Delete All
+                    </button>
+                    <button id="btnGenKey" onclick="openModal('genKeyModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-pink-900/30">
+                        + Generate Keys
+                    </button>
+                </div>
             </div>
             <div class="glass-panel rounded-xl overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-gray-900/80 text-xs font-mono text-gray-400 uppercase border-b border-gray-800">
                         <tr>
+                            <th class="px-3 py-3 w-10 text-center"><input type="checkbox" id="checkAllKeys" onchange="toggleSelectAllKeys(this.checked)" class="round-checkbox"></th>
                             <th class="px-4 py-3">License Key</th>
                             <th class="px-4 py-3">Sub Plan</th>
                             <th class="px-4 py-3">Duration</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3">Created</th>
+                            <th class="px-4 py-3 text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody id="keysTableBody" class="divide-y divide-gray-800/50 font-mono text-xs text-gray-300">
-                        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">Select an app or generate keys</td></tr>
+                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Select an app or generate keys</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -138,13 +151,28 @@
 
         <!-- TAB 2: Users -->
         <section id="usersTab" class="space-y-4 hidden">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-3">
                 <h3 class="text-lg font-semibold text-white">User Accounts & HWID Records</h3>
+                <div id="usersActionsGroup" class="flex flex-wrap items-center gap-2">
+                    <button onclick="openExtendModal()" class="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-pink-900/30">
+                        + Extend Timer
+                    </button>
+                    <button onclick="deleteSelectedUsers()" class="px-3 py-1.5 bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg text-xs font-medium transition">
+                        Delete Selected
+                    </button>
+                    <button onclick="deleteExpiredUsers()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-xs font-medium transition">
+                        Delete Expired
+                    </button>
+                    <button onclick="deleteAllUsers()" class="px-3 py-1.5 bg-gray-800 hover:bg-red-900/60 border border-gray-700 hover:border-red-800 text-gray-300 hover:text-red-300 rounded-lg text-xs font-medium transition">
+                        Delete All
+                    </button>
+                </div>
             </div>
             <div class="glass-panel rounded-xl overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-gray-900/80 text-xs font-mono text-gray-400 uppercase border-b border-gray-800">
                         <tr>
+                            <th class="px-3 py-3 w-10 text-center"><input type="checkbox" id="checkAllUsers" onchange="toggleSelectAllUsers(this.checked)" class="round-checkbox"></th>
                             <th class="px-4 py-3">Username</th>
                             <th class="px-4 py-3">Hardware ID (HWID)</th>
                             <th class="px-4 py-3">IP Address</th>
@@ -154,7 +182,7 @@
                         </tr>
                     </thead>
                     <tbody id="usersTableBody" class="divide-y divide-gray-800/50 font-mono text-xs text-gray-300">
-                        <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No users found</td></tr>
+                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No users found</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -278,6 +306,36 @@
         </div>
     </div>
 
+    <!-- Modal: Extend User Timer -->
+    <div id="extendModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-4">
+            <h3 class="text-lg font-bold text-white">Extend User Timer</h3>
+            <div class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Target (เป้าหมาย)</label>
+                    <select id="extendTarget" onchange="onExtendTargetChange()" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500">
+                        <option value="active" selected>ทั้งหมดที่ Active (ยังไม่หมดอายุ)</option>
+                        <option value="all">ทั้งหมด (All Users)</option>
+                        <option value="single">ต่อ 1 User (ระบุรายคน)</option>
+                    </select>
+                </div>
+                <div id="extendUserSelectDiv" class="hidden">
+                    <label class="block text-xs text-gray-400 mb-1">Select User (เลือกผู้ใช้)</label>
+                    <select id="extendUserId" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Add Duration (Days / จำนวนวัน)</label>
+                    <input type="number" id="extendDays" value="30" min="1" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-4">
+                <button onclick="closeModal('extendModal')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs">Cancel</button>
+                <button onclick="submitExtendTimer()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold">Extend Time</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: New Variable -->
     <div id="newVarModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center hidden z-50">
         <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-4">
@@ -307,9 +365,29 @@
         let currentAppId = null;
         let isAuthorized = false;
 
+        async function copyToClipboard(text, btn) {
+            try {
+                await navigator.clipboard.writeText(text);
+                const oldText = btn.innerHTML;
+                btn.innerHTML = '<span class="text-emerald-400 font-medium">Copied!</span>';
+                setTimeout(() => { btn.innerHTML = oldText; }, 1500);
+            } catch (err) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                const oldText = btn.innerHTML;
+                btn.innerHTML = '<span class="text-emerald-400 font-medium">Copied!</span>';
+                setTimeout(() => { btn.innerHTML = oldText; }, 1500);
+            }
+        }
+
         function updateActionButtons() {
             const btnNewApp = document.getElementById('btnNewApp');
-            const btnGenKey = document.getElementById('btnGenKey');
+            const keysActionsGroup = document.getElementById('keysActionsGroup');
+            const usersActionsGroup = document.getElementById('usersActionsGroup');
             const btnAddVar = document.getElementById('btnAddVar');
 
             const hasApp = Boolean(isAuthorized && currentAppId);
@@ -319,9 +397,14 @@
                 else btnNewApp.classList.add('hidden');
             }
 
-            if (btnGenKey) {
-                if (hasApp) btnGenKey.classList.remove('hidden');
-                else btnGenKey.classList.add('hidden');
+            if (keysActionsGroup) {
+                if (hasApp) keysActionsGroup.classList.remove('hidden');
+                else keysActionsGroup.classList.add('hidden');
+            }
+
+            if (usersActionsGroup) {
+                if (hasApp) usersActionsGroup.classList.remove('hidden');
+                else usersActionsGroup.classList.add('hidden');
             }
 
             if (btnAddVar) {
@@ -351,8 +434,8 @@
             document.getElementById('statUsers').textContent = '0';
             document.getElementById('statUnusedKeys').textContent = '0';
             document.getElementById('statTotalKeys').textContent = '0';
-            document.getElementById('keysTableBody').innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
-            document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            document.getElementById('keysTableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('varsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             updateActionButtons();
@@ -431,8 +514,14 @@
             const appName = selectedOpt ? selectedOpt.dataset.name : '';
 
             document.getElementById('appInfoBar').innerHTML = `
-                <span>ID: <code class="text-pink-300">${escapeHtml(currentAppId)}</code></span>
-                <span>Secret: <code class="text-gray-300">${escapeHtml(secret ? secret.slice(0, 12) + '...' : '')}</code></span>
+                <div class="flex items-center gap-2">
+                    <span>ID: <code class="text-pink-300 font-mono select-all">${escapeHtml(currentAppId)}</code></span>
+                    <button onclick="copyToClipboard('${escapeHtml(currentAppId)}', this)" class="px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 text-xs transition">Copy ID</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span>Secret: <code class="text-gray-400 font-mono tracking-widest select-none">****************</code></span>
+                    <button onclick="copyToClipboard('${escapeHtml(secret)}', this)" class="px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 text-xs transition">Copy Secret</button>
+                </div>
             `;
 
             loadKeys();
@@ -443,7 +532,7 @@
 
         async function loadKeys() {
             if (!currentAppId) {
-                document.getElementById('keysTableBody').innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('keysTableBody').innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
                 document.getElementById('statTotalKeys').textContent = '0';
                 document.getElementById('statUnusedKeys').textContent = '0';
                 return;
@@ -451,8 +540,11 @@
             const res = await api(`/api/admin/licenses?app_id=${currentAppId}`);
             const tbody = document.getElementById('keysTableBody');
             tbody.innerHTML = '';
+            const checkAll = document.getElementById('checkAllKeys');
+            if (checkAll) checkAll.checked = false;
+
             if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load licenses')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load licenses')}</td></tr>`;
                 document.getElementById('statTotalKeys').textContent = '0';
                 document.getElementById('statUnusedKeys').textContent = '0';
                 return;
@@ -462,7 +554,7 @@
             document.getElementById('statUnusedKeys').textContent = keys.filter(k => k.status === 'unregistered').length;
 
             if (keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">No licenses generated yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No licenses generated yet</td></tr>';
                 return;
             }
 
@@ -477,59 +569,266 @@
                 const dateStr = new Date(k.created_at * 1000).toLocaleString();
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-pink-300 font-mono">${escapeHtml(k.key)}</td>
+                    <td class="px-3 py-3 text-center"><input type="checkbox" class="key-checkbox round-checkbox" value="${escapeHtml(k.key)}"></td>
+                    <td class="px-4 py-3 font-bold text-pink-300 font-mono select-all">${escapeHtml(k.key)}</td>
                     <td class="px-4 py-3">${escapeHtml(k.sub_name)}</td>
                     <td class="px-4 py-3">${days} days</td>
                     <td class="px-4 py-3">${statusBadge}</td>
                     <td class="px-4 py-3 text-gray-400">${dateStr}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="deleteSingleKey('${escapeHtml(k.key)}')" class="px-2 py-1 bg-red-950/70 hover:bg-red-900 border border-red-800/70 text-xs rounded text-red-400 transition">Delete</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
+        let loadedUsers = [];
+
         async function loadUsers() {
             if (!currentAppId) {
-                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
                 document.getElementById('statUsers').textContent = '0';
+                loadedUsers = [];
                 return;
             }
             const res = await api(`/api/admin/users?app_id=${currentAppId}`);
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = '';
+            const checkAll = document.getElementById('checkAllUsers');
+            if (checkAll) checkAll.checked = false;
+
             if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load users')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load users')}</td></tr>`;
                 document.getElementById('statUsers').textContent = '0';
+                loadedUsers = [];
                 return;
             }
             const users = res.users || [];
+            loadedUsers = users;
             document.getElementById('statUsers').textContent = users.length;
 
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No users registered yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No users registered yet</td></tr>';
                 return;
             }
 
+            const now = Math.floor(Date.now() / 1000);
             users.forEach(u => {
                 const tr = document.createElement('tr');
                 const hwidText = u.hwid ? `${escapeHtml(u.hwid.slice(0, 16))}...` : '<span class="text-amber-400">Unbound</span>';
-                const expireStr = new Date(u.expires_at * 1000).toLocaleDateString();
+                const isExpired = u.expires_at <= now;
+                const expireStr = `${new Date(u.expires_at * 1000).toLocaleDateString()} ${isExpired ? '<span class="text-red-400 text-[10px]">(Expired)</span>' : ''}`;
                 const bannedBadge = u.banned
                     ? '<span class="px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800">Banned</span>'
-                    : '<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">Active</span>';
+                    : (isExpired 
+                        ? '<span class="px-2 py-0.5 rounded bg-gray-800 text-gray-400">Expired</span>' 
+                        : '<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">Active</span>');
 
                 tr.innerHTML = `
+                    <td class="px-3 py-3 text-center"><input type="checkbox" class="user-checkbox round-checkbox" value="${escapeHtml(u.id)}"></td>
                     <td class="px-4 py-3 font-semibold text-white">${escapeHtml(u.username)}</td>
                     <td class="px-4 py-3 font-mono text-xs text-gray-300">${hwidText}</td>
                     <td class="px-4 py-3 font-mono text-xs text-gray-400">${escapeHtml(u.ip_address || 'N/A')}</td>
                     <td class="px-4 py-3 text-xs">${expireStr}</td>
                     <td class="px-4 py-3">${bannedBadge}</td>
-                    <td class="px-4 py-3 text-right space-x-2">
-                        <button onclick="resetHwid('${u.id}')" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded text-gray-300">Reset HWID</button>
-                        <button onclick="toggleBan('${u.id}', ${u.banned ? 0 : 1})" class="px-2 py-1 ${u.banned ? 'bg-emerald-800 hover:bg-emerald-700' : 'bg-red-800 hover:bg-red-700'} text-xs rounded text-white">${u.banned ? 'Unban' : 'Ban'}</button>
+                    <td class="px-4 py-3 text-right space-x-1.5">
+                        <button onclick="openExtendModal('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-pink-950/70 hover:bg-pink-900 border border-pink-800 text-xs rounded text-pink-300 transition">+ Extend</button>
+                        <button onclick="resetHwid('${u.id}')" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded text-gray-300 transition">Reset HWID</button>
+                        <button onclick="toggleBan('${u.id}', ${u.banned ? 0 : 1})" class="px-2 py-1 ${u.banned ? 'bg-emerald-800 hover:bg-emerald-700' : 'bg-red-800 hover:bg-red-700'} text-xs rounded text-white transition">${u.banned ? 'Unban' : 'Ban'}</button>
+                        <button onclick="deleteSingleUser('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-red-950/70 hover:bg-red-900 border border-red-800/70 text-xs rounded text-red-400 transition">Delete</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        // Extend Timer Functions
+        function openExtendModal(userId = null, username = null) {
+            if (!currentAppId) return alert('Please select an application first');
+            const targetSelect = document.getElementById('extendTarget');
+            const userSelect = document.getElementById('extendUserId');
+            const userDiv = document.getElementById('extendUserSelectDiv');
+
+            userSelect.innerHTML = '';
+            loadedUsers.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = `${u.username} (${new Date(u.expires_at * 1000).toLocaleDateString()})`;
+                userSelect.appendChild(opt);
+            });
+
+            if (userId) {
+                targetSelect.value = 'single';
+                userSelect.value = userId;
+                userDiv.classList.remove('hidden');
+            } else {
+                targetSelect.value = 'active';
+                userDiv.classList.add('hidden');
+            }
+            openModal('extendModal');
+        }
+
+        function onExtendTargetChange() {
+            const target = document.getElementById('extendTarget').value;
+            const userDiv = document.getElementById('extendUserSelectDiv');
+            if (target === 'single') {
+                userDiv.classList.remove('hidden');
+            } else {
+                userDiv.classList.add('hidden');
+            }
+        }
+
+        async function submitExtendTimer() {
+            if (!currentAppId) return alert('Please select an application first');
+            const target = document.getElementById('extendTarget').value;
+            const days = document.getElementById('extendDays').value;
+            const userId = document.getElementById('extendUserId').value;
+
+            if (!days || Number(days) <= 0) return alert('Please enter a valid number of days');
+
+            const payload = {
+                app_id: currentAppId,
+                target: target,
+                days: days
+            };
+            if (target === 'single') {
+                if (!userId) return alert('Please select a user');
+                payload.user_id = userId;
+            }
+
+            const res = await api('/api/admin/users/extend', {
+                method: 'POST',
+                body: payload
+            });
+
+            if (res && res.success) {
+                closeModal('extendModal');
+                loadUsers();
+                alert(res.message);
+            } else {
+                alert(res && res.message ? res.message : 'Failed to extend user subscription');
+            }
+        }
+
+        // Delete User Functions
+        function toggleSelectAllUsers(checked) {
+            document.querySelectorAll('.user-checkbox').forEach(cb => { cb.checked = checked; });
+        }
+
+        async function deleteSingleUser(userId, username) {
+            if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+            const res = await api('/api/admin/users/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'single', user_id: userId }
+            });
+            if (res && res.success) {
+                loadUsers();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete user');
+            }
+        }
+
+        async function deleteSelectedUsers() {
+            const checked = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
+            if (checked.length === 0) return alert('Please select at least one user to delete');
+            if (!confirm(`Are you sure you want to delete ${checked.length} selected user(s)?`)) return;
+
+            const res = await api('/api/admin/users/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'selected', user_ids: checked }
+            });
+            if (res && res.success) {
+                loadUsers();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete selected users');
+            }
+        }
+
+        async function deleteExpiredUsers() {
+            if (!confirm('Are you sure you want to delete all expired users in this application?')) return;
+            const res = await api('/api/admin/users/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'expired' }
+            });
+            if (res && res.success) {
+                loadUsers();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete expired users');
+            }
+        }
+
+        async function deleteAllUsers() {
+            if (!confirm('DANGER: Are you sure you want to delete ALL users in this application? This action cannot be undone!')) return;
+            const res = await api('/api/admin/users/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'all' }
+            });
+            if (res && res.success) {
+                loadUsers();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete users');
+            }
+        }
+
+        // Delete License Functions
+        function toggleSelectAllKeys(checked) {
+            document.querySelectorAll('.key-checkbox').forEach(cb => { cb.checked = checked; });
+        }
+
+        async function deleteSingleKey(key) {
+            if (!confirm(`Are you sure you want to delete license key "${key}"?`)) return;
+            const res = await api('/api/admin/licenses/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'single', key: key }
+            });
+            if (res && res.success) {
+                loadKeys();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete license key');
+            }
+        }
+
+        async function deleteSelectedKeys() {
+            const checked = Array.from(document.querySelectorAll('.key-checkbox:checked')).map(cb => cb.value);
+            if (checked.length === 0) return alert('Please select at least one key to delete');
+            if (!confirm(`Are you sure you want to delete ${checked.length} selected key(s)?`)) return;
+
+            const res = await api('/api/admin/licenses/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'selected', keys: checked }
+            });
+            if (res && res.success) {
+                loadKeys();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete selected keys');
+            }
+        }
+
+        async function deleteUsedKeys() {
+            if (!confirm('Are you sure you want to delete all activated/used keys in this application?')) return;
+            const res = await api('/api/admin/licenses/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'used' }
+            });
+            if (res && res.success) {
+                loadKeys();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete used keys');
+            }
+        }
+
+        async function deleteAllKeys() {
+            if (!confirm('DANGER: Are you sure you want to delete ALL license keys in this application? This action cannot be undone!')) return;
+            const res = await api('/api/admin/licenses/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId, target: 'all' }
+            });
+            if (res && res.success) {
+                loadKeys();
+            } else {
+                alert(res && res.message ? res.message : 'Failed to delete keys');
+            }
         }
 
         async function loadVars() {

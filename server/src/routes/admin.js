@@ -112,12 +112,118 @@ function generateKeyFromPattern(pattern, caseMode) {
         return sendJson(res, 200, { success: true, licenses });
     }
 
+    // Delete Licenses: /api/admin/licenses/delete
+    if (pathname === '/api/admin/licenses/delete' && method === 'POST') {
+        const { app_id, target, key, keys } = body || {};
+        if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        let result;
+        if (target === 'single' || key) {
+            const targetKey = key || (Array.isArray(keys) ? keys[0] : null);
+            if (!targetKey) return sendJson(res, 400, { success: false, message: 'Missing key' });
+            result = db.prepare('DELETE FROM licenses WHERE key = ? AND app_id = ?').run(targetKey, app_id);
+        } else if (target === 'selected') {
+            if (!Array.isArray(keys) || keys.length === 0) {
+                return sendJson(res, 400, { success: false, message: 'No keys selected' });
+            }
+            const placeholders = keys.map(() => '?').join(',');
+            result = db.prepare(`DELETE FROM licenses WHERE key IN (${placeholders}) AND app_id = ?`).run(...keys, app_id);
+        } else if (target === 'used') {
+            result = db.prepare("DELETE FROM licenses WHERE app_id = ? AND status != 'unregistered'").run(app_id);
+        } else if (target === 'unused') {
+            result = db.prepare("DELETE FROM licenses WHERE app_id = ? AND status = 'unregistered'").run(app_id);
+        } else if (target === 'all') {
+            result = db.prepare('DELETE FROM licenses WHERE app_id = ?').run(app_id);
+        } else {
+            return sendJson(res, 400, { success: false, message: 'Invalid delete target' });
+        }
+
+        return sendJson(res, 200, {
+            success: true,
+            message: `Deleted ${result.changes} license(s)`,
+            count: result.changes
+        });
+    }
+
     // List users by app: /api/admin/users
     if (pathname === '/api/admin/users' && method === 'GET') {
         const appId = url.searchParams.get('app_id');
         if (!appId) return sendJson(res, 400, { success: false, message: 'Missing app_id query param' });
         const users = db.prepare('SELECT id, username, hwid, ip_address, banned, ban_reason, sub_level, expires_at, created_at, last_login FROM users WHERE app_id = ? ORDER BY created_at DESC').all(appId);
         return sendJson(res, 200, { success: true, users });
+    }
+
+    // Extend User Timer: /api/admin/users/extend
+    if (pathname === '/api/admin/users/extend' && method === 'POST') {
+        const { app_id, target, user_id, days } = body || {};
+        if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const addDays = Number(days);
+        if (isNaN(addDays) || addDays <= 0) {
+            return sendJson(res, 400, { success: false, message: 'Invalid duration days' });
+        }
+        const addSeconds = Math.round(addDays * 86400);
+
+        let result;
+        if (target === 'single') {
+            if (!user_id) return sendJson(res, 400, { success: false, message: 'Missing user_id' });
+            result = db.prepare(`
+                UPDATE users 
+                SET expires_at = CASE WHEN expires_at > ? THEN expires_at + ? ELSE ? + ? END 
+                WHERE id = ? AND app_id = ?
+            `).run(now, addSeconds, now, addSeconds, user_id, app_id);
+        } else if (target === 'active') {
+            result = db.prepare(`
+                UPDATE users 
+                SET expires_at = expires_at + ? 
+                WHERE app_id = ? AND expires_at > ?
+            `).run(addSeconds, app_id, now);
+        } else if (target === 'all') {
+            result = db.prepare(`
+                UPDATE users 
+                SET expires_at = CASE WHEN expires_at > ? THEN expires_at + ? ELSE ? + ? END 
+                WHERE app_id = ?
+            `).run(now, addSeconds, now, addSeconds, app_id);
+        } else {
+            return sendJson(res, 400, { success: false, message: 'Invalid extend target' });
+        }
+
+        return sendJson(res, 200, {
+            success: true,
+            message: `Extended time for ${result.changes} user(s) by ${addDays} day(s)`,
+            count: result.changes
+        });
+    }
+
+    // Delete Users: /api/admin/users/delete
+    if (pathname === '/api/admin/users/delete' && method === 'POST') {
+        const { app_id, target, user_id, user_ids } = body || {};
+        if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        let result;
+        if (target === 'single' || user_id) {
+            const targetId = user_id || (Array.isArray(user_ids) ? user_ids[0] : null);
+            if (!targetId) return sendJson(res, 400, { success: false, message: 'Missing user_id' });
+            result = db.prepare('DELETE FROM users WHERE id = ? AND app_id = ?').run(targetId, app_id);
+        } else if (target === 'selected') {
+            if (!Array.isArray(user_ids) || user_ids.length === 0) {
+                return sendJson(res, 400, { success: false, message: 'No users selected' });
+            }
+            const placeholders = user_ids.map(() => '?').join(',');
+            result = db.prepare(`DELETE FROM users WHERE id IN (${placeholders}) AND app_id = ?`).run(...user_ids, app_id);
+        } else if (target === 'expired') {
+            result = db.prepare('DELETE FROM users WHERE app_id = ? AND expires_at <= ?').run(app_id, now);
+        } else if (target === 'all') {
+            result = db.prepare('DELETE FROM users WHERE app_id = ?').run(app_id);
+        } else {
+            return sendJson(res, 400, { success: false, message: 'Invalid delete target' });
+        }
+
+        return sendJson(res, 200, {
+            success: true,
+            message: `Deleted ${result.changes} user(s)`,
+            count: result.changes
+        });
     }
 
     // Reset User HWID
