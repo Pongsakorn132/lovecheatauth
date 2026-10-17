@@ -10,6 +10,36 @@
         body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #e2e8f0; }
         code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
         .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .round-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #4b5563;
+            border-radius: 9999px;
+            outline: none;
+            cursor: pointer;
+            display: inline-grid;
+            place-content: center;
+            background-color: #1f2937;
+            transition: all 0.15s ease-in-out;
+            vertical-align: middle;
+        }
+        .round-checkbox:hover {
+            border-color: #ec4899;
+        }
+        .round-checkbox:checked {
+            background-color: #db2777;
+            border-color: #db2777;
+        }
+        .round-checkbox:checked::before {
+            content: "";
+            width: 0.6rem;
+            height: 0.35rem;
+            border-left: 2px solid #ffffff;
+            border-bottom: 2px solid #ffffff;
+            transform: rotate(-45deg) translate(1px, -1px);
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -226,11 +256,20 @@
                     </p>
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Character Case (รูปแบบตัวอักษร)</label>
-                    <select id="genCharCase" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500">
-                        <option value="upper" selected>Upper Letter (ตัวพิมพ์ใหญ่ A-Z, 0-9)</option>
-                        <option value="lower">Lower Letter (ตัวพิมพ์เล็ก a-z, 0-9)</option>
-                    </select>
+                    <label class="block text-xs text-gray-400 mb-2">Character Case (รูปแบบตัวอักษร)</label>
+                    <div class="flex items-center gap-6 bg-gray-800/60 p-3 rounded-lg border border-gray-700/60">
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="genCaseUpper" class="round-checkbox">
+                            <span class="text-xs text-gray-300 font-medium">Upper (ตัวพิมพ์ใหญ่ A-Z)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="genCaseLower" class="round-checkbox">
+                            <span class="text-xs text-gray-300 font-medium">Lower (ตัวพิมพ์เล็ก a-z)</span>
+                        </label>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-1.5">
+                        💡 หากไม่ติ๊กอะไรเลย ระบบจะสุ่มผสมทั้งพิมพ์ใหญ่และพิมพ์เล็ก (A-Z, a-z, 0-9)
+                    </p>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-4">
@@ -594,7 +633,17 @@
             const amount = document.getElementById('genAmount').value;
             const duration_days = document.getElementById('genDays').value;
             const prefix = document.getElementById('genPrefix').value;
-            const char_case = document.getElementById('genCharCase').value;
+            const upperChecked = document.getElementById('genCaseUpper').checked;
+            const lowerChecked = document.getElementById('genCaseLower').checked;
+
+            let char_case = 'mixed';
+            if (upperChecked && !lowerChecked) {
+                char_case = 'upper';
+            } else if (lowerChecked && !upperChecked) {
+                char_case = 'lower';
+            } else {
+                char_case = 'mixed';
+            }
 
             const res = await api('/api/admin/licenses/generate', {
                 method: 'POST',

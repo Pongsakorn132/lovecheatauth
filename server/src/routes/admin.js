@@ -50,9 +50,15 @@ function handleAdminRequest(req, res, url, body) {
     }
 
 function getRandomChar(caseMode) {
-    const chars = caseMode === 'lower' 
-        ? 'abcdefghijklmnopqrstuvwxyz0123456789'
-        : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let chars;
+    if (caseMode === 'upper') {
+        chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    } else if (caseMode === 'lower') {
+        chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    } else {
+        // mixed: both uppercase, lowercase, and numbers 0-9
+        chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    }
     return chars[crypto.randomInt(0, chars.length)];
 }
 
