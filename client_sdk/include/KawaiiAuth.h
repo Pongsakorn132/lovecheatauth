@@ -44,9 +44,7 @@ namespace KawaiiAuth {
         std::string app_id;
         std::string app_secret;
         std::string version = "1.0";
-        std::string server_host = "127.0.0.1";
-        uint16_t server_port = 8080;
-        bool use_ssl = false;
+        std::string server_url = "http://127.0.0.1:8080";
         bool enforce_integrity = false;
     };
 
@@ -90,9 +88,7 @@ namespace KawaiiAuth {
         const std::string& app_id,
         const std::string& app_secret,
         const std::string& version = "1.0",
-        const std::string& server_host = "127.0.0.1",
-        uint16_t server_port = 8080,
-        bool use_ssl = false,
+        const std::string& server_url = "http://127.0.0.1:8080",
         bool enforce_integrity = false
     );
 
@@ -169,9 +165,7 @@ namespace KawaiiAuth {
             const std::string& app_id,
             const std::string& app_secret,
             const std::string& version = "1.0",
-            const std::string& server_host = "127.0.0.1",
-            uint16_t server_port = 8080,
-            bool use_ssl = false
+            const std::string& server_url = "http://127.0.0.1:8080"
         );
         ~Client();
 

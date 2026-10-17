@@ -176,11 +176,9 @@ int main() {
     const std::string APP_ID = skCrypt("kawaii_demo_app");
     const std::string APP_SECRET = skCrypt("demo_app_secret");
     const std::string APP_VERSION = skCrypt("1.0");
-    const std::string SERVER_HOST = skCrypt("127.0.0.1");
-    const INTERNET_PORT SERVER_PORT = 8080;
-    const bool USE_SSL = false;
+    const std::string SERVER_URL = skCrypt("http://127.0.0.1:8080");
 
-    KawaiiAuth::Client auth(APP_ID, APP_SECRET, APP_VERSION, SERVER_HOST, SERVER_PORT, USE_SSL);
+    KawaiiAuth::Client auth(APP_ID, APP_SECRET, APP_VERSION, SERVER_URL);
 
     PrintStatus("HWID", "Hardware Identifier: " + auth.GetHWID(), CLR_BLUE);
     PrintStatus("INIT", "Negotiating dynamic cryptographic session with gateway...", CLR_CYAN);

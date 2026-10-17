@@ -53,20 +53,59 @@ namespace KawaiiAuth {
         return result;
     }
 
+    static void ParseServerUrl(const std::string& input, std::string& outHost, INTERNET_PORT& outPort, bool& outSsl) {
+        std::string str = input;
+        outSsl = false;
+        outPort = 8080;
+
+        if (str.rfind("https://", 0) == 0) {
+            outSsl = true;
+            outPort = 443;
+            str = str.substr(8);
+        } else if (str.rfind("http://", 0) == 0) {
+            outSsl = false;
+            outPort = 80;
+            str = str.substr(7);
+        }
+
+        size_t slashPos = str.find('/');
+        if (slashPos != std::string::npos) {
+            str = str.substr(0, slashPos);
+        }
+
+        size_t colonPos = str.find(':');
+        if (colonPos != std::string::npos) {
+            outHost = str.substr(0, colonPos);
+            try {
+                int p = std::stoi(str.substr(colonPos + 1));
+                if (p > 0 && p <= 65535) {
+                    outPort = static_cast<INTERNET_PORT>(p);
+                }
+            } catch (...) {}
+        } else {
+            outHost = str;
+            if (!outSsl && (outHost == "127.0.0.1" || outHost == "localhost")) {
+                outPort = 8080;
+            }
+        }
+
+        if (outHost.empty()) {
+            outHost = "127.0.0.1";
+            outPort = 8080;
+            outSsl = false;
+        }
+    }
+
     Client::Client(
         const std::string& app_id,
         const std::string& app_secret,
         const std::string& version,
-        const std::string& host,
-        INTERNET_PORT port,
-        bool use_ssl
+        const std::string& server_url
     ) : m_app_id(app_id),
         m_app_secret(app_secret),
-        m_version(version),
-        m_host(host),
-        m_port(port),
-        m_use_ssl(use_ssl)
+        m_version(version)
     {
+        ParseServerUrl(server_url, m_host, m_port, m_use_ssl);
         m_hwid = ComputeHWID();
         m_hInternet = InternetOpenA(skCrypt("KawaiiAuth-Native/1.0"), INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
         if (m_hInternet) {

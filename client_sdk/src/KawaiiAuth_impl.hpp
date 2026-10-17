@@ -61,14 +61,62 @@ namespace KawaiiAuth {
         HINTERNET m_hInternet = nullptr;
         HINTERNET m_hConnect = nullptr;
 
+        std::string m_host;
+        INTERNET_PORT m_port = 8080;
+        bool m_use_ssl = false;
+
+        static void ParseServerUrl(const std::string& input, std::string& outHost, INTERNET_PORT& outPort, bool& outSsl) {
+            std::string str = input;
+            outSsl = false;
+            outPort = 8080;
+
+            if (str.rfind("https://", 0) == 0) {
+                outSsl = true;
+                outPort = 443;
+                str = str.substr(8);
+            } else if (str.rfind("http://", 0) == 0) {
+                outSsl = false;
+                outPort = 80;
+                str = str.substr(7);
+            }
+
+            size_t slashPos = str.find('/');
+            if (slashPos != std::string::npos) {
+                str = str.substr(0, slashPos);
+            }
+
+            size_t colonPos = str.find(':');
+            if (colonPos != std::string::npos) {
+                outHost = str.substr(0, colonPos);
+                try {
+                    int p = std::stoi(str.substr(colonPos + 1));
+                    if (p > 0 && p <= 65535) {
+                        outPort = static_cast<INTERNET_PORT>(p);
+                    }
+                } catch (...) {}
+            } else {
+                outHost = str;
+                if (!outSsl && (outHost == "127.0.0.1" || outHost == "localhost")) {
+                    outPort = 8080;
+                }
+            }
+
+            if (outHost.empty()) {
+                outHost = "127.0.0.1";
+                outPort = 8080;
+                outSsl = false;
+            }
+        }
+
         explicit Impl(const Config& config) : m_config(config) {
+            ParseServerUrl(m_config.server_url, m_host, m_port, m_use_ssl);
             m_hwid = ComputeHWID();
             m_hInternet = InternetOpenA(skCrypt("KawaiiAuth-SDK/1.0"), INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
             if (m_hInternet) {
                 m_hConnect = InternetConnectA(
                     m_hInternet,
-                    m_config.server_host.c_str(),
-                    static_cast<INTERNET_PORT>(m_config.server_port),
+                    m_host.c_str(),
+                    m_port,
                     nullptr,
                     nullptr,
                     INTERNET_SERVICE_HTTP,
@@ -374,7 +422,7 @@ namespace KawaiiAuth {
             if (!m_hConnect) return response;
 
             DWORD flags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE;
-            if (m_config.use_ssl) {
+            if (m_use_ssl) {
                 flags |= INTERNET_FLAG_SECURE | INTERNET_FLAG_IGNORE_CERT_CN_INVALID | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
             }
 

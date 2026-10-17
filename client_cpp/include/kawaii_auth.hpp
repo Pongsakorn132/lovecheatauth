@@ -57,9 +57,7 @@ namespace KawaiiAuth {
             const std::string& app_id,
             const std::string& app_secret,
             const std::string& version,
-            const std::string& host,
-            INTERNET_PORT port = 8080,
-            bool use_ssl = false
+            const std::string& server_url = "http://127.0.0.1:8080"
         );
         ~Client();
 
