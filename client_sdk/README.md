@@ -17,27 +17,31 @@ client_sdk/
 │   ├── security.hpp
 │   ├── skCrypter.hpp         <-- Compile-time String Obfuscation
 │   └── json.hpp              <-- Internal JSON engine (ไม่รั่วไหลไป header หลัก)
-├── example/
+├── example/                  <-- โฟลเดอร์โปรเจกต์ตัวอย่างแบบ Standalone
+│   ├── KawaiiAuth.h          <-- Header พร้อมใช้
+│   ├── KawaiiAuth.lib        <-- Static Library พร้อมลิงก์
 │   ├── example_main.cpp      <-- โค้ดตัวอย่างการเรียกใช้งานจริง
-│   └── CMakeLists.txt        <-- ตัวอย่าง CMake สำหรับโปรเจกต์ภายนอก
+│   ├── CMakeLists.txt        <-- ตัวอย่าง CMake สำหรับโปรเจกต์ภายนอก
+│   └── build.bat             <-- สคริปต์คลิกเดียวสำหรับ Build Example
 ├── dist/                     <-- โฟลเดอร์ผลลัพธ์หลัง Build (พร้อมแจกจ่าย/ใช้งาน)
 │   ├── include/KawaiiAuth.h
 │   └── lib/KawaiiAuth.lib
 ├── CMakeLists.txt            <-- CMake Build Script
-├── build_lib.bat             <-- สคริปต์คลิกเดียวสำหรับ Build KawaiiAuth.lib
+├── build_lib.bat             <-- สคริปต์คลิกเดียวสำหรับ Build KawaiiAuth.lib & Example
 └── README.md
 ```
 
 ---
 
-## 🛠️ วิธีการ Build `KawaiiAuth.lib`
+## 🛠️ วิธีการ Build `KawaiiAuth.lib` และ `Example`
 
 ### วิธีที่ 1: ดับเบิลคลิกสคริปต์ (ง่ายที่สุด)
 ดับเบิลคลิกที่ไฟล์ **`build_lib.bat`** 
 สคริปต์จะทำการ:
 1. กำหนดค่าผ่าน CMake (x64)
-2. คอมไพล์แบบ Release ผ่าน MSVC Compiler
-3. ส่งออกไฟล์ `KawaiiAuth.h` และ `KawaiiAuth.lib` ไปยังโฟลเดอร์ `dist/` โดยอัตโนมัติ
+2. คอมไพล์ Static Library `KawaiiAuth.lib` (Release x64)
+3. ส่งออกไฟล์ `KawaiiAuth.h` และ `KawaiiAuth.lib` ไปยังโฟลเดอร์ `dist/` และ `example/` โดยอัตโนมัติ
+4. คอมไพล์โปรแกรมตัวอย่าง `KawaiiAuthExample.exe` ไปยังโฟลเดอร์ `example/` พร้อมทดสอบใช้งานทันที
 
 ### วิธีที่ 2: ใช้คำสั่งผ่าน Terminal / PowerShell
 ```powershell

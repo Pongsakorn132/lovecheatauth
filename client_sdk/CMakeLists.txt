@@ -49,7 +49,7 @@ if (MSVC)
     )
 endif()
 
-# Dist Package Target: copies header and .lib to dist/ folder
+# Dist & Example Package Target: copies header and .lib to dist/ and example/ folders
 add_custom_command(TARGET KawaiiAuth POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/dist/include"
     COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_SOURCE_DIR}/dist/lib"
@@ -59,5 +59,14 @@ add_custom_command(TARGET KawaiiAuth POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:KawaiiAuth>"
         "${CMAKE_CURRENT_SOURCE_DIR}/dist/lib/$<TARGET_FILE_NAME:KawaiiAuth>"
-    COMMENT "[KawaiiAuth] Exporting KawaiiAuth.h and KawaiiAuth.lib to dist/ directory..."
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/KawaiiAuth.h"
+        "${CMAKE_CURRENT_SOURCE_DIR}/example/KawaiiAuth.h"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:KawaiiAuth>"
+        "${CMAKE_CURRENT_SOURCE_DIR}/example/$<TARGET_FILE_NAME:KawaiiAuth>"
+    COMMENT "[KawaiiAuth] Exporting KawaiiAuth.h and KawaiiAuth.lib to dist/ and example/..."
 )
+
+# Example executable
+add_subdirectory(example)

@@ -6,6 +6,7 @@
 *.exp
 *.lib
 !client_sdk/dist/lib/*.lib
+!client_sdk/example/*.lib
 *.key
 build/
 bin/
