@@ -49,15 +49,35 @@ function handleAdminRequest(req, res, url, body) {
         }
     }
 
+function getRandomChar(caseMode) {
+    const chars = caseMode === 'lower' 
+        ? 'abcdefghijklmnopqrstuvwxyz0123456789'
+        : 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    return chars[crypto.randomInt(0, chars.length)];
+}
+
+function generateKeyFromPattern(pattern, caseMode) {
+    const trimmed = (pattern || '').trim();
+    if (!trimmed) {
+        return '****-****-****-****'.replace(/[*]/g, () => getRandomChar(caseMode));
+    }
+    if (trimmed.includes('*')) {
+        return trimmed.replace(/[*]/g, () => getRandomChar(caseMode));
+    }
+    const sep = (trimmed.endsWith('-') || trimmed.endsWith('_')) ? '' : '-';
+    return (trimmed + sep + '****-****-****-****').replace(/[*]/g, () => getRandomChar(caseMode));
+}
+
     // Generate Licenses: /api/admin/licenses/generate
     if (pathname === '/api/admin/licenses/generate' && method === 'POST') {
-        const { app_id, amount, duration_days, level, prefix, sub_name } = body;
+        const { app_id, amount, duration_days, level, prefix, sub_name, char_case, mask } = body;
         if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
 
         const count = Math.min(Math.max(Number(amount) || 1, 1), 100);
         const durationSeconds = (Number(duration_days) || 30) * 86400;
         const subLevel = Number(level) || 1;
-        const keyPrefix = prefix ? `${prefix}-` : 'KAWAII-';
+        const caseMode = (char_case || 'upper').toLowerCase();
+        const pattern = mask !== undefined ? mask : (prefix !== undefined ? prefix : '');
         const generatedKeys = [];
 
         const insertStmt = db.prepare(`
@@ -66,9 +86,7 @@ function handleAdminRequest(req, res, url, body) {
         `);
 
         for (let i = 0; i < count; i++) {
-            const raw = crypto.randomBytes(8).toString('hex').toUpperCase();
-            const formatted = `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}-${raw.slice(12, 16)}`;
-            const fullKey = `${keyPrefix}${formatted}`;
+            const fullKey = generateKeyFromPattern(pattern, caseMode);
             insertStmt.run(fullKey, app_id, sub_name || 'Standard', durationSeconds, subLevel, now);
             generatedKeys.push(fullKey);
         }
