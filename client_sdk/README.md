@@ -75,7 +75,7 @@ int main() {
     config.app_id = "kawaii_demo_app";
     config.app_secret = "demo_app_secret";
     config.version = "1.0";
-    config.server_url = "http://127.0.0.1:8080"; // ระบุ URL ได้ทั้ง http / https หรือ domain/IP ระบบจะตัดคำนวณ Port และ SSL ให้อัตโนมัติ
+    config.api = "http://127.0.0.1:8080"; // ระบุ URL ได้ทั้ง http / https หรือ domain/IP ระบบจะตัดคำนวณ Port และ SSL ให้อัตโนมัติ
 
     if (!KawaiiAuth::Init(config)) {
         std::cout << "เชื่อมต่อเซิร์ฟเวอร์ไม่สำเร็จ: " << KawaiiAuth::GetLastError() << std::endl;
@@ -116,7 +116,7 @@ int main() {
 
 ### 1. การเริ่มต้นระบบ (Initialization)
 - `bool KawaiiAuth::Init(const Config& config)`: เริ่มต้นการทำงานด้วยการตั้งค่าแบบ Struct
-- `bool KawaiiAuth::Init(app_id, app_secret, version, server_url)`: เริ่มต้นแบบพารามิเตอร์แบบย่อ (ระบุ URL เช่น "http://127.0.0.1:8080" หรือ "https://auth.domain.com")
+- `bool KawaiiAuth::Init(app_id, app_secret, version, api)`: เริ่มต้นแบบพารามิเตอร์แบบย่อ (ระบุ URL เช่น "http://127.0.0.1:8080" หรือ "https://auth.domain.com")
 
 ### 2. การยืนยันตัวตน (Authentication)
 - `AuthResult KawaiiAuth::LicenseLogin(const std::string& license_key)`: เข้าสู่ระบบด้วย License Key

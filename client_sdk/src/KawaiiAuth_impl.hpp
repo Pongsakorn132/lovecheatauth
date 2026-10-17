@@ -109,7 +109,7 @@ namespace KawaiiAuth {
         }
 
         explicit Impl(const Config& config) : m_config(config) {
-            ParseServerUrl(m_config.server_url, m_host, m_port, m_use_ssl);
+            ParseServerUrl(m_config.api, m_host, m_port, m_use_ssl);
             m_hwid = ComputeHWID();
             m_hInternet = InternetOpenA(skCrypt("KawaiiAuth-SDK/1.0"), INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
             if (m_hInternet) {

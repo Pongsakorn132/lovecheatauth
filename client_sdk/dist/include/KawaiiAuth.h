@@ -10,7 +10,7 @@
  *   (KawaiiAuth.lib will be automatically linked via MSVC #pragma comment)
  * 
  * Example:
- *   if (!KawaiiAuth::Init("kawaii_demo_app", "demo_app_secret", "1.0", "127.0.0.1", 8080)) {
+ *   if (!KawaiiAuth::Init("kawaii_demo_app", "demo_app_secret", "1.0", "http://127.0.0.1:8080")) {
  *       std::cout << "Init error: " << KawaiiAuth::GetLastError() << std::endl;
  *       return 1;
  *   }
@@ -44,7 +44,7 @@ namespace KawaiiAuth {
         std::string app_id;
         std::string app_secret;
         std::string version = "1.0";
-        std::string server_url = "http://127.0.0.1:8080";
+        std::string api = "http://127.0.0.1:8080";
         bool enforce_integrity = false;
     };
 
@@ -88,7 +88,7 @@ namespace KawaiiAuth {
         const std::string& app_id,
         const std::string& app_secret,
         const std::string& version = "1.0",
-        const std::string& server_url = "http://127.0.0.1:8080",
+        const std::string& api = "http://127.0.0.1:8080",
         bool enforce_integrity = false
     );
 
@@ -165,7 +165,7 @@ namespace KawaiiAuth {
             const std::string& app_id,
             const std::string& app_secret,
             const std::string& version = "1.0",
-            const std::string& server_url = "http://127.0.0.1:8080"
+            const std::string& api = "http://127.0.0.1:8080"
         );
         ~Client();
 

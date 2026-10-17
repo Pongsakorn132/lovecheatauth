@@ -100,12 +100,12 @@ namespace KawaiiAuth {
         const std::string& app_id,
         const std::string& app_secret,
         const std::string& version,
-        const std::string& server_url
+        const std::string& api
     ) : m_app_id(app_id),
         m_app_secret(app_secret),
         m_version(version)
     {
-        ParseServerUrl(server_url, m_host, m_port, m_use_ssl);
+        ParseServerUrl(api, m_host, m_port, m_use_ssl);
         m_hwid = ComputeHWID();
         m_hInternet = InternetOpenA(skCrypt("KawaiiAuth-Native/1.0"), INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
         if (m_hInternet) {

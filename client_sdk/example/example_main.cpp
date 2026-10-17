@@ -35,7 +35,7 @@ int main() {
     config.app_id = "kawaii_demo_app";
     config.app_secret = "demo_app_secret";
     config.version = "1.0";
-    config.server_url = "http://127.0.0.1:8080";
+    config.api = "http://127.0.0.1:8080";
 
     if (!KawaiiAuth::Init(config)) {
         std::cout << "[!] Initialization failed: " << KawaiiAuth::GetLastError() << std::endl;

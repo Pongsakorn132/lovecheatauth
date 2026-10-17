@@ -20,13 +20,13 @@ namespace KawaiiAuth {
         const std::string& app_id,
         const std::string& app_secret,
         const std::string& version,
-        const std::string& server_url
+        const std::string& api
     ) {
         Config cfg;
         cfg.app_id = app_id;
         cfg.app_secret = app_secret;
         cfg.version = version;
-        cfg.server_url = server_url;
+        cfg.api = api;
         m_impl = std::make_unique<Impl>(cfg);
     }
 
@@ -118,14 +118,14 @@ namespace KawaiiAuth {
         const std::string& app_id,
         const std::string& app_secret,
         const std::string& version,
-        const std::string& server_url,
+        const std::string& api,
         bool enforce_integrity
     ) {
         Config cfg;
         cfg.app_id = app_id;
         cfg.app_secret = app_secret;
         cfg.version = version;
-        cfg.server_url = server_url;
+        cfg.api = api;
         cfg.enforce_integrity = enforce_integrity;
         return Init(cfg);
     }
