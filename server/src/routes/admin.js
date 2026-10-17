@@ -631,6 +631,73 @@ function handleAdminRequest(req, res, url, body) {
         }
     }
 
+    // App Files / Payloads: /api/admin/files
+    if (pathname === '/api/admin/files' && method === 'GET') {
+        const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
+        if (!appId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
+        const files = db.prepare(`
+            SELECT id, app_id, file_name, LENGTH(file_data) as file_size, authed_only 
+            FROM files 
+            WHERE app_id = ? 
+            ORDER BY file_name ASC
+        `).all(appId);
+        return sendJson(res, 200, { success: true, files });
+    }
+
+    if (pathname === '/api/admin/files' && method === 'POST') {
+        const { app_id, file_name, file_data_base64, authed_only } = body || {};
+        const targetAppId = isSeller ? sellerApp.id : app_id;
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+        if (!file_name || typeof file_name !== 'string' || !file_name.trim()) {
+            return sendJson(res, 400, { success: false, message: 'File name is required' });
+        }
+        if (!file_data_base64 || typeof file_data_base64 !== 'string') {
+            return sendJson(res, 400, { success: false, message: 'File data (base64) is required' });
+        }
+
+        const buffer = Buffer.from(file_data_base64, 'base64');
+        if (buffer.length > 50 * 1024 * 1024) { // 50MB limit
+            return sendJson(res, 400, { success: false, message: 'File exceeds maximum limit of 50MB' });
+        }
+
+        const fileId = crypto.randomUUID();
+        const safeName = file_name.trim();
+
+        // Remove existing file with same name in this app
+        db.prepare('DELETE FROM files WHERE app_id = ? AND file_name = ?').run(targetAppId, safeName);
+
+        db.prepare(`
+            INSERT INTO files (id, app_id, file_name, file_data, authed_only)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(fileId, targetAppId, safeName, buffer, authed_only ? 1 : 0);
+
+        logAudit(targetAppId, 'FILE_UPLOADED', `Uploaded file '${safeName}' (${(buffer.length / 1024).toFixed(1)} KB)`, clientIp);
+        return sendJson(res, 200, {
+            success: true,
+            message: `File '${safeName}' uploaded successfully`,
+            file: { id: fileId, file_name: safeName, file_size: buffer.length, authed_only: authed_only ? 1 : 0 }
+        });
+    }
+
+    if (pathname === '/api/admin/files' && method === 'DELETE') {
+        const { id, app_id, file_name } = body || {};
+        const queryId = url.searchParams.get('id') || id;
+        if (queryId) {
+            const f = db.prepare('SELECT app_id, file_name FROM files WHERE id = ?').get(queryId);
+            if (f) {
+                db.prepare('DELETE FROM files WHERE id = ?').run(queryId);
+                logAudit(f.app_id, 'FILE_DELETED', `Deleted file '${f.file_name}'`, clientIp);
+            }
+            return sendJson(res, 200, { success: true, message: 'File deleted' });
+        } else if (app_id && file_name) {
+            db.prepare('DELETE FROM files WHERE app_id = ? AND file_name = ?').run(app_id, file_name);
+            logAudit(app_id, 'FILE_DELETED', `Deleted file '${file_name}'`, clientIp);
+            return sendJson(res, 200, { success: true, message: 'File deleted' });
+        } else {
+            return sendJson(res, 400, { success: false, message: 'Missing file id' });
+        }
+    }
+
     // Logs: /api/admin/logs
     if (pathname === '/api/admin/logs' && method === 'GET') {
         const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');

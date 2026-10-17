@@ -6,10 +6,24 @@ echo   KawaiiAuth SDK - Static Library (.lib) Builder
 echo ================================================================
 echo.
 
+set "CMAKE_EXE=cmake"
 where cmake >nul 2>nul
 if %errorlevel% neq 0 (
-    echo [ERROR] CMake is not found in PATH!
-    echo Please install CMake or run from Visual Studio Developer Command Prompt.
+    set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+    if not exist "!VSWHERE!" set "VSWHERE=%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"
+    if exist "!VSWHERE!" (
+        for /f "usebackq tokens=*" %%i in (`"!VSWHERE!" -latest -property installationPath`) do (
+            if exist "%%i\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe" (
+                set "CMAKE_EXE=%%i\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin\cmake.exe"
+            )
+        )
+    )
+)
+
+"!CMAKE_EXE!" --version >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [ERROR] CMake is not found in PATH or Visual Studio installation!
+    echo Please install CMake or Visual Studio C++ CMake tools.
     pause
     exit /b 1
 )
@@ -21,7 +35,7 @@ if not exist "dist\include" mkdir "dist\include"
 if not exist "dist\lib" mkdir "dist\lib"
 
 echo [*] Configuring CMake project...
-cmake -B build -S . -A x64
+"!CMAKE_EXE!" -B build -S . -A x64
 if %errorlevel% neq 0 (
     echo [ERROR] CMake configuration failed!
     popd
@@ -31,7 +45,7 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [*] Building KawaiiAuth.lib (Release x64)...
-cmake --build build --config Release --target KawaiiAuth
+"!CMAKE_EXE!" --build build --config Release --target KawaiiAuth
 if %errorlevel% neq 0 (
     echo [ERROR] KawaiiAuth.lib build failed!
     popd
@@ -49,7 +63,7 @@ copy /y "build\lib\Release\KawaiiAuth.lib" "example\KawaiiAuth.lib" >nul
 
 echo.
 echo [*] Building KawaiiAuthExample (Release x64)...
-cmake --build build --config Release --target KawaiiAuthExample
+"!CMAKE_EXE!" --build build --config Release --target KawaiiAuthExample
 if %errorlevel% neq 0 (
     echo [ERROR] Example build failed!
     popd

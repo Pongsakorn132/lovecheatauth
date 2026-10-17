@@ -148,6 +148,7 @@
             <button onclick="switchTab('subsTab')" id="tabBtn-subsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Subscriptions</button>
             <button onclick="switchTab('usersTab')" id="tabBtn-usersTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Registered Users</button>
             <button onclick="switchTab('varsTab')" id="tabBtn-varsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Server Variables</button>
+            <button onclick="switchTab('filesTab')" id="tabBtn-filesTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Files & Payloads</button>
             <button onclick="switchTab('logsTab')" id="tabBtn-logsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Audit Logs</button>
             <button onclick="switchTab('settingsTab')" id="tabBtn-settingsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">App Settings</button>
         </div>
@@ -315,6 +316,34 @@
                     </thead>
                     <tbody id="varsTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
                         <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No variables configured</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- TAB: Files & Payloads -->
+        <section id="filesTab" class="space-y-4 hidden">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-white">Application Files & Payloads</h3>
+                    <p class="text-xs text-slate-400">ฝากไฟล์ DLL หรือไบนารีเข้ารหัสสำหรับดาวน์โหลดเข้า Memory ของ Client</p>
+                </div>
+                <button id="btnAddFile" onclick="openModal('newFileModal')" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-lg text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">
+                    + Upload File
+                </button>
+            </div>
+            <div class="glass-panel rounded-xl overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
+                        <tr>
+                            <th class="px-4 py-3">File Name</th>
+                            <th class="px-4 py-3">Size</th>
+                            <th class="px-4 py-3">Auth Required</th>
+                            <th class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="filesTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
+                        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No files uploaded yet</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -793,6 +822,48 @@
         </div>
     </div>
 
+    <!-- Modal: New File / Payload Upload -->
+    <div id="newFileModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newFileModal')">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide">Upload Protected Payload</h3>
+                        <p class="text-xs text-slate-400">อัปโหลดไฟล์ DLL หรือไบนารีเข้ารหัสเพื่อสตรีมเข้าแรม</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('newFileModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <div class="space-y-3.5 text-sm">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Choose File (.dll, .bin, .exe, etc.)</label>
+                    <input type="file" id="newFileInput" onchange="onFileSelected(this)" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-white text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Payload Name (ชื่อไฟล์อ้างอิง)</label>
+                    <input type="text" id="newFileName" placeholder="e.g. cheat_core.dll" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
+                </div>
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
+                    <div>
+                        <label for="newFileAuthedOnly" class="text-xs font-semibold text-slate-200 cursor-pointer">Require Authentication</label>
+                        <p class="text-[11px] text-slate-400">ดาวน์โหลดได้เฉพาะ Client ที่ผ่านการยืนยันตัวตนแล้วเท่านั้น</p>
+                    </div>
+                    <input type="checkbox" id="newFileAuthedOnly" checked class="round-checkbox">
+                </div>
+                <div id="fileUploadStatus" class="text-xs font-mono text-sky-400 hidden">Reading file...</div>
+            </div>
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button onclick="closeModal('newFileModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitNewFile()" id="btnSubmitFile" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">Upload Payload</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal: New Subscription -->
     <div id="newSubModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newSubModal')">
         <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
@@ -1122,6 +1193,12 @@
                 if (hasApp) btnAddVar.classList.remove('hidden');
                 else btnAddVar.classList.add('hidden');
             }
+
+            const btnAddFile = document.getElementById('btnAddFile');
+            if (btnAddFile) {
+                if (hasApp) btnAddFile.classList.remove('hidden');
+                else btnAddFile.classList.add('hidden');
+            }
         }
 
         let apiAdminKey = '';
@@ -1425,6 +1502,7 @@
             document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('subsTableBody').innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('varsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            document.getElementById('filesTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             
             const genSubEl = document.getElementById('genSubName');
@@ -1583,6 +1661,7 @@
             loadSubscriptions();
             loadUsers();
             loadVars();
+            loadFiles();
             loadLogs();
             loadAppSettings();
         }
@@ -2423,6 +2502,148 @@
             }
         }
 
+        // Files & Payloads Management
+        let uploadedFileBase64 = '';
+        let uploadedFileSize = 0;
+
+        function onFileSelected(input) {
+            const file = input.files && input.files[0];
+            if (!file) return;
+            const nameInput = document.getElementById('newFileName');
+            if (nameInput && !nameInput.value.trim()) {
+                nameInput.value = file.name;
+            }
+            const statusEl = document.getElementById('fileUploadStatus');
+            if (statusEl) {
+                statusEl.textContent = `Reading ${file.name} (${formatBytes(file.size)})...`;
+                statusEl.classList.remove('hidden');
+            }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                const base64 = dataUrl.split(',')[1];
+                uploadedFileBase64 = base64;
+                uploadedFileSize = file.size;
+                if (statusEl) {
+                    statusEl.textContent = `Ready: ${file.name} (${formatBytes(file.size)})`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function loadFiles() {
+            if (!currentAppId) {
+                document.getElementById('filesTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
+                return;
+            }
+            const res = await api(`/api/admin/files?app_id=${currentAppId}`);
+            const tbody = document.getElementById('filesTableBody');
+            tbody.innerHTML = '';
+            if (!res || !res.success) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load files')}</td></tr>`;
+                return;
+            }
+            const files = res.files || [];
+            if (files.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No files or payloads uploaded yet</td></tr>';
+                return;
+            }
+            files.forEach(f => {
+                const tr = document.createElement('tr');
+                const authedBadge = f.authed_only
+                    ? '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950/60 text-amber-400 border border-amber-800">Authed Only</span>'
+                    : '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-800">Public</span>';
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3 font-bold text-sky-300 font-mono flex items-center gap-2">
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>${escapeHtml(f.file_name)}</span>
+                    </td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-300">${formatBytes(f.file_size)}</td>
+                    <td class="px-4 py-3">${authedBadge}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="deleteFile('${escapeHtml(f.id)}', '${escapeHtml(f.file_name)}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function submitNewFile() {
+            if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
+            const nameInput = document.getElementById('newFileName');
+            const file_name = (nameInput ? nameInput.value : '').trim();
+            const authed_only = document.getElementById('newFileAuthedOnly').checked;
+
+            if (!file_name) return customAlert('File name is required', { type: 'warning' });
+            if (!uploadedFileBase64) return customAlert('Please select a file to upload', { type: 'warning' });
+
+            const btn = document.getElementById('btnSubmitFile');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Uploading...';
+            }
+
+            try {
+                const res = await api('/api/admin/files', {
+                    method: 'POST',
+                    body: {
+                        app_id: currentAppId,
+                        file_name: file_name,
+                        file_data_base64: uploadedFileBase64,
+                        authed_only: authed_only
+                    }
+                });
+
+                if (res && res.success) {
+                    closeModal('newFileModal');
+                    if (nameInput) nameInput.value = '';
+                    const fileInput = document.getElementById('newFileInput');
+                    if (fileInput) fileInput.value = '';
+                    uploadedFileBase64 = '';
+                    loadFiles();
+                    showToast(res.message || 'Payload uploaded successfully', 'success');
+                } else {
+                    customAlert(res && res.message ? res.message : 'Upload failed', { type: 'error' });
+                }
+            } catch (err) {
+                customAlert('Failed to upload file due to network error', { type: 'error' });
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Upload Payload';
+                }
+            }
+        }
+
+        async function deleteFile(fileId, fileName) {
+            const ok = await customConfirm(`Are you sure you want to delete payload "${fileName}"?`, {
+                title: 'Delete Payload',
+                isDanger: true,
+                confirmText: 'Delete'
+            });
+            if (!ok) return;
+
+            const res = await api('/api/admin/files', {
+                method: 'DELETE',
+                body: { id: fileId }
+            });
+            if (res && res.success) {
+                loadFiles();
+                showToast('Payload deleted successfully', 'success');
+            } else {
+                customAlert(res && res.message ? res.message : 'Failed to delete file', { type: 'error' });
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
         function escapeHtml(str) {
             if (str === null || str === undefined) return '';
             return String(str)
@@ -2434,7 +2655,7 @@
         }
 
         function switchTab(tabId) {
-            ['keysTab', 'subsTab', 'usersTab', 'varsTab', 'logsTab', 'settingsTab'].forEach(t => {
+            ['keysTab', 'subsTab', 'usersTab', 'varsTab', 'filesTab', 'logsTab', 'settingsTab'].forEach(t => {
                 const el = document.getElementById(t);
                 const btn = document.getElementById(`tabBtn-${t}`);
                 if (el) el.classList.add('hidden');
@@ -2448,6 +2669,8 @@
                 loadAppSettings();
             } else if (tabId === 'subsTab') {
                 loadSubscriptions();
+            } else if (tabId === 'filesTab') {
+                loadFiles();
             }
         }
 
