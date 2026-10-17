@@ -46,13 +46,22 @@ function handleApiRequest(req, res, url, body) {
             VALUES (?, ?, ?, ?, ?, ?)
         `).run(creds.sessionToken, app.id, creds.sessionKey, creds.sessionIv, now, expiresAt);
 
-        return sendJson(res, 200, {
+        // Encrypt init payload with app.secret_hash and dynamic IV
+        const initIvHex = cryptoUtils.generateRandomHex(16);
+        const plainInitData = {
             success: true,
             message: 'Initialized',
             session_token: creds.sessionToken,
             session_key: creds.sessionKey,
             session_iv: creds.sessionIv,
             app_name: app.name
+        };
+        const encryptedInit = cryptoUtils.encryptPayload(plainInitData, app.secret_hash, initIvHex);
+
+        return sendJson(res, 200, {
+            success: true,
+            iv: initIvHex,
+            data: encryptedInit
         });
     }
 
@@ -290,11 +299,23 @@ function handleApiRequest(req, res, url, body) {
 }
 
 function sendJson(res, status, obj) {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const bodyString = JSON.stringify(obj);
+    const signature = cryptoUtils.signPayload(bodyString, timestamp);
+
     res.writeHead(status, {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Expose-Headers': 'X-Signature, X-Timestamp, X-Signature-Algorithm, X-Ed256, Signature, Timestamp, ed256',
+        'X-Signature': signature,
+        'X-Timestamp': timestamp,
+        'X-Signature-Algorithm': 'ed256',
+        'X-Ed256': signature,
+        'Signature': signature,
+        'Timestamp': timestamp,
+        'ed256': 'true'
     });
-    res.end(JSON.stringify(obj));
+    res.end(bodyString);
 }
 
 function sendEncrypted(res, session, obj) {

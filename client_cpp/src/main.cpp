@@ -103,7 +103,7 @@ int main() {
 
         // Fetch Protected Variable
         std::cout << skCrypt("[*] Fetching protected server variable...") << std::endl;
-        std::string secretVar = auth.FetchVariable(skCrypt("payload_offset"));
+        std::string secretVar = auth.FetchVariable(skCrypt("TEST"));
         std::cout << "[+] Received Variable: " << (secretVar.empty() ? "(none)" : secretVar) << std::endl;
 
         // Heartbeat Test

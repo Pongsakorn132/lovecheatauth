@@ -6,6 +6,8 @@
 #include <windows.h>
 #include <wininet.h>
 
+#include <wincrypt.h>
+
 #pragma comment(lib, "wininet.lib")
 #pragma comment(lib, "bcrypt.lib")
 #pragma comment(lib, "crypt32.lib")
@@ -27,6 +29,14 @@ namespace KawaiiAuth {
         Response() = default;
         Response(bool s, const std::string& m) : success(s), message(m) {}
         Response(bool s, const std::string& m, const UserData& u) : success(s), message(m), user(u) {}
+    };
+
+    struct HttpResponse {
+        int statusCode = 0;
+        std::string body;
+        std::string signature;
+        std::string timestamp;
+        std::string algorithm;
     };
 
     class Client {
@@ -53,6 +63,9 @@ namespace KawaiiAuth {
         std::vector<uint8_t> DownloadFile(const std::string& file_name);
         bool SendLog(const std::string& log_message);
 
+        // Verification & Security
+        bool VerifyServerSignature(const std::string& body, const std::string& timestamp, const std::string& sig_b64);
+
         // Accessors
         const std::string& GetHWID() const { return m_hwid; }
         const std::string& GetSessionToken() const { return m_session_token; }
@@ -78,9 +91,11 @@ namespace KawaiiAuth {
         // Internal Helpers
         std::string ComputeHWID();
         std::string HashSHA256(const std::string& input);
+        std::string EncryptAES256WithKey(const std::string& plaintext, const std::string& keyHex, const std::string& ivHex);
+        std::string DecryptAES256WithKey(const std::string& ciphertext_b64, const std::string& keyHex, const std::string& ivHex);
         std::string EncryptAES256(const std::string& plaintext);
         std::string DecryptAES256(const std::string& ciphertext_b64);
-        std::string SendHttpRequest(const std::string& path, const std::string& post_data, const std::string& extra_header = "");
+        HttpResponse SendHttpRequest(const std::string& path, const std::string& post_data, const std::string& extra_header = "");
     };
 
 }

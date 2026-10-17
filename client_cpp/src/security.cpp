@@ -56,7 +56,6 @@ namespace KawaiiSecurity {
             skCrypt("Cheat Engine"),
             skCrypt("Process Hacker"),
             skCrypt("Wireshark"),
-            skCrypt("HTTP Debugger Pro"),
             skCrypt("Fiddler Everywhere"),
             skCrypt("Scylla")
         };

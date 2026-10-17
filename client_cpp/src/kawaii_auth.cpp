@@ -14,6 +14,18 @@ using json = nlohmann::json;
 
 namespace KawaiiAuth {
 
+    // Server RSA Public Key (Used strictly for signature verification)
+    static const char* SERVER_PUBLIC_KEY_PEM = 
+        "-----BEGIN PUBLIC KEY-----\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtM89CKg1mvXbUws2w75s\n"
+        "ktY8G+hpGSdP0Y03Jsxu9XqypEwji2b8kS5+EC1Ew0oQ3gFffTI5aAt306waqBe6\n"
+        "U4Fn1Qbs+uwy/yNYnqg73Tr0dJT2GxQg+OcX32cPRA/SzqRwpJ9BR2E/lnivflrC\n"
+        "UD3WERT5BqRbqbPF8nq/DQVkbUVdHQGsG7HaxyTHtgre5zTdZ/BkZHXMtsubEEgN\n"
+        "6xfh/gwkF6bNFZvygKJ9J1NHcNOa/wjX7oXjOfVQqy2UevJ7uK+tK+rZh6DlElPG\n"
+        "z82Z8BVMXlwEI6/xdUjSMhWNgW4i9S84Wxp9vjeB9tCnmd3hSREuxjoFxMjK6Wq0\n"
+        "/QIDAQAB\n"
+        "-----END PUBLIC KEY-----\n";
+
     static std::vector<uint8_t> HexToBytes(const std::string& hex) {
         std::vector<uint8_t> bytes;
         for (size_t i = 0; i < hex.length(); i += 2) {
@@ -108,7 +120,6 @@ namespace KawaiiAuth {
         DWORD_PTR oldMask = SetThreadAffinityMask(GetCurrentThread(), 1);
         int cpuInfo[4] = { 0 };
         __cpuid(cpuInfo, 1);
-        // Mask out bits 24-31 (Initial APIC ID) from EBX so it never varies by scheduled core
         int ebxStable = cpuInfo[1] & 0x00FFFFFF;
         raw << "CPU:" << std::hex << cpuInfo[0] << "-" << ebxStable << "-" << cpuInfo[2] << "-" << cpuInfo[3] << ";";
         if (oldMask) SetThreadAffinityMask(GetCurrentThread(), oldMask);
@@ -148,7 +159,102 @@ namespace KawaiiAuth {
         return HashSHA256(raw.str());
     }
 
-    std::string Client::EncryptAES256(const std::string& plaintext) {
+    bool Client::VerifyServerSignature(const std::string& body, const std::string& timestamp, const std::string& sig_b64) {
+        if (sig_b64.empty() || timestamp.empty()) {
+            return false;
+        }
+
+        // Verify timestamp freshness (drift within +/- 300s)
+        try {
+            uint64_t ts = std::stoull(timestamp);
+            uint64_t current_time = static_cast<uint64_t>(time(nullptr));
+            int64_t diff = static_cast<int64_t>(current_time) - static_cast<int64_t>(ts);
+            if (std::abs(diff) > 300) {
+                return false;
+            }
+        } catch (...) {
+            return false;
+        }
+
+        // Decode Public Key PEM to DER
+        DWORD derLen = 0;
+        if (!CryptStringToBinaryA(SERVER_PUBLIC_KEY_PEM, 0, CRYPT_STRING_BASE64HEADER, nullptr, &derLen, nullptr, nullptr)) {
+            return false;
+        }
+        std::vector<uint8_t> derBytes(derLen);
+        if (!CryptStringToBinaryA(SERVER_PUBLIC_KEY_PEM, 0, CRYPT_STRING_BASE64HEADER, derBytes.data(), &derLen, nullptr, nullptr)) {
+            return false;
+        }
+
+        // Decode DER to CERT_PUBLIC_KEY_INFO
+        CERT_PUBLIC_KEY_INFO* pPubKeyInfo = nullptr;
+        DWORD infoLen = 0;
+        if (!CryptDecodeObjectEx(X509_ASN_ENCODING, X509_PUBLIC_KEY_INFO, derBytes.data(), derLen, CRYPT_DECODE_ALLOC_FLAG, nullptr, &pPubKeyInfo, &infoLen)) {
+            return false;
+        }
+
+        // Import public key to BCRYPT_KEY_HANDLE
+        BCRYPT_KEY_HANDLE hKey = nullptr;
+        if (!CryptImportPublicKeyInfoEx2(X509_ASN_ENCODING, pPubKeyInfo, 0, nullptr, &hKey)) {
+            LocalFree(pPubKeyInfo);
+            return false;
+        }
+        LocalFree(pPubKeyInfo);
+
+        // Compute SHA-256 hash of "timestamp.body"
+        std::string dataToVerify = timestamp + "." + body;
+        BCRYPT_ALG_HANDLE hAlg = nullptr;
+        if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0) {
+            BCryptDestroyKey(hKey);
+            return false;
+        }
+
+        DWORD hashObjSize = 0, dataLen = 0;
+        BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&hashObjSize, sizeof(DWORD), &dataLen, 0);
+        std::vector<uint8_t> hashObj(hashObjSize);
+        std::vector<uint8_t> hashVal(32);
+
+        BCRYPT_HASH_HANDLE hHash = nullptr;
+        bool hashOk = false;
+        if (BCryptCreateHash(hAlg, &hHash, hashObj.data(), hashObjSize, nullptr, 0, 0) == 0) {
+            BCryptHashData(hHash, (PUCHAR)dataToVerify.data(), (ULONG)dataToVerify.length(), 0);
+            BCryptFinishHash(hHash, hashVal.data(), (ULONG)hashVal.size(), 0);
+            BCryptDestroyHash(hHash);
+            hashOk = true;
+        }
+        BCryptCloseAlgorithmProvider(hAlg, 0);
+
+        if (!hashOk) {
+            BCryptDestroyKey(hKey);
+            return false;
+        }
+
+        // Decode base64 signature
+        std::vector<uint8_t> sigBytes = Base64Decode(sig_b64);
+        if (sigBytes.empty()) {
+            BCryptDestroyKey(hKey);
+            return false;
+        }
+
+        // Verify signature with PKCS#1 padding (RSA-SHA256 / ed256)
+        BCRYPT_PKCS1_PADDING_INFO padInfo;
+        padInfo.pszAlgId = BCRYPT_SHA256_ALGORITHM;
+
+        NTSTATUS status = BCryptVerifySignature(
+            hKey,
+            &padInfo,
+            hashVal.data(),
+            (ULONG)hashVal.size(),
+            sigBytes.data(),
+            (ULONG)sigBytes.size(),
+            BCRYPT_PAD_PKCS1
+        );
+
+        BCryptDestroyKey(hKey);
+        return (status == 0);
+    }
+
+    std::string Client::EncryptAES256WithKey(const std::string& plaintext, const std::string& keyHex, const std::string& ivHex) {
         BCRYPT_ALG_HANDLE hAlg = nullptr;
         BCRYPT_KEY_HANDLE hKey = nullptr;
         std::string resultB64 = "";
@@ -160,15 +266,15 @@ namespace KawaiiAuth {
         BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&keyObjSize, sizeof(DWORD), &dataLen, 0);
         std::vector<uint8_t> keyObj(keyObjSize);
 
-        auto keyBytes = HexToBytes(m_session_key_hex);
-        auto ivBytes = HexToBytes(m_session_iv_hex);
+        auto keyBytes = HexToBytes(keyHex);
+        auto ivBytes = HexToBytes(ivHex);
 
         if (BCryptGenerateSymmetricKey(hAlg, &hKey, keyObj.data(), keyObjSize, keyBytes.data(), (ULONG)keyBytes.size(), 0) == 0) {
             DWORD outSize = 0;
             BCryptEncrypt(hKey, (PUCHAR)plaintext.data(), (ULONG)plaintext.length(), nullptr, ivBytes.data(), (ULONG)ivBytes.size(), nullptr, 0, &outSize, BCRYPT_BLOCK_PADDING);
             std::vector<uint8_t> cipherBytes(outSize);
             
-            ivBytes = HexToBytes(m_session_iv_hex);
+            ivBytes = HexToBytes(ivHex);
             if (BCryptEncrypt(hKey, (PUCHAR)plaintext.data(), (ULONG)plaintext.length(), nullptr, ivBytes.data(), (ULONG)ivBytes.size(), cipherBytes.data(), outSize, &outSize, BCRYPT_BLOCK_PADDING) == 0) {
                 cipherBytes.resize(outSize);
                 resultB64 = Base64Encode(cipherBytes);
@@ -179,7 +285,7 @@ namespace KawaiiAuth {
         return resultB64;
     }
 
-    std::string Client::DecryptAES256(const std::string& ciphertext_b64) {
+    std::string Client::DecryptAES256WithKey(const std::string& ciphertext_b64, const std::string& keyHex, const std::string& ivHex) {
         BCRYPT_ALG_HANDLE hAlg = nullptr;
         BCRYPT_KEY_HANDLE hKey = nullptr;
         std::string plaintext = "";
@@ -191,8 +297,8 @@ namespace KawaiiAuth {
         BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&keyObjSize, sizeof(DWORD), &dataLen, 0);
         std::vector<uint8_t> keyObj(keyObjSize);
 
-        auto keyBytes = HexToBytes(m_session_key_hex);
-        auto ivBytes = HexToBytes(m_session_iv_hex);
+        auto keyBytes = HexToBytes(keyHex);
+        auto ivBytes = HexToBytes(ivHex);
         auto cipherBytes = Base64Decode(ciphertext_b64);
 
         if (BCryptGenerateSymmetricKey(hAlg, &hKey, keyObj.data(), keyObjSize, keyBytes.data(), (ULONG)keyBytes.size(), 0) == 0) {
@@ -200,7 +306,7 @@ namespace KawaiiAuth {
             BCryptDecrypt(hKey, cipherBytes.data(), (ULONG)cipherBytes.size(), nullptr, ivBytes.data(), (ULONG)ivBytes.size(), nullptr, 0, &outSize, BCRYPT_BLOCK_PADDING);
             std::vector<uint8_t> plainBytes(outSize);
 
-            ivBytes = HexToBytes(m_session_iv_hex);
+            ivBytes = HexToBytes(ivHex);
             if (BCryptDecrypt(hKey, cipherBytes.data(), (ULONG)cipherBytes.size(), nullptr, ivBytes.data(), (ULONG)ivBytes.size(), plainBytes.data(), outSize, &outSize, BCRYPT_BLOCK_PADDING) == 0) {
                 plainBytes.resize(outSize);
                 plaintext = std::string(plainBytes.begin(), plainBytes.end());
@@ -211,14 +317,23 @@ namespace KawaiiAuth {
         return plaintext;
     }
 
-    std::string Client::SendHttpRequest(const std::string& path, const std::string& post_data, const std::string& extra_header) {
-        if (!m_hConnect) return "";
+    std::string Client::EncryptAES256(const std::string& plaintext) {
+        return EncryptAES256WithKey(plaintext, m_session_key_hex, m_session_iv_hex);
+    }
+
+    std::string Client::DecryptAES256(const std::string& ciphertext_b64) {
+        return DecryptAES256WithKey(ciphertext_b64, m_session_key_hex, m_session_iv_hex);
+    }
+
+    HttpResponse Client::SendHttpRequest(const std::string& path, const std::string& post_data, const std::string& extra_header) {
+        HttpResponse response;
+        if (!m_hConnect) return response;
 
         DWORD flags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE;
         if (m_use_ssl) flags |= INTERNET_FLAG_SECURE;
 
         HINTERNET hRequest = HttpOpenRequestA(m_hConnect, skCrypt("POST"), path.c_str(), nullptr, nullptr, nullptr, flags, 0);
-        if (!hRequest) return "";
+        if (!hRequest) return response;
 
         std::string headers = skCrypt("Content-Type: application/json\r\n");
         if (!extra_header.empty()) {
@@ -228,19 +343,58 @@ namespace KawaiiAuth {
         BOOL sent = HttpSendRequestA(hRequest, headers.c_str(), (DWORD)headers.length(), (LPVOID)post_data.c_str(), (DWORD)post_data.length());
         if (!sent) {
             InternetCloseHandle(hRequest);
-            return "";
+            return response;
         }
 
-        std::string responseStr = "";
+        // 1. Get Status Code
+        DWORD statusCode = 0;
+        DWORD statusSize = sizeof(statusCode);
+        if (HttpQueryInfoA(hRequest, HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, &statusCode, &statusSize, nullptr)) {
+            response.statusCode = static_cast<int>(statusCode);
+        }
+
+        // 2. Query Raw Headers
+        DWORD dwSize = 0;
+        HttpQueryInfoA(hRequest, HTTP_QUERY_RAW_HEADERS_CRLF, nullptr, &dwSize, nullptr);
+        if (GetLastError() == ERROR_INSUFFICIENT_BUFFER && dwSize > 0) {
+            std::vector<char> headerBuf(dwSize + 1, 0);
+            if (HttpQueryInfoA(hRequest, HTTP_QUERY_RAW_HEADERS_CRLF, headerBuf.data(), &dwSize, nullptr)) {
+                std::string rawHeaders(headerBuf.data(), dwSize);
+                std::stringstream ss(rawHeaders);
+                std::string line;
+                while (std::getline(ss, line)) {
+                    if (!line.empty() && line.back() == '\r') line.pop_back();
+                    auto colonPos = line.find(':');
+                    if (colonPos != std::string::npos) {
+                        std::string headerName = line.substr(0, colonPos);
+                        std::string headerVal = line.substr(colonPos + 1);
+                        while (!headerVal.empty() && (headerVal.front() == ' ' || headerVal.front() == '\t')) {
+                            headerVal.erase(0, 1);
+                        }
+                        std::string lowerName = headerName;
+                        for (char& c : lowerName) c = static_cast<char>(tolower(c));
+
+                        if (lowerName == "x-signature" || lowerName == "signature") {
+                            if (response.signature.empty()) response.signature = headerVal;
+                        } else if (lowerName == "x-timestamp" || lowerName == "timestamp") {
+                            if (response.timestamp.empty()) response.timestamp = headerVal;
+                        } else if (lowerName == "x-signature-algorithm" || lowerName == "x-ed256" || lowerName == "ed256") {
+                            if (response.algorithm.empty()) response.algorithm = headerVal;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 3. Read Body
         char buffer[4096];
         DWORD bytesRead = 0;
-
         while (InternetReadFile(hRequest, buffer, sizeof(buffer), &bytesRead) && bytesRead > 0) {
-            responseStr.append(buffer, bytesRead);
+            response.body.append(buffer, bytesRead);
         }
 
         InternetCloseHandle(hRequest);
-        return responseStr;
+        return response;
     }
 
     bool Client::Initialize(bool enforce_integrity) {
@@ -258,26 +412,49 @@ namespace KawaiiAuth {
             { skCrypt("client_hash"), textHash }
         };
 
-        std::string response = SendHttpRequest(skCrypt("/api/v1/init"), initPayload.dump());
-        if (response.empty()) {
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/init"), initPayload.dump());
+        if (httpResp.body.empty()) {
             m_last_response = { false, skCrypt("Connection failed to authentication server") };
             return false;
         }
 
+        // Verify RSA Signature with server public key
+        if (!VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            m_last_response = { false, skCrypt("Server response signature verification failed (tampering detected)") };
+            return false;
+        }
+
         try {
-            auto j = json::parse(response);
-            if (j.value(skCrypt("success"), false)) {
-                m_session_token = j.value(skCrypt("session_token"), "");
-                m_session_key_hex = j.value(skCrypt("session_key"), "");
-                m_session_iv_hex = j.value(skCrypt("session_iv"), "");
-                m_last_response = { true, j.value(skCrypt("message"), skCrypt("Initialized")) };
-                return true;
-            } else {
+            auto j = json::parse(httpResp.body);
+            if (!j.value(skCrypt("success"), false)) {
                 m_last_response = { false, j.value(skCrypt("message"), skCrypt("Initialization rejected")) };
                 return false;
             }
+
+            // Decrypt encrypted session payload with HashSHA256(m_app_secret)
+            if (!j.contains(skCrypt("data")) || !j.contains(skCrypt("iv"))) {
+                m_last_response = { false, skCrypt("Missing encrypted session payload in init response") };
+                return false;
+            }
+
+            std::string ivHex = j[skCrypt("iv")];
+            std::string encData = j[skCrypt("data")];
+            std::string appSecretHash = HashSHA256(m_app_secret);
+            std::string dec = DecryptAES256WithKey(encData, appSecretHash, ivHex);
+
+            auto inner = json::parse(dec);
+            if (inner.value(skCrypt("success"), false)) {
+                m_session_token = inner.value(skCrypt("session_token"), "");
+                m_session_key_hex = inner.value(skCrypt("session_key"), "");
+                m_session_iv_hex = inner.value(skCrypt("session_iv"), "");
+                m_last_response = { true, inner.value(skCrypt("message"), skCrypt("Initialized")) };
+                return true;
+            } else {
+                m_last_response = { false, inner.value(skCrypt("message"), skCrypt("Initialization rejected")) };
+                return false;
+            }
         } catch (...) {
-            m_last_response = { false, skCrypt("JSON parse failure on /init") };
+            m_last_response = { false, skCrypt("JSON parse or decryption failure on /init") };
             return false;
         }
     }
@@ -297,9 +474,16 @@ namespace KawaiiAuth {
         json reqBody = { { skCrypt("data"), enc } };
         std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
 
-        std::string rawResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty()) {
+            return { false, skCrypt("Connection failed to authentication server") };
+        }
+        if (!VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return { false, skCrypt("Server response signature verification failed") };
+        }
+
         try {
-            auto outer = json::parse(rawResp);
+            auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
 
@@ -336,9 +520,16 @@ namespace KawaiiAuth {
         json reqBody = { { skCrypt("data"), enc } };
         std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
 
-        std::string rawResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty()) {
+            return { false, skCrypt("Connection failed to authentication server") };
+        }
+        if (!VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return { false, skCrypt("Server response signature verification failed") };
+        }
+
         try {
-            auto outer = json::parse(rawResp);
+            auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
 
@@ -373,9 +564,16 @@ namespace KawaiiAuth {
         json reqBody = { { skCrypt("data"), enc } };
         std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
 
-        std::string rawResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty()) {
+            return { false, skCrypt("Connection failed to authentication server") };
+        }
+        if (!VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return { false, skCrypt("Server response signature verification failed") };
+        }
+
         try {
-            auto outer = json::parse(rawResp);
+            auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
 
@@ -407,9 +605,13 @@ namespace KawaiiAuth {
         json reqBody = { { skCrypt("data"), enc } };
         std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
 
-        std::string rawResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return false;
+        }
+
         try {
-            auto outer = json::parse(rawResp);
+            auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
             return inner.value(skCrypt("success"), false);
@@ -430,9 +632,13 @@ namespace KawaiiAuth {
         json reqBody = { { skCrypt("data"), enc } };
         std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
 
-        std::string rawResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return "";
+        }
+
         try {
-            auto outer = json::parse(rawResp);
+            auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
             if (inner.value(skCrypt("success"), false)) {
@@ -454,9 +660,13 @@ namespace KawaiiAuth {
         json reqBody = { { skCrypt("data"), enc } };
         std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
 
-        std::string rawResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return {};
+        }
+
         try {
-            auto outer = json::parse(rawResp);
+            auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
             if (inner.value(skCrypt("success"), false)) {
@@ -478,7 +688,11 @@ namespace KawaiiAuth {
         std::string enc = EncryptAES256(payload.dump());
         json reqBody = { { skCrypt("data"), enc } };
         std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
-        SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return false;
+        }
         return true;
     }
 
