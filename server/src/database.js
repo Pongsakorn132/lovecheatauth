@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS licenses (
     key TEXT PRIMARY KEY,
     app_id TEXT NOT NULL,
-    sub_name TEXT NOT NULL DEFAULT 'Default',
+    sub_name TEXT NOT NULL DEFAULT 'default',
     duration_seconds INTEGER NOT NULL,
     level INTEGER NOT NULL DEFAULT 1,
     status TEXT NOT NULL DEFAULT 'unregistered',
@@ -130,6 +130,33 @@ try {
     }
 } catch (e) {
     console.error('[DB Migration Error]', e);
+}
+
+// Migration: add created_at to subscriptions if missing
+try {
+    const subInfo = db.prepare("PRAGMA table_info(subscriptions)").all();
+    const hasCreatedAt = subInfo.some(col => col.name === 'created_at');
+    if (!hasCreatedAt) {
+        db.exec("ALTER TABLE subscriptions ADD COLUMN created_at INTEGER DEFAULT 0;");
+    }
+} catch (e) {
+    console.error('[DB Migration Error - Subscriptions]', e);
+}
+
+// Seed default subscription for every app if missing
+try {
+    const nodeCrypto = require('node:crypto');
+    const apps = db.prepare("SELECT id FROM apps").all();
+    const checkSub = db.prepare("SELECT COUNT(*) as count FROM subscriptions WHERE app_id = ? AND LOWER(name) = 'default'");
+    const insertSub = db.prepare("INSERT INTO subscriptions (id, app_id, name, duration_seconds, level, created_at) VALUES (?, ?, 'default', 0, 1, ?)");
+    const now = Math.floor(Date.now() / 1000);
+    for (const app of apps) {
+        if (checkSub.get(app.id).count === 0) {
+            insertSub.run(nodeCrypto.randomUUID(), app.id, now);
+        }
+    }
+} catch (e) {
+    console.error('[DB Migration Error - Default Subscriptions]', e);
 }
 
 module.exports = db;

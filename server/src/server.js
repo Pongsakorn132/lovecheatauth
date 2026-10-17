@@ -22,13 +22,19 @@ function seedInitialData() {
             VALUES (?, ?, ?, ?, 'active', 1, 0, ?)
         `).run(appId, appName, secret, '1.0', now);
 
+        // Seed default subscription
+        db.prepare(`
+            INSERT INTO subscriptions (id, app_id, name, duration_seconds, level, created_at)
+            VALUES (?, ?, 'default', 0, 1, ?)
+        `).run('sub_default', appId, now);
+
         // Pre-generate 3 demo licenses
         const keys = ['KAWAII-DEMO-KEY1', 'KAWAII-DEMO-KEY2', 'KAWAII-LIFETIME-001'];
         keys.forEach((k, idx) => {
             const duration = idx === 2 ? 315360000 : 2592000; // 10 years or 30 days
             db.prepare(`
                 INSERT INTO licenses (key, app_id, sub_name, duration_seconds, level, status, created_at)
-                VALUES (?, ?, 'VIP Access', ?, 2, 'unregistered', ?)
+                VALUES (?, ?, 'default', ?, 1, 'unregistered', ?)
             `).run(k, appId, duration, now);
         });
 

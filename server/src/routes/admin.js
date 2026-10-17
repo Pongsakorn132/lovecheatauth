@@ -113,6 +113,13 @@ function handleAdminRequest(req, res, url, body) {
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).run(appId, name, secretHash, newSellerKey, version || '1.0', 'active', hwid_lock !== false ? 1 : 0, hash_check ? 1 : 0, app_hash || null, now);
             
+            // Auto-create default subscription for the new app
+            const defaultSubId = crypto.randomUUID();
+            db.prepare(`
+                INSERT INTO subscriptions (id, app_id, name, duration_seconds, level, created_at)
+                VALUES (?, ?, 'default', 0, 1, ?)
+            `).run(defaultSubId, appId, now);
+
             logAudit(appId, 'APP_CREATED', `Application '${name}' created`, clientIp);
 
             return sendJson(res, 201, {
@@ -188,6 +195,111 @@ function handleAdminRequest(req, res, url, body) {
         });
     }
 
+    // List Subscriptions: /api/admin/subscriptions
+    if (pathname === '/api/admin/subscriptions' && method === 'GET') {
+        const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
+        if (!appId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
+
+        const subs = db.prepare('SELECT * FROM subscriptions WHERE app_id = ? ORDER BY created_at ASC').all(appId);
+        const stats = subs.map(sub => {
+            const licenseCount = db.prepare('SELECT COUNT(*) as count FROM licenses WHERE app_id = ? AND sub_name = ?').get(appId, sub.name).count;
+            return { ...sub, licenseCount };
+        });
+        return sendJson(res, 200, { success: true, subscriptions: stats });
+    }
+
+    // Create Subscription: /api/admin/subscriptions
+    if (pathname === '/api/admin/subscriptions' && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const { name, level } = body || {};
+        if (!name || typeof name !== 'string' || !name.trim()) {
+            return sendJson(res, 400, { success: false, message: 'Subscription name is required' });
+        }
+
+        const subName = name.trim();
+        const existing = db.prepare('SELECT id FROM subscriptions WHERE app_id = ? AND LOWER(name) = LOWER(?)').get(targetAppId, subName);
+        if (existing) {
+            return sendJson(res, 400, { success: false, message: `Subscription '${subName}' already exists` });
+        }
+
+        const subId = crypto.randomUUID();
+        const subLevel = Number(level) || 1;
+        db.prepare(`
+            INSERT INTO subscriptions (id, app_id, name, duration_seconds, level, created_at)
+            VALUES (?, ?, ?, 0, ?, ?)
+        `).run(subId, targetAppId, subName, subLevel, now);
+
+        logAudit(targetAppId, 'SUBSCRIPTION_CREATED', `Created subscription '${subName}'`, clientIp);
+        return sendJson(res, 201, {
+            success: true,
+            message: `Subscription '${subName}' created`,
+            subscription: { id: subId, app_id: targetAppId, name: subName, level: subLevel, created_at: now, licenseCount: 0 }
+        });
+    }
+
+    // Update / Rename Subscription: /api/admin/subscriptions/update
+    if ((pathname === '/api/admin/subscriptions/update' || pathname === '/api/admin/subscriptions/rename') && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const { id, name } = body || {};
+        if (!id) return sendJson(res, 400, { success: false, message: 'Missing subscription id' });
+        if (!name || typeof name !== 'string' || !name.trim()) {
+            return sendJson(res, 400, { success: false, message: 'Subscription name is required' });
+        }
+
+        const newName = name.trim();
+        const sub = db.prepare('SELECT * FROM subscriptions WHERE id = ? AND app_id = ?').get(id, targetAppId);
+        if (!sub) {
+            return sendJson(res, 404, { success: false, message: 'Subscription not found' });
+        }
+
+        // Check if another subscription already has this name
+        const duplicate = db.prepare('SELECT id FROM subscriptions WHERE app_id = ? AND LOWER(name) = LOWER(?) AND id != ?').get(targetAppId, newName, id);
+        if (duplicate) {
+            return sendJson(res, 400, { success: false, message: `Subscription '${newName}' already exists` });
+        }
+
+        const oldName = sub.name;
+        db.prepare('UPDATE subscriptions SET name = ? WHERE id = ?').run(newName, id);
+        // Also update existing licenses with this subscription name
+        const updatedLicenses = db.prepare('UPDATE licenses SET sub_name = ? WHERE app_id = ? AND sub_name = ?').run(newName, targetAppId, oldName);
+
+        logAudit(targetAppId, 'SUBSCRIPTION_RENAMED', `Renamed subscription '${oldName}' to '${newName}' (Updated ${updatedLicenses.changes} licenses)`, clientIp);
+        return sendJson(res, 200, {
+            success: true,
+            message: `Subscription renamed to '${newName}'`,
+            subscription: { ...sub, name: newName }
+        });
+    }
+
+    // Delete Subscription: /api/admin/subscriptions/delete
+    if ((pathname === '/api/admin/subscriptions/delete' && method === 'POST') || (pathname === '/api/admin/subscriptions' && method === 'DELETE')) {
+        const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const id = body?.id || url.searchParams.get('id');
+        if (!id) return sendJson(res, 400, { success: false, message: 'Missing subscription id' });
+
+        const sub = db.prepare('SELECT * FROM subscriptions WHERE id = ? AND app_id = ?').get(id, targetAppId);
+        if (!sub) {
+            return sendJson(res, 404, { success: false, message: 'Subscription not found' });
+        }
+
+        // Reassign any licenses using this sub_name to 'default'
+        db.prepare("UPDATE licenses SET sub_name = 'default' WHERE app_id = ? AND sub_name = ?").run(targetAppId, sub.name);
+
+        db.prepare('DELETE FROM subscriptions WHERE id = ?').run(id);
+
+        logAudit(targetAppId, 'SUBSCRIPTION_DELETED', `Deleted subscription '${sub.name}'`, clientIp);
+        return sendJson(res, 200, {
+            success: true,
+            message: `Subscription '${sub.name}' deleted`
+        });
+    }
+
     // Generate Licenses: /api/admin/licenses/generate
     if (pathname === '/api/admin/licenses/generate' && method === 'POST') {
         const { app_id, amount, duration_days, level, prefix, sub_name, char_case, mask } = body || {};
@@ -198,6 +310,7 @@ function handleAdminRequest(req, res, url, body) {
         const subLevel = Number(level) || 1;
         const caseMode = (char_case || 'upper').toLowerCase();
         const pattern = mask !== undefined ? mask : (prefix !== undefined ? prefix : '');
+        const chosenSubName = (sub_name && typeof sub_name === 'string' && sub_name.trim()) ? sub_name.trim() : 'default';
         const generatedKeys = [];
 
         const insertStmt = db.prepare(`
@@ -207,11 +320,11 @@ function handleAdminRequest(req, res, url, body) {
 
         for (let i = 0; i < count; i++) {
             const fullKey = generateKeyFromPattern(pattern, caseMode);
-            insertStmt.run(fullKey, app_id, sub_name || 'Standard', durationSeconds, subLevel, now);
+            insertStmt.run(fullKey, app_id, chosenSubName, durationSeconds, subLevel, now);
             generatedKeys.push(fullKey);
         }
 
-        logAudit(app_id, 'LICENSES_GENERATED', `Generated ${generatedKeys.length} license key(s)`, clientIp);
+        logAudit(app_id, 'LICENSES_GENERATED', `Generated ${generatedKeys.length} license key(s) [Plan: ${chosenSubName}]`, clientIp);
 
         return sendJson(res, 201, {
             success: true,
