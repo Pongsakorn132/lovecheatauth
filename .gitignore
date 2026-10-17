@@ -5,6 +5,7 @@
 *.ilk
 *.exp
 *.lib
+!client_sdk/dist/lib/*.lib
 *.key
 build/
 bin/
