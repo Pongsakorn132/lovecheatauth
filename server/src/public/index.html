@@ -26,7 +26,7 @@
             <div class="flex items-center space-x-4">
                 <div class="flex items-center gap-2 text-xs text-gray-400 font-mono">
                     <span>Admin Key:</span>
-                    <input type="password" id="adminKeyInput" value="kawaii_master_secret" class="bg-gray-800 border border-gray-700 px-2 py-1 rounded text-white text-xs w-48 focus:outline-none focus:border-pink-500">
+                    <input type="password" id="adminKeyInput" value="kawaii_master_secret" onkeydown="if(event.key==='Enter') refreshData()" class="bg-gray-800 border border-gray-700 px-2 py-1 rounded text-white text-xs w-48 focus:outline-none focus:border-pink-500">
                     <button onclick="refreshData()" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 text-white rounded text-xs transition">Connect</button>
                 </div>
             </div>
@@ -64,9 +64,9 @@
                 <div class="text-xs text-gray-400 font-mono uppercase">Total Licenses</div>
                 <div id="statTotalKeys" class="text-3xl font-bold mt-2 text-white font-mono">0</div>
             </div>
-            <div class="glass-panel p-5 rounded-xl border-l-4 border-l-emerald-500">
+            <div id="engineStatusCard" class="glass-panel p-5 rounded-xl border-l-4 border-l-emerald-500 transition-colors">
                 <div class="text-xs text-gray-400 font-mono uppercase">Engine Status</div>
-                <div class="text-lg font-bold mt-2 text-emerald-400 font-mono flex items-center gap-2">
+                <div id="engineStatusText" class="text-lg font-bold mt-2 text-emerald-400 font-mono flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ACTIVE
                 </div>
             </div>
@@ -273,41 +273,87 @@
             return await res.json();
         }
 
-        async function refreshData() {
-            const data = await api('/api/admin/apps');
-            const select = document.getElementById('appSelect');
-            select.innerHTML = '';
-            if (data.apps && data.apps.length > 0) {
-                data.apps.forEach(app => {
-                    const opt = document.createElement('option');
-                    opt.value = app.id;
-                    opt.textContent = `${app.name} (v${app.version})`;
-                    opt.dataset.secret = app.secret_hash;
-                    opt.dataset.name = app.name;
-                    select.appendChild(opt);
-                });
-                if (!currentAppId || !data.apps.find(a => a.id === currentAppId)) {
-                    currentAppId = data.apps[0].id;
-                }
-                select.value = currentAppId;
-                onAppChanged();
+        function clearAllData(message = 'No application selected') {
+            currentAppId = null;
+            document.getElementById('appInfoBar').innerHTML = '';
+            document.getElementById('statUsers').textContent = '0';
+            document.getElementById('statUnusedKeys').textContent = '0';
+            document.getElementById('statTotalKeys').textContent = '0';
+            document.getElementById('keysTableBody').innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            document.getElementById('varsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+        }
+
+        function updateEngineStatus(active, label) {
+            const card = document.getElementById('engineStatusCard');
+            const textEl = document.getElementById('engineStatusText');
+            if (!card || !textEl) return;
+            if (active) {
+                card.className = 'glass-panel p-5 rounded-xl border-l-4 border-l-emerald-500 transition-colors';
+                textEl.className = 'text-lg font-bold mt-2 text-emerald-400 font-mono flex items-center gap-2';
+                textEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ${escapeHtml(label)}`;
             } else {
-                select.innerHTML = '<option value="">No Apps Created</option>';
+                card.className = 'glass-panel p-5 rounded-xl border-l-4 border-l-red-500 transition-colors';
+                textEl.className = 'text-lg font-bold mt-2 text-red-400 font-mono flex items-center gap-2';
+                textEl.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> ${escapeHtml(label)}`;
+            }
+        }
+
+        async function refreshData() {
+            const select = document.getElementById('appSelect');
+            try {
+                const data = await api('/api/admin/apps');
+                if (!data || !data.success) {
+                    select.innerHTML = '<option value="">Invalid Admin Key</option>';
+                    updateEngineStatus(false, 'UNAUTHORIZED');
+                    clearAllData('Invalid Admin Key — authorization failed.');
+                    return;
+                }
+
+                updateEngineStatus(true, 'ACTIVE');
+
+                select.innerHTML = '';
+                if (data.apps && data.apps.length > 0) {
+                    data.apps.forEach(app => {
+                        const opt = document.createElement('option');
+                        opt.value = app.id;
+                        opt.textContent = `${app.name} (v${app.version})`;
+                        opt.dataset.secret = app.secret_hash;
+                        opt.dataset.name = app.name;
+                        select.appendChild(opt);
+                    });
+                    if (!currentAppId || !data.apps.find(a => a.id === currentAppId)) {
+                        currentAppId = data.apps[0].id;
+                    }
+                    select.value = currentAppId;
+                    onAppChanged();
+                } else {
+                    select.innerHTML = '<option value="">No Apps Created</option>';
+                    clearAllData('No applications found. Click "+ New App" above to create one.');
+                }
+            } catch (err) {
+                select.innerHTML = '<option value="">Connection Error</option>';
+                updateEngineStatus(false, 'OFFLINE');
+                clearAllData('Failed to connect to KawaiiAuth server.');
             }
         }
 
         async function onAppChanged() {
             const select = document.getElementById('appSelect');
             currentAppId = select.value;
-            if (!currentAppId) return;
+            if (!currentAppId) {
+                clearAllData('No application selected');
+                return;
+            }
 
             const selectedOpt = select.selectedOptions[0];
             const secret = selectedOpt ? selectedOpt.dataset.secret : '';
             const appName = selectedOpt ? selectedOpt.dataset.name : '';
 
             document.getElementById('appInfoBar').innerHTML = `
-                <span>ID: <code class="text-pink-300">${currentAppId}</code></span>
-                <span>Secret: <code class="text-gray-300">${secret.slice(0, 12)}...</code></span>
+                <span>ID: <code class="text-pink-300">${escapeHtml(currentAppId)}</code></span>
+                <span>Secret: <code class="text-gray-300">${escapeHtml(secret ? secret.slice(0, 12) + '...' : '')}</code></span>
             `;
 
             loadKeys();
@@ -317,10 +363,21 @@
         }
 
         async function loadKeys() {
-            if (!currentAppId) return;
+            if (!currentAppId) {
+                document.getElementById('keysTableBody').innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('statTotalKeys').textContent = '0';
+                document.getElementById('statUnusedKeys').textContent = '0';
+                return;
+            }
             const res = await api(`/api/admin/licenses?app_id=${currentAppId}`);
             const tbody = document.getElementById('keysTableBody');
             tbody.innerHTML = '';
+            if (!res || !res.success) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load licenses')}</td></tr>`;
+                document.getElementById('statTotalKeys').textContent = '0';
+                document.getElementById('statUnusedKeys').textContent = '0';
+                return;
+            }
             const keys = res.licenses || [];
             document.getElementById('statTotalKeys').textContent = keys.length;
             document.getElementById('statUnusedKeys').textContent = keys.filter(k => k.status === 'unregistered').length;
@@ -341,8 +398,8 @@
                 const dateStr = new Date(k.created_at * 1000).toLocaleString();
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-pink-300">${k.key}</td>
-                    <td class="px-4 py-3">${k.sub_name}</td>
+                    <td class="px-4 py-3 font-bold text-pink-300 font-mono">${escapeHtml(k.key)}</td>
+                    <td class="px-4 py-3">${escapeHtml(k.sub_name)}</td>
                     <td class="px-4 py-3">${days} days</td>
                     <td class="px-4 py-3">Lvl ${k.level}</td>
                     <td class="px-4 py-3">${statusBadge}</td>
@@ -353,10 +410,19 @@
         }
 
         async function loadUsers() {
-            if (!currentAppId) return;
+            if (!currentAppId) {
+                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('statUsers').textContent = '0';
+                return;
+            }
             const res = await api(`/api/admin/users?app_id=${currentAppId}`);
             const tbody = document.getElementById('usersTableBody');
             tbody.innerHTML = '';
+            if (!res || !res.success) {
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load users')}</td></tr>`;
+                document.getElementById('statUsers').textContent = '0';
+                return;
+            }
             const users = res.users || [];
             document.getElementById('statUsers').textContent = users.length;
 
@@ -367,16 +433,16 @@
 
             users.forEach(u => {
                 const tr = document.createElement('tr');
-                const hwidText = u.hwid ? `${u.hwid.slice(0, 16)}...` : '<span class="text-amber-400">Unbound</span>';
+                const hwidText = u.hwid ? `${escapeHtml(u.hwid.slice(0, 16))}...` : '<span class="text-amber-400">Unbound</span>';
                 const expireStr = new Date(u.expires_at * 1000).toLocaleDateString();
                 const bannedBadge = u.banned
                     ? '<span class="px-2 py-0.5 rounded bg-red-950 text-red-400 border border-red-800">Banned</span>'
                     : '<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">Active</span>';
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-semibold text-white">${u.username}</td>
+                    <td class="px-4 py-3 font-semibold text-white">${escapeHtml(u.username)}</td>
                     <td class="px-4 py-3 font-mono text-xs text-gray-300">${hwidText}</td>
-                    <td class="px-4 py-3 font-mono text-xs text-gray-400">${u.ip_address || 'N/A'}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-gray-400">${escapeHtml(u.ip_address || 'N/A')}</td>
                     <td class="px-4 py-3 text-xs">${expireStr}</td>
                     <td class="px-4 py-3">${bannedBadge}</td>
                     <td class="px-4 py-3 text-right space-x-2">
@@ -389,10 +455,17 @@
         }
 
         async function loadVars() {
-            if (!currentAppId) return;
+            if (!currentAppId) {
+                document.getElementById('varsTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                return;
+            }
             const res = await api(`/api/admin/variables?app_id=${currentAppId}`);
             const tbody = document.getElementById('varsTableBody');
             tbody.innerHTML = '';
+            if (!res || !res.success) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load variables')}</td></tr>`;
+                return;
+            }
             const vars = res.variables || [];
             if (vars.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No variables configured</td></tr>';
@@ -417,10 +490,17 @@
         }
 
         async function loadLogs() {
-            if (!currentAppId) return;
+            if (!currentAppId) {
+                document.getElementById('logsTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                return;
+            }
             const res = await api(`/api/admin/logs?app_id=${currentAppId}`);
             const tbody = document.getElementById('logsTableBody');
             tbody.innerHTML = '';
+            if (!res || !res.success) {
+                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load logs')}</td></tr>`;
+                return;
+            }
             const logs = res.logs || [];
             if (logs.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No audit logs</td></tr>';
@@ -430,9 +510,9 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td class="px-4 py-3 text-gray-400">${new Date(l.created_at * 1000).toLocaleTimeString()}</td>
-                    <td class="px-4 py-3 font-bold text-pink-400">${l.event}</td>
-                    <td class="px-4 py-3 text-gray-300">${l.details}</td>
-                    <td class="px-4 py-3 text-gray-400">${l.ip || 'N/A'}</td>
+                    <td class="px-4 py-3 font-bold text-pink-400">${escapeHtml(l.event)}</td>
+                    <td class="px-4 py-3 text-gray-300">${escapeHtml(l.details)}</td>
+                    <td class="px-4 py-3 text-gray-400">${escapeHtml(l.ip || 'N/A')}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -469,6 +549,7 @@
         }
 
         async function submitGenKeys() {
+            if (!currentAppId) return alert('Please select or create an application first');
             const amount = document.getElementById('genAmount').value;
             const duration_days = document.getElementById('genDays').value;
             const prefix = document.getElementById('genPrefix').value;
@@ -542,7 +623,13 @@
             document.getElementById(`tabBtn-${tabId}`).className = 'pb-3 border-b-2 border-pink-500 text-pink-400 font-semibold';
         }
 
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function openModal(id) {
+            if ((id === 'genKeyModal' || id === 'newVarModal') && !currentAppId) {
+                alert('Please connect with a valid Admin Key and select/create an application first.');
+                return;
+            }
+            document.getElementById(id).classList.remove('hidden');
+        }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         // Initial Load
