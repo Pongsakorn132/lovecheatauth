@@ -17,13 +17,13 @@ namespace KawaiiAuth {
     // Server RSA Public Key (Used strictly for signature verification)
     static const char* SERVER_PUBLIC_KEY_PEM = 
         "-----BEGIN PUBLIC KEY-----\n"
-        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtM89CKg1mvXbUws2w75s\n"
-        "ktY8G+hpGSdP0Y03Jsxu9XqypEwji2b8kS5+EC1Ew0oQ3gFffTI5aAt306waqBe6\n"
-        "U4Fn1Qbs+uwy/yNYnqg73Tr0dJT2GxQg+OcX32cPRA/SzqRwpJ9BR2E/lnivflrC\n"
-        "UD3WERT5BqRbqbPF8nq/DQVkbUVdHQGsG7HaxyTHtgre5zTdZ/BkZHXMtsubEEgN\n"
-        "6xfh/gwkF6bNFZvygKJ9J1NHcNOa/wjX7oXjOfVQqy2UevJ7uK+tK+rZh6DlElPG\n"
-        "z82Z8BVMXlwEI6/xdUjSMhWNgW4i9S84Wxp9vjeB9tCnmd3hSREuxjoFxMjK6Wq0\n"
-        "/QIDAQAB\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4EAHMcmfqIxAZXyJUtMh\n"
+        "1pIGwuHJU7CZErr82ePBrbwE25xI/jsW2ss/ftVLvT4cwmu+oeDygnIOQtnoIgpa\n"
+        "NLSE5ott4T5zPXuafP/lsFtSGZXHr3SXeqAg6DIZDrzeYIjop4cPR27FrPi9tQux\n"
+        "9Z1mmATj0M2fg3LJa4qkRoRYwCFSXhOuIjj+054hJX0SutJx60iGSxaczqA6fjEZ\n"
+        "Wuc9Gl+T3+xPnxgPikEE53AbuI0QrqZhvqGRnjoZfV0dMycZmUQbC54SMlURKL/D\n"
+        "JbG8MdnD1I8SHS8gDtktnPbd4ZYAAuRDWFntCMHyS5WpUoK5jVpJ05BYaYP+/rqY\n"
+        "bQIDAQAB\n"
         "-----END PUBLIC KEY-----\n";
 
     static std::vector<uint8_t> HexToBytes(const std::string& hex) {

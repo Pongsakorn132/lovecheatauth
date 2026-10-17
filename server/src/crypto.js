@@ -4,8 +4,11 @@ const path = require('node:path');
 
 // RSA Key Pair Management for Asymmetric Response Signing
 const DATA_DIR = path.join(__dirname, '../data');
+const KEYS_DIR = path.join(__dirname, '../keys');
 const PRIVATE_KEY_PATH = path.join(DATA_DIR, 'server_private.pem');
 const PUBLIC_KEY_PATH = path.join(DATA_DIR, 'server_public.pem');
+const CANONICAL_PRIVATE_KEY_PATH = path.join(KEYS_DIR, 'server_private.pem');
+const CANONICAL_PUBLIC_KEY_PATH = path.join(KEYS_DIR, 'server_public.pem');
 
 let serverPrivateKey = '';
 let serverPublicKey = '';
@@ -15,7 +18,15 @@ function initRsaKeys() {
         fs.mkdirSync(DATA_DIR, { recursive: true });
     }
 
-    if (fs.existsSync(PRIVATE_KEY_PATH) && fs.existsSync(PUBLIC_KEY_PATH)) {
+    if (fs.existsSync(CANONICAL_PRIVATE_KEY_PATH) && fs.existsSync(CANONICAL_PUBLIC_KEY_PATH)) {
+        serverPrivateKey = fs.readFileSync(CANONICAL_PRIVATE_KEY_PATH, 'utf8');
+        serverPublicKey = fs.readFileSync(CANONICAL_PUBLIC_KEY_PATH, 'utf8');
+        // Ensure data dir has matching copies
+        try {
+            fs.writeFileSync(PRIVATE_KEY_PATH, serverPrivateKey, { mode: 0o600 });
+            fs.writeFileSync(PUBLIC_KEY_PATH, serverPublicKey, { mode: 0o644 });
+        } catch (_) {}
+    } else if (fs.existsSync(PRIVATE_KEY_PATH) && fs.existsSync(PUBLIC_KEY_PATH)) {
         serverPrivateKey = fs.readFileSync(PRIVATE_KEY_PATH, 'utf8');
         serverPublicKey = fs.readFileSync(PUBLIC_KEY_PATH, 'utf8');
     } else {
