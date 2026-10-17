@@ -588,6 +588,18 @@ namespace KawaiiAuth {
                 r.user.hwid = u.value(skCrypt("hwid"), "");
             }
             m_last_response = r;
+
+            // Immediately check and verify session status after using license key
+            if (r.success) {
+                SessionStatus st = CheckSession();
+                if (!st.authed) {
+                    r.success = false;
+                    r.message = skCrypt("Session authentication verification failed after license activation");
+                    m_last_response = r;
+                    return r;
+                }
+            }
+
             return r;
         } catch (...) {
             return { false, skCrypt("Decryption or license parse error") };
@@ -667,48 +679,6 @@ namespace KawaiiAuth {
         } catch (...) {
             status.success = false;
             status.message = skCrypt("Response parsing failed");
-            return status;
-        }
-    }
-
-    SessionStatus Client::CheckAuthSession(const std::string& session_token) {
-        SessionStatus status;
-        std::string token = session_token.empty() ? m_session_token : session_token;
-        if (token.empty()) {
-            status.success = false;
-            status.need_connect = true;
-            status.message = skCrypt("No session token provided");
-            return status;
-        }
-
-        json reqBody = {
-            { skCrypt("session_token"), token }
-        };
-        std::string header = std::string(skCrypt("X-Client-Session: ")) + token;
-
-        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/auth/session"), reqBody.dump(), header);
-        if (httpResp.body.empty()) {
-            status.success = false;
-            status.message = skCrypt("Failed to connect to /api/auth/session");
-            return status;
-        }
-
-        try {
-            auto j = json::parse(httpResp.body);
-            status.success = j.value(skCrypt("success"), false);
-            status.authed = j.value(skCrypt("authed"), false);
-            status.pin_required = j.value(skCrypt("pin_required"), false);
-            status.need_connect = j.value(skCrypt("need_connect"), false);
-            status.client_key = j.value(skCrypt("client_key"), "");
-            status.name = j.value(skCrypt("name"), "");
-            status.message = j.value(skCrypt("message"), "");
-            status.session_token = j.value(skCrypt("session_token"), token);
-            status.session_expires_at = j.value(skCrypt("session_expires_at"), 0ULL);
-            status.session_time_left = j.value(skCrypt("session_time_left"), 0ULL);
-            return status;
-        } catch (...) {
-            status.success = false;
-            status.message = skCrypt("Failed to parse auth session response");
             return status;
         }
     }

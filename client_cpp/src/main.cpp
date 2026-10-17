@@ -84,27 +84,14 @@ int main() {
         std::cout << "License Key: "; std::cin >> key;
         resp = auth.Register(user, pass, key);
     } else if (choice == 4) {
-        std::cout << "\n[*] Checking session status via /api/v1/action..." << std::endl;
+        std::cout << "\n[*] Checking session status via gateway (/api/v1/action)..." << std::endl;
         KawaiiAuth::SessionStatus st = auth.CheckSession();
         std::cout << "[+] Session Success: " << (st.success ? "YES" : "NO") << std::endl;
         std::cout << "[+] Is Authed: " << (st.authed ? "YES (Authenticated)" : "NO (Unauthenticated)") << std::endl;
         std::cout << "[+] Message: " << st.message << std::endl;
         std::cout << "[+] Time Remaining: " << st.session_time_left << " seconds" << std::endl;
-
-        std::cout << "\n[*] Also check /api/auth/session token? (y/n): ";
-        char c;
-        if (std::cin >> c && (c == 'y' || c == 'Y')) {
-            std::string t;
-            std::cout << "Enter session token (or press Enter for current): ";
-            std::cin.ignore();
-            std::getline(std::cin, t);
-            auto authSt = auth.CheckAuthSession(t);
-            std::cout << "[+] Auth Session Success: " << (authSt.success ? "YES" : "NO") << std::endl;
-            std::cout << "[+] Authed: " << (authSt.authed ? "YES" : "NO") << std::endl;
-            std::cout << "[+] PIN Required: " << (authSt.pin_required ? "YES" : "NO") << std::endl;
-            std::cout << "[+] Need Connect: " << (authSt.need_connect ? "YES" : "NO") << std::endl;
-            std::cout << "[+] Time Left: " << authSt.session_time_left << " seconds" << std::endl;
-            std::cout << "[+] Message: " << authSt.message << std::endl;
+        if (st.authed) {
+            std::cout << "[+] User: " << st.user.username << " (Level " << st.user.level << ")" << std::endl;
         }
 
         std::cout << "\nPress Enter to terminate...";
@@ -116,7 +103,17 @@ int main() {
         std::cout << "License Key (default 'KAWAII-DEMO-KEY2'): ";
         std::cin >> key;
         if (key.empty()) key = skCrypt("KAWAII-DEMO-KEY2");
+        std::cout << "[*] Activating License Key..." << std::endl;
         resp = auth.LicenseOnly(key);
+
+        // Immediate session verification right after using License Key
+        std::cout << "\n[*] Checking session immediately after using License Key..." << std::endl;
+        KawaiiAuth::SessionStatus sessCheck = auth.CheckSession();
+        std::cout << "[+] Session Status: " << (sessCheck.authed ? "AUTHED (Active)" : "UNAUTHED") << std::endl;
+        std::cout << "[+] Session Time Left: " << sessCheck.session_time_left << " seconds" << std::endl;
+        if (sessCheck.authed) {
+            std::cout << "[+] Verified Session User: " << sessCheck.user.username << " (Level " << sessCheck.user.level << ")" << std::endl;
+        }
     }
 
     std::cout << "\n--------------------------------------------------" << std::endl;

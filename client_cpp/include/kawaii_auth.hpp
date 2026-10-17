@@ -42,10 +42,6 @@ namespace KawaiiAuth {
     struct SessionStatus {
         bool success = false;
         bool authed = false;
-        bool pin_required = false;
-        bool need_connect = false;
-        std::string client_key;
-        std::string name;
         std::string message;
         std::string session_token;
         uint64_t session_expires_at = 0;
@@ -74,7 +70,6 @@ namespace KawaiiAuth {
         Response LicenseOnly(const std::string& license_key);
         bool Ping();
         SessionStatus CheckSession();
-        SessionStatus CheckAuthSession(const std::string& session_token = "");
         bool IsAuthed();
 
         // Assets and Telemetry
