@@ -106,6 +106,27 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     ip TEXT,
     created_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS client_keys (
+    id TEXT PRIMARY KEY,
+    key TEXT UNIQUE NOT NULL,
+    pin TEXT NOT NULL,
+    name TEXT,
+    duration_seconds INTEGER NOT NULL DEFAULT 0,
+    expires_at INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'active',
+    created_at INTEGER NOT NULL,
+    last_login INTEGER,
+    last_ip TEXT
+);
+
+CREATE TABLE IF NOT EXISTS master_admins (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    pin TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+);
 `);
 
 // Migration: add seller_key to apps if missing
@@ -157,6 +178,48 @@ try {
     }
 } catch (e) {
     console.error('[DB Migration Error - Default Subscriptions]', e);
+}
+
+// Seed default master admin if none exists
+try {
+    const nodeCrypto = require('node:crypto');
+    const masterCount = db.prepare("SELECT COUNT(*) as count FROM master_admins").get().count;
+    if (masterCount === 0) {
+        const passHash = nodeCrypto.createHash('sha256').update('admin').digest('hex');
+        const now = Math.floor(Date.now() / 1000);
+        db.prepare(`
+            INSERT INTO master_admins (id, username, password_hash, pin, created_at)
+            VALUES (?, 'admin', ?, '123456', ?)
+        `).run(nodeCrypto.randomUUID(), passHash, now);
+        console.log('[KawaiiAuth] Seeded Default Master Admin -> User: admin | Pass: admin | PIN: 123456');
+    }
+} catch (e) {
+    console.error('[DB Migration Error - Master Admins]', e);
+}
+
+// Seed default client key if none exists
+try {
+    const nodeCrypto = require('node:crypto');
+    const clientKeyCount = db.prepare("SELECT COUNT(*) as count FROM client_keys").get().count;
+    if (clientKeyCount === 0) {
+        const now = Math.floor(Date.now() / 1000);
+        // Default Client Key (Lifetime)
+        db.prepare(`
+            INSERT INTO client_keys (id, key, pin, name, duration_seconds, expires_at, status, created_at)
+            VALUES (?, 'CK-KAWAII-DEMO-2025', '123456', 'Demo Client Key', 0, 0, 'active', ?)
+        `).run(nodeCrypto.randomUUID(), now);
+
+        // Also add the legacy master secret as an active client key so existing setups continue working
+        const legacyKey = process.env.ADMIN_KEY || 'kawaii_master_secret';
+        db.prepare(`
+            INSERT OR IGNORE INTO client_keys (id, key, pin, name, duration_seconds, expires_at, status, created_at)
+            VALUES (?, ?, '123456', 'System Root Client Key', 0, 0, 'active', ?)
+        `).run(nodeCrypto.randomUUID(), legacyKey, now);
+
+        console.log('[KawaiiAuth] Seeded Default Client Key -> Key: CK-KAWAII-DEMO-2025 | PIN: 123456');
+    }
+} catch (e) {
+    console.error('[DB Migration Error - Client Keys]', e);
 }
 
 module.exports = db;

@@ -47,17 +47,37 @@ function handleAdminRequest(req, res, url, body) {
     const now = Math.floor(Date.now() / 1000);
     const clientIp = req.socket?.remoteAddress || '127.0.0.1';
 
-    const adminKey = req.headers['x-admin-key'] || url.searchParams.get('admin_key');
+    const clientKey = req.headers['x-client-key'] || req.headers['x-admin-key'] || url.searchParams.get('client_key') || url.searchParams.get('admin_key');
+    const clientPin = req.headers['x-client-pin'] || req.headers['x-admin-pin'] || url.searchParams.get('client_pin') || url.searchParams.get('admin_pin');
     const sellerKey = req.headers['x-seller-key'] || url.searchParams.get('seller_key') || (body && typeof body === 'object' ? body.seller_key : null);
 
     let isAdmin = false;
     let isSeller = false;
     let sellerApp = null;
 
-    if (adminKey === MASTER_KEY) {
-        isAdmin = true;
-    } else {
-        const testSellerKey = sellerKey || adminKey;
+    if (clientKey) {
+        const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(clientKey);
+        if (ck) {
+            if (ck.status !== 'active') {
+                return sendJson(res, 403, { success: false, message: 'Client Key has been deactivated/suspended' });
+            }
+            if (ck.expires_at > 0 && ck.expires_at < now) {
+                return sendJson(res, 403, { success: false, message: 'Client Key has expired' });
+            }
+            if (clientPin && ck.pin === String(clientPin).trim()) {
+                isAdmin = true;
+            } else if (!clientPin) {
+                return sendJson(res, 401, { success: false, require_pin: true, message: '6-digit PIN required for Client Key' });
+            } else {
+                return sendJson(res, 401, { success: false, message: 'Invalid 6-digit PIN' });
+            }
+        } else if (clientKey === MASTER_KEY) {
+            isAdmin = true;
+        }
+    }
+
+    if (!isAdmin) {
+        const testSellerKey = sellerKey || clientKey;
         if (testSellerKey) {
             sellerApp = db.prepare('SELECT * FROM apps WHERE seller_key = ?').get(testSellerKey);
             if (sellerApp) {
@@ -67,7 +87,7 @@ function handleAdminRequest(req, res, url, body) {
     }
 
     if (!isAdmin && !isSeller) {
-        return sendJson(res, 401, { success: false, message: 'Invalid X-Admin-Key or X-Seller-Key authorization' });
+        return sendJson(res, 401, { success: false, message: 'Invalid Client Key or 6-digit PIN authorization' });
     }
 
     // If request is from a seller, force app_id scope to seller's application

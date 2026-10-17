@@ -5,6 +5,7 @@ const db = require('./database');
 const cryptoUtils = require('./crypto');
 const { handleApiRequest } = require('./routes/api');
 const { handleAdminRequest, MASTER_KEY } = require('./routes/admin');
+const { handleMasterRequest } = require('./routes/master');
 
 const PORT = process.env.PORT || 8080;
 
@@ -55,7 +56,7 @@ const server = http.createServer((req, res) => {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Admin-Key, X-Seller-Key');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Admin-Key, X-Admin-Pin, X-Client-Key, X-Client-Pin, X-Seller-Key, X-Master-Token, Authorization');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -71,6 +72,15 @@ const server = http.createServer((req, res) => {
         if (fs.existsSync(htmlPath)) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             return fs.createReadStream(htmlPath).pipe(res);
+        }
+    }
+
+    // Master Backend UI
+    if (url.pathname === '/backend' || url.pathname === '/backend.html' || url.pathname === '/master') {
+        const backendPath = path.join(__dirname, 'public/backend.html');
+        if (fs.existsSync(backendPath)) {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            return fs.createReadStream(backendPath).pipe(res);
         }
     }
 
@@ -101,6 +111,10 @@ const server = http.createServer((req, res) => {
                 return handleApiRequest(req, res, url, body);
             }
 
+            if (url.pathname.startsWith('/api/master/') || url.pathname.startsWith('/api/auth/')) {
+                return handleMasterRequest(req, res, url, body);
+            }
+
             if (url.pathname.startsWith('/api/admin/') || url.pathname.startsWith('/api/seller/')) {
                 return handleAdminRequest(req, res, url, body);
             }
@@ -118,7 +132,9 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`[KawaiiAuth Server] Active and listening on port ${PORT}`);
-    console.log(`[Web Dashboard] http://localhost:${PORT}/dashboard`);
-    console.log(`[Master Key]    ${MASTER_KEY}`);
+    console.log(`[Client Dashboard] http://localhost:${PORT}/dashboard`);
+    console.log(`[Master Backend]   http://localhost:${PORT}/backend`);
+    console.log(`[Master Account]   User: admin | Pass: admin | PIN: 123456`);
+    console.log(`[Default Client]   Key: CK-KAWAII-DEMO-2025 | PIN: 123456`);
     console.log(`=======================================================`);
 });

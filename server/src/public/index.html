@@ -40,6 +40,22 @@
             border-bottom: 2px solid #ffffff;
             transform: rotate(-45deg) translate(1px, -1px);
         }
+        .client-pin-box {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .client-pin-box:focus {
+            transform: translateY(-2px) scale(1.05);
+            border-color: #ec4899;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+        }
+        .shake-animation {
+            animation: shake 0.4s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -53,11 +69,15 @@
                     <span class="text-xs px-2 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-800 font-mono">v1.0-STABLE</span>
                 </h1>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3">
+                <a href="/backend" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 border border-purple-500/30 text-purple-300 text-xs transition flex items-center gap-1 font-mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                    <span>Backend</span>
+                </a>
                 <div class="flex items-center gap-2 text-xs text-gray-400 font-mono">
-                    <span>Admin Key:</span>
-                    <input type="password" id="adminKeyInput" value="kawaii_master_secret" onkeydown="if(event.key==='Enter') refreshData()" class="bg-gray-800 border border-gray-700 px-2 py-1 rounded text-white text-xs w-48 focus:outline-none focus:border-pink-500">
-                    <button onclick="refreshData()" class="px-3 py-1 bg-pink-600 hover:bg-pink-500 text-white rounded text-xs transition">Connect</button>
+                    <span class="text-gray-300">Client Key:</span>
+                    <input type="password" id="clientKeyInput" placeholder="CK-••••-••••-••••" onkeydown="if(event.key==='Enter') initiateClientConnect()" class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-white text-xs w-48 focus:outline-none focus:border-pink-500 font-mono">
+                    <button onclick="initiateClientConnect()" class="px-3.5 py-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold rounded text-xs transition shadow-sm">Connect</button>
                 </div>
             </div>
         </div>
@@ -467,6 +487,53 @@
         </section>
 
     </main>
+
+    <!-- Modal: Client 2-Factor 6-PIN Verification -->
+    <div id="clientPinModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('clientPinModal')">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide">Enter 6-Digit PIN</h3>
+                        <p class="text-xs text-gray-400">Two-Factor Security Verification</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('clientPinModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="space-y-3.5 text-center">
+                <div class="p-2.5 rounded-xl bg-gray-900/70 border border-gray-800 text-left flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-mono text-gray-400 block">Client Key</span>
+                        <span id="pinTargetKeyDisplay" class="font-mono text-pink-300 font-bold text-xs truncate max-w-[180px] block"></span>
+                    </div>
+                    <span id="pinKeyNameDisplay" class="text-[11px] text-cyan-400 font-medium"></span>
+                </div>
+
+                <!-- 6 PIN Input Boxes -->
+                <div id="clientPinBoxes" class="flex justify-center gap-2 py-2">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="0">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="1">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="2">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="3">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="4">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="5">
+                </div>
+                <p class="text-[11px] text-gray-400">กรอกรหัส PIN 6 หลักที่ผูกกับ Client Key เพื่อเข้าใช้งาน</p>
+            </div>
+            <!-- Footer -->
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button onclick="closeModal('clientPinModal')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
+                <button onclick="submitClientPinVerification()" class="px-5 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Verify PIN</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal: New App -->
     <div id="newAppModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newAppModal')">
@@ -941,7 +1008,7 @@
                 return;
             }
             if (e.key === 'Escape') {
-                ['newAppModal', 'genKeyModal', 'extendModal', 'newVarModal', 'newSubModal', 'editSubModal'].forEach(id => {
+                ['clientPinModal', 'newAppModal', 'genKeyModal', 'extendModal', 'newVarModal', 'newSubModal', 'editSubModal'].forEach(id => {
                     const m = document.getElementById(id);
                     if (m && !m.classList.contains('hidden')) closeModal(id);
                 });
@@ -1009,19 +1076,170 @@
             }
         }
 
+        let apiAdminKey = localStorage.getItem('kawaii_client_key') || 'CK-KAWAII-DEMO-2025';
+        let apiAdminPin = localStorage.getItem('kawaii_client_pin') || '123456';
+        let pendingConnectKey = '';
+
         function getAdminKey() {
-            return document.getElementById('adminKeyInput').value;
+            return apiAdminKey || document.getElementById('clientKeyInput')?.value?.trim() || '';
+        }
+
+        function getAdminPin() {
+            return apiAdminPin || '';
         }
 
         async function api(path, options = {}) {
             options.headers = options.headers || {};
-            options.headers['X-Admin-Key'] = getAdminKey();
+            const key = getAdminKey();
+            const pin = getAdminPin();
+            if (key) {
+                options.headers['X-Admin-Key'] = key;
+                options.headers['X-Client-Key'] = key;
+            }
+            if (pin) {
+                options.headers['X-Admin-Pin'] = pin;
+                options.headers['X-Client-PIN'] = pin;
+            }
             if (options.body && typeof options.body === 'object') {
                 options.headers['Content-Type'] = 'application/json';
                 options.body = JSON.stringify(options.body);
             }
-            const res = await fetch(path, options);
-            return await res.json();
+            try {
+                const res = await fetch(path, options);
+                return await res.json();
+            } catch (err) {
+                console.error('[API Error]', err);
+                return { success: false, message: 'Network or server error' };
+            }
+        }
+
+        // Two-Factor Authentication for Client Key
+        async function initiateClientConnect() {
+            const keyInput = document.getElementById('clientKeyInput');
+            const key = (keyInput ? keyInput.value : '').trim();
+            if (!key) {
+                return customAlert('Please enter a Client Key.', { type: 'warning' });
+            }
+
+            try {
+                const res = await fetch('/api/auth/check-client-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_key: key })
+                }).then(r => r.json());
+
+                if (res.success && res.require_pin) {
+                    pendingConnectKey = key;
+                    const keyDisp = document.getElementById('pinTargetKeyDisplay');
+                    const nameDisp = document.getElementById('pinKeyNameDisplay');
+                    if (keyDisp) keyDisp.textContent = key;
+                    if (nameDisp) nameDisp.textContent = res.name || 'Verified Key';
+                    clearClientPinBoxes();
+                    openModal('clientPinModal');
+                    initClientPinHandlers();
+                    setTimeout(() => focusClientPinBox(0), 100);
+                } else {
+                    customAlert(res.message || 'Invalid Client Key', { type: 'error' });
+                }
+            } catch (err) {
+                customAlert('Failed to connect to authentication server.', { type: 'error' });
+            }
+        }
+
+        function clearClientPinBoxes() {
+            document.querySelectorAll('.client-pin-box').forEach(b => b.value = '');
+        }
+
+        function focusClientPinBox(idx) {
+            const boxes = document.querySelectorAll('.client-pin-box');
+            if (boxes[idx]) boxes[idx].focus();
+        }
+
+        function initClientPinHandlers() {
+            const boxes = document.querySelectorAll('.client-pin-box');
+            boxes.forEach((box, idx) => {
+                box.onkeydown = (e) => {
+                    if (e.key === 'Backspace') {
+                        if (!box.value && idx > 0) {
+                            boxes[idx - 1].focus();
+                            boxes[idx - 1].value = '';
+                        }
+                    } else if (e.key === 'ArrowLeft' && idx > 0) {
+                        boxes[idx - 1].focus();
+                    } else if (e.key === 'ArrowRight' && idx < boxes.length - 1) {
+                        boxes[idx + 1].focus();
+                    } else if (e.key === 'Enter') {
+                        submitClientPinVerification();
+                    }
+                };
+
+                box.oninput = (e) => {
+                    const val = box.value.replace(/\D/g, '');
+                    box.value = val.slice(0, 1);
+                    if (box.value && idx < boxes.length - 1) {
+                        boxes[idx + 1].focus();
+                    }
+                    if (idx === boxes.length - 1 && box.value) {
+                        submitClientPinVerification();
+                    }
+                };
+
+                box.onpaste = (e) => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+                    if (!text) return;
+                    for (let i = 0; i < 6; i++) {
+                        if (boxes[i]) boxes[i].value = text[i] || '';
+                    }
+                    if (text.length === 6) {
+                        submitClientPinVerification();
+                    } else {
+                        focusClientPinBox(Math.min(text.length, 5));
+                    }
+                };
+            });
+        }
+
+        async function submitClientPinVerification() {
+            const boxes = document.querySelectorAll('.client-pin-box');
+            const pin = Array.from(boxes).map(b => b.value).join('');
+
+            if (pin.length !== 6) {
+                shakeClientPinBoxes();
+                return showToast('Please enter all 6 digits of your PIN', 'error');
+            }
+
+            try {
+                const res = await fetch('/api/auth/verify-client-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_key: pendingConnectKey, pin })
+                }).then(r => r.json());
+
+                if (res.success) {
+                    apiAdminKey = pendingConnectKey;
+                    apiAdminPin = pin;
+                    localStorage.setItem('kawaii_client_key', apiAdminKey);
+                    localStorage.setItem('kawaii_client_pin', apiAdminPin);
+                    closeModal('clientPinModal');
+                    showToast('Connected successfully with Client Key!', 'success');
+                    refreshData();
+                } else {
+                    shakeClientPinBoxes();
+                    clearClientPinBoxes();
+                    focusClientPinBox(0);
+                    showToast(res.message || 'Incorrect 6-digit PIN', 'error');
+                }
+            } catch (err) {
+                showToast('Verification failed due to network error', 'error');
+            }
+        }
+
+        function shakeClientPinBoxes() {
+            const container = document.getElementById('clientPinBoxes');
+            if (!container) return;
+            container.classList.add('shake-animation');
+            setTimeout(() => container.classList.remove('shake-animation'), 450);
         }
 
         function clearAllData(message = 'No application selected') {
@@ -1109,9 +1327,9 @@
                 const data = await api('/api/admin/apps');
                 if (!data || !data.success) {
                     isAuthorized = false;
-                    select.innerHTML = '<option value="">Invalid Admin Key</option>';
+                    select.innerHTML = '<option value="">Invalid Client Key or PIN</option>';
                     updateEngineStatus(false, 'UNAUTHORIZED');
-                    clearAllData('Invalid Admin Key — authorization failed.');
+                    clearAllData('Invalid Client Key or PIN — click Connect to authenticate.');
                     return;
                 }
 
@@ -2159,11 +2377,11 @@
 
         function openModal(id) {
             if (id === 'newAppModal' && !isAuthorized) {
-                customAlert('Please connect with a valid Admin Key first.', { type: 'warning' });
+                customAlert('Please connect with a valid Client Key first.', { type: 'warning' });
                 return;
             }
             if ((id === 'genKeyModal' || id === 'newVarModal' || id === 'extendModal' || id === 'newSubModal' || id === 'editSubModal') && (!isAuthorized || !currentAppId)) {
-                customAlert('Please connect with a valid Admin Key and select/create an application first.', { type: 'warning' });
+                customAlert('Please connect with a valid Client Key and select/create an application first.', { type: 'warning' });
                 return;
             }
             const modal = document.getElementById(id);
@@ -2191,7 +2409,13 @@
             }, 150);
         }
 
-        // Initial Load
+        // Initial Load: Prefill client key input if saved
+        const keyInputEl = document.getElementById('clientKeyInput');
+        if (keyInputEl && apiAdminKey) {
+            keyInputEl.value = apiAdminKey;
+        }
+
+        // Initial connection check
         refreshData();
     </script>
 </body>
