@@ -433,30 +433,109 @@
 
             <!-- Settings Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- 1. App Version -->
+                <!-- 1. App Version & Auto-Update URL -->
                 <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
                     <div class="flex items-center gap-3">
                         <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-800/80 text-blue-400 shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                         </div>
                         <div>
-                            <h4 class="text-sm font-bold text-white">Application Version</h4>
-                            <p class="text-xs text-slate-400">แก้ไขเวอร์ชันของแอปพลิเคชันที่เลือก (เช่น 1.0, 1.2, 2.0)</p>
+                            <h4 class="text-sm font-bold text-white">Version Control &amp; Auto-Update</h4>
+                            <p class="text-xs text-slate-400">ควบคุมเวอร์ชันของแอปพลิเคชันและลิงก์สำหรับดาวน์โหลดตัวอัปเดต</p>
                         </div>
                     </div>
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Current App Version</label>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Required App Version</label>
+                            <input type="text" id="settingAppVersion" placeholder="e.g. 1.0" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Update / Download URL</label>
+                            <input type="text" id="settingDownloadUrl" placeholder="https://example.com/download/loader.exe" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sky-300 text-xs focus:outline-none focus:border-sky-400 font-mono">
+                            <p class="text-[11px] text-slate-400 mt-1">หาก Client ใช้เวอร์ชันเก่า เซิร์ฟเวอร์จะปฏิเสธการเชื่อมต่อและส่งลิงก์นี้ไปให้เปิดดาวน์โหลด</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Maintenance Mode -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl bg-amber-950/80 border border-amber-800/80 text-amber-400 shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">Maintenance Mode</h4>
+                                <p class="text-xs text-slate-400">โหมดปิดปรับปรุงชั่วคราวเพื่อความปลอดภัย</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer select-none">
+                            <input type="checkbox" id="settingMaintenanceMode" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        </label>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Maintenance Broadcast Message</label>
+                            <textarea id="settingMaintenanceMsg" rows="3" placeholder="ข้อความแจ้งเตือนผู้ใช้ เช่น 'กำลังอัปเดตระบบความปลอดภัย กรุณารอสักครู่'" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-white text-xs focus:outline-none focus:border-amber-400 resize-none leading-relaxed"></textarea>
+                            <p class="text-[11px] text-slate-400 mt-1">เมื่อเปิดโหมดนี้ ไคลเอนต์ทั่วไปจะไม่สามารถ Init เข้าระบบได้ (ป้องกันคนเข้าเกมขณะเกมอัปเดต)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Discord Webhook Integration -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/80 text-purple-400 shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Discord Webhook Alerts</h4>
+                            <p class="text-xs text-slate-400">แจ้งเตือนกิจกรรมของ App นี้เข้าสู่ห้อง Discord อัตโนมัติ</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Discord Webhook URL</label>
                             <div class="flex gap-2">
-                                <input type="text" id="settingAppVersion" placeholder="e.g. 1.0" class="flex-1 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
-                                <button onclick="submitSaveVersion()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-950/50 transition">
-                                    Save Version
+                                <input type="text" id="settingWebhookUrl" placeholder="https://discord.com/api/webhooks/..." class="flex-1 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-purple-400 font-mono">
+                                <button type="button" id="btnTestWebhook" onclick="submitTestWebhook()" class="px-3.5 py-2.5 bg-purple-950 hover:bg-purple-900 border border-purple-800 text-purple-300 rounded-xl text-xs font-medium transition shrink-0">
+                                    Test Ping
                                 </button>
                             </div>
                         </div>
                         <p class="text-[11px] text-slate-400">
-                            💡 เมื่อแก้ไขเวอร์ชัน ไคลเอนต์ที่มีเวอร์ชันไม่ตรงกันจะไม่สามารถเริ่มต้นระบบ (Init) ได้
+                            🔔 ส่งการแจ้งเตือนเมื่อ: มีผู้ใช้ลงทะเบียนใหม่, มีการใช้คีย์ใบอนุญาต, หรือตรวจพบ HWID Mismatch
                         </p>
+                    </div>
+                </div>
+
+                <!-- 4. Hardware ID (HWID) Lock Policy -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">Hardware Lock (HWID Lock)</h4>
+                                <p class="text-xs text-slate-400">ผูกสิทธิ์บัญชีกับเครื่องคอมพิวเตอร์เครื่องแรก</p>
+                            </div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer select-none">
+                            <input type="checkbox" id="settingHwidLock" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                    <div class="space-y-3">
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            เมื่อเปิดใช้งาน ระบบจะตรวจสอบ HWID ประจำเครื่องทุกครั้งที่มีการ Login หากนำคีย์หรือไอดีไปเปิดบนเครื่องอื่นจะถูกบล็อกทันที
+                        </p>
+                        <div class="pt-2">
+                            <button type="button" id="btnSaveAllSettings" onclick="submitSaveAllSettings()" class="w-full py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-950/50 transition">
+                                Save All Application Settings
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1708,20 +1787,33 @@
             }
         }
 
-        function loadAppSettings() {
-            const select = document.getElementById('appSelect');
-            if (!select || !select.selectedOptions[0]) return;
-            const opt = select.selectedOptions[0];
+        async function loadAppSettings() {
+            if (!currentAppId) return;
+            const res = await api(`/api/admin/apps/settings?app_id=${currentAppId}`);
+            if (!res || !res.success || !res.settings) return;
+            const s = res.settings;
+
             const verEl = document.getElementById('settingAppVersion');
+            const downUrlEl = document.getElementById('settingDownloadUrl');
+            const webUrlEl = document.getElementById('settingWebhookUrl');
+            const maintModeEl = document.getElementById('settingMaintenanceMode');
+            const maintMsgEl = document.getElementById('settingMaintenanceMsg');
+            const hwidLockEl = document.getElementById('settingHwidLock');
             const secEl = document.getElementById('settingAppSecret');
             const selEl = document.getElementById('settingSellerKey');
-            if (verEl) verEl.value = opt.dataset.version || '1.0';
+
+            if (verEl) verEl.value = s.version || '1.0';
+            if (downUrlEl) downUrlEl.value = s.download_url || '';
+            if (webUrlEl) webUrlEl.value = s.webhook_url || '';
+            if (maintModeEl) maintModeEl.checked = Boolean(s.maintenance_mode);
+            if (maintMsgEl) maintMsgEl.value = s.maintenance_msg || '';
+            if (hwidLockEl) hwidLockEl.checked = Boolean(s.hwid_lock !== 0);
             if (secEl) {
-                secEl.value = opt.dataset.secret || '';
+                secEl.value = s.secret_hash || '';
                 secEl.type = 'password';
             }
             if (selEl) {
-                selEl.value = opt.dataset.sellerKey || '';
+                selEl.value = s.seller_key || '';
                 selEl.type = 'password';
             }
         }
@@ -2956,27 +3048,89 @@
             });
         }
 
-        async function submitSaveVersion() {
+        async function submitSaveAllSettings() {
             if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
-            const version = document.getElementById('settingAppVersion').value.trim();
-            if (!version) return customAlert('Please enter a valid version string', { type: 'warning' });
 
-            const res = await api('/api/admin/apps/settings', {
-                method: 'POST',
-                body: { app_id: currentAppId, version }
-            });
+            const version = (document.getElementById('settingAppVersion')?.value || '1.0').trim();
+            const download_url = (document.getElementById('settingDownloadUrl')?.value || '').trim();
+            const webhook_url = (document.getElementById('settingWebhookUrl')?.value || '').trim();
+            const maintenance_mode = document.getElementById('settingMaintenanceMode')?.checked ? 1 : 0;
+            const maintenance_msg = (document.getElementById('settingMaintenanceMsg')?.value || '').trim();
+            const hwid_lock = document.getElementById('settingHwidLock')?.checked ? 1 : 0;
 
-            if (res && res.success) {
-                showToast(res.message || 'Version updated successfully', 'success');
-                const select = document.getElementById('appSelect');
-                if (select && select.selectedOptions[0]) {
-                    const currentName = select.selectedOptions[0].dataset.name || 'App';
-                    select.selectedOptions[0].textContent = `${currentName} (v${version})`;
-                    select.selectedOptions[0].dataset.version = version;
+            if (!version) return customAlert('App version cannot be empty', { type: 'warning' });
+
+            const btn = document.getElementById('btnSaveAllSettings');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+            }
+
+            try {
+                const res = await api('/api/admin/apps/settings', {
+                    method: 'POST',
+                    body: {
+                        app_id: currentAppId,
+                        version,
+                        download_url,
+                        webhook_url,
+                        maintenance_mode,
+                        maintenance_msg,
+                        hwid_lock
+                    }
+                });
+
+                if (res && res.success) {
+                    showToast(res.message || 'Settings saved successfully', 'success');
+                    const select = document.getElementById('appSelect');
+                    if (select && select.selectedOptions[0]) {
+                        const currentName = select.selectedOptions[0].dataset.name || 'App';
+                        select.selectedOptions[0].textContent = `${currentName} (v${version})`;
+                        select.selectedOptions[0].dataset.version = version;
+                    }
+                    loadLogs();
+                } else {
+                    customAlert(res?.message || 'Failed to save settings', { type: 'error' });
                 }
-                loadLogs();
-            } else {
-                customAlert(res?.message || 'Failed to update version', { type: 'error' });
+            } catch (err) {
+                customAlert('Failed to save settings due to network error', { type: 'error' });
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Save All Application Settings';
+                }
+            }
+        }
+
+        async function submitTestWebhook() {
+            if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
+            const webhook_url = (document.getElementById('settingWebhookUrl')?.value || '').trim();
+            if (!webhook_url) return customAlert('Please enter a Discord Webhook URL first', { type: 'warning' });
+
+            const btn = document.getElementById('btnTestWebhook');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+            }
+
+            try {
+                const res = await api('/api/admin/apps/test-webhook', {
+                    method: 'POST',
+                    body: { app_id: currentAppId, webhook_url }
+                });
+
+                if (res && res.success) {
+                    showToast(res.message || 'Test notification sent to Discord!', 'success');
+                } else {
+                    customAlert(res?.message || 'Failed to send test webhook', { type: 'error' });
+                }
+            } catch (err) {
+                customAlert('Network error testing webhook', { type: 'error' });
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Test Ping';
+                }
             }
         }
 

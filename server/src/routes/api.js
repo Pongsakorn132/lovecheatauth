@@ -44,8 +44,22 @@ function handleApiRequest(req, res, url, body) {
             return sendJson(res, 403, { success: false, message: `Application status is: ${app.status}` });
         }
 
-        if (version && app.version && version !== app.version) {
-            return sendJson(res, 400, { success: false, message: `Version mismatch. Current version: ${app.version}` });
+        if (app.maintenance_mode) {
+            return sendJson(res, 503, {
+                success: false,
+                maintenance: true,
+                message: app.maintenance_msg || 'Application is currently undergoing maintenance. Please check back later.'
+            });
+        }
+
+        if (app.version && version && version !== app.version) {
+            return sendJson(res, 426, {
+                success: false,
+                outdated: true,
+                message: `Update required! You are running v${version}, latest version is v${app.version}.`,
+                latest_version: app.version,
+                download_url: app.download_url || ''
+            });
         }
 
         if (app.hash_check && app.app_hash) {
@@ -192,6 +206,21 @@ function handleApiRequest(req, res, url, body) {
                 db.prepare('INSERT INTO audit_logs (app_id, event, details, ip, created_at) VALUES (?, ?, ?, ?, ?)')
                     .run(app.id, 'USER_REGISTER', `User ${username} registered with key ${key}`, clientIp, now);
 
+                sendDiscordWebhook({
+                    appId: app.id,
+                    title: 'New User Registered',
+                    description: `User **${username}** registered account with license key.`,
+                    color: 0x10b981,
+                    fields: [
+                        { name: 'App', value: app.name, inline: true },
+                        { name: 'Username', value: username, inline: true },
+                        { name: 'Plan', value: `${license.sub_name} (Lvl ${license.level})`, inline: true },
+                        { name: 'Duration', value: `${Math.round(license.duration_seconds / 86400)} days`, inline: true },
+                        { name: 'IP', value: clientIp, inline: true },
+                        { name: 'HWID', value: hwid ? `\`${hwid}\`` : 'N/A' }
+                    ]
+                });
+
                 return sendEncrypted(res, session, {
                     success: true,
                     message: 'Registration successful',
@@ -229,11 +258,19 @@ function handleApiRequest(req, res, url, body) {
                     } else if (user.hwid && user.hwid !== hwid) {
                         db.prepare('INSERT INTO audit_logs (app_id, event, details, ip, created_at) VALUES (?, ?, ?, ?, ?)')
                             .run(app.id, 'HWID_MISMATCH', `User ${username} attempted login from mismatched HWID: ${hwid}`, clientIp, now);
-                        sendDiscordWebhook('Security Alert: HWID Mismatch', `User **${username}** attempted login with unauthorized HWID`, 0xef4444, [
-                            { name: 'App', value: app.name, inline: true },
-                            { name: 'IP', value: clientIp, inline: true },
-                            { name: 'Attempted HWID', value: `\`${hwid}\`` }
-                        ]);
+                        sendDiscordWebhook({
+                            appId: app.id,
+                            title: 'Security Alert: HWID Mismatch',
+                            description: `User **${username}** attempted login with unauthorized HWID`,
+                            color: 0xef4444,
+                            fields: [
+                                { name: 'App', value: app.name, inline: true },
+                                { name: 'User', value: username, inline: true },
+                                { name: 'IP', value: clientIp, inline: true },
+                                { name: 'Attempted HWID', value: `\`${hwid}\`` },
+                                { name: 'Authorized HWID', value: `\`${user.hwid}\`` }
+                            ]
+                        });
                         return sendEncrypted(res, session, { success: false, message: 'HWID mismatch. Contact admin to reset.' });
                     }
                 }
@@ -270,6 +307,19 @@ function handleApiRequest(req, res, url, body) {
                         return sendEncrypted(res, session, { success: false, message: 'License has expired' });
                     }
                     if (app.hwid_lock && user.hwid && user.hwid !== hwid) {
+                        sendDiscordWebhook({
+                            appId: app.id,
+                            title: 'Security Alert: HWID Mismatch',
+                            description: `License key **${key}** used from mismatched HWID`,
+                            color: 0xef4444,
+                            fields: [
+                                { name: 'App', value: app.name, inline: true },
+                                { name: 'License', value: `\`${key}\``, inline: true },
+                                { name: 'IP', value: clientIp, inline: true },
+                                { name: 'Attempted HWID', value: `\`${hwid}\`` },
+                                { name: 'Authorized HWID', value: `\`${user.hwid}\`` }
+                            ]
+                        });
                         return sendEncrypted(res, session, { success: false, message: 'HWID mismatch on license' });
                     }
                     db.prepare('UPDATE sessions SET user_id = ? WHERE session_token = ?').run(user.id, session.session_token);
@@ -298,6 +348,21 @@ function handleApiRequest(req, res, url, body) {
                     .run('used', userId, now, key);
 
                 db.prepare('UPDATE sessions SET user_id = ? WHERE session_token = ?').run(userId, session.session_token);
+
+                sendDiscordWebhook({
+                    appId: app.id,
+                    title: 'License Key Activated',
+                    description: `License key **${key}** has been activated.`,
+                    color: 0x38bdf8,
+                    fields: [
+                        { name: 'App', value: app.name, inline: true },
+                        { name: 'Key', value: `\`${key}\``, inline: true },
+                        { name: 'Plan', value: `${license.sub_name} (Lvl ${license.level})`, inline: true },
+                        { name: 'Duration', value: `${Math.round(license.duration_seconds / 86400)} days`, inline: true },
+                        { name: 'IP', value: clientIp, inline: true },
+                        { name: 'HWID', value: hwid ? `\`${hwid}\`` : 'N/A' }
+                    ]
+                });
 
                 return sendEncrypted(res, session, {
                     success: true,

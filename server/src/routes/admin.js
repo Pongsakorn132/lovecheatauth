@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const db = require('../database');
 const cryptoUtils = require('../crypto');
+const { sendDiscordWebhook } = require('../utils/webhook');
 
 const MASTER_KEY = process.env.ADMIN_KEY || 'kawaii_master_secret';
 
@@ -40,7 +41,7 @@ function generateKeyFromPattern(pattern, caseMode) {
     return (trimmed + sep + '****-****-****-****').replace(/[*]/g, () => getRandomChar(caseMode));
 }
 
-function handleAdminRequest(req, res, url, body) {
+async function handleAdminRequest(req, res, url, body) {
     const rawPath = url.pathname;
     const pathname = rawPath.replace(/^\/api\/seller\//, '/api/admin/');
     const method = req.method;
@@ -191,29 +192,77 @@ function handleAdminRequest(req, res, url, body) {
         });
     }
 
-    // App Settings: Update Version (/api/admin/apps/settings)
+    // App Settings: Retrieve Settings (/api/admin/apps/settings)
+    if (pathname === '/api/admin/apps/settings' && method === 'GET') {
+        const targetAppId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
+        const app = db.prepare('SELECT id, name, version, webhook_url, download_url, maintenance_mode, maintenance_msg, hwid_lock, secret_hash, seller_key, status, created_at FROM apps WHERE id = ?').get(targetAppId);
+        if (!app) return sendJson(res, 404, { success: false, message: 'Application not found' });
+        return sendJson(res, 200, { success: true, settings: app });
+    }
+
+    // App Settings: Update Settings (/api/admin/apps/settings)
     if (pathname === '/api/admin/apps/settings' && method === 'POST') {
         const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
         if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
 
-        const { version } = body || {};
-        if (!version || typeof version !== 'string' || !version.trim()) {
-            return sendJson(res, 400, { success: false, message: 'Version is required' });
-        }
+        const current = db.prepare('SELECT * FROM apps WHERE id = ?').get(targetAppId);
+        if (!current) return sendJson(res, 404, { success: false, message: 'Application not found' });
 
-        const newVersion = version.trim();
-        const result = db.prepare('UPDATE apps SET version = ? WHERE id = ?').run(newVersion, targetAppId);
-        if (result.changes === 0) {
-            return sendJson(res, 404, { success: false, message: 'Application not found' });
-        }
+        const { version, download_url, webhook_url, maintenance_mode, maintenance_msg, hwid_lock } = body || {};
 
-        logAudit(targetAppId, 'APP_VERSION_UPDATED', `Version updated to ${newVersion}`, clientIp);
-        const updatedApp = db.prepare('SELECT * FROM apps WHERE id = ?').get(targetAppId);
+        const newVersion = (version !== undefined && version !== null) ? String(version).trim() : current.version;
+        const newDownloadUrl = download_url !== undefined ? String(download_url).trim() : (current.download_url || '');
+        const newWebhookUrl = webhook_url !== undefined ? String(webhook_url).trim() : (current.webhook_url || '');
+        const newMaintenanceMode = maintenance_mode !== undefined ? (maintenance_mode ? 1 : 0) : current.maintenance_mode;
+        const newMaintenanceMsg = maintenance_msg !== undefined ? String(maintenance_msg).trim() : (current.maintenance_msg || '');
+        const newHwidLock = hwid_lock !== undefined ? (hwid_lock ? 1 : 0) : current.hwid_lock;
+
+        db.prepare(`
+            UPDATE apps 
+            SET version = ?, download_url = ?, webhook_url = ?, maintenance_mode = ?, maintenance_msg = ?, hwid_lock = ?
+            WHERE id = ?
+        `).run(newVersion, newDownloadUrl, newWebhookUrl, newMaintenanceMode, newMaintenanceMsg, newHwidLock, targetAppId);
+
+        logAudit(targetAppId, 'APP_SETTINGS_UPDATED', `Settings updated: v${newVersion}, Maint: ${newMaintenanceMode ? 'ON' : 'OFF'}, HWID: ${newHwidLock ? 'LOCK' : 'OPEN'}`, clientIp);
+
+        const updated = db.prepare('SELECT id, name, version, webhook_url, download_url, maintenance_mode, maintenance_msg, hwid_lock, secret_hash, seller_key, status FROM apps WHERE id = ?').get(targetAppId);
         return sendJson(res, 200, {
             success: true,
-            message: `Version updated to ${newVersion}`,
-            app: updatedApp
+            message: 'Application settings saved successfully',
+            settings: updated
         });
+    }
+
+    // Test Discord Webhook: /api/admin/apps/test-webhook
+    if (pathname === '/api/admin/apps/test-webhook' && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
+        const { webhook_url } = body || {};
+        const app = targetAppId ? db.prepare('SELECT * FROM apps WHERE id = ?').get(targetAppId) : null;
+        const testUrl = (webhook_url || (app ? app.webhook_url : '') || '').trim();
+
+        if (!testUrl) {
+            return sendJson(res, 400, { success: false, message: 'Please provide or save a Discord Webhook URL first' });
+        }
+
+        const testRes = await sendDiscordWebhook({
+            webhookUrl: testUrl,
+            title: 'Webhook Integration Test',
+            description: `Discord Webhook connectivity verified for **${app ? app.name : 'KawaiiAuth Application'}**!`,
+            color: 0x10b981,
+            fields: [
+                { name: 'Application', value: app ? app.name : 'KawaiiDemo', inline: true },
+                { name: 'Gateway', value: 'KawaiiAuth v2.0', inline: true },
+                { name: 'Admin IP', value: clientIp, inline: true }
+            ]
+        });
+
+        if (testRes.success) {
+            logAudit(targetAppId || null, 'WEBHOOK_TEST_SENT', 'Discord test webhook sent successfully', clientIp);
+            return sendJson(res, 200, { success: true, message: 'Test webhook sent to Discord successfully!' });
+        } else {
+            return sendJson(res, 400, { success: false, message: testRes.message || 'Failed to deliver webhook' });
+        }
     }
 
     // Refresh Application Secret: /api/admin/apps/refresh-secret

@@ -26,6 +26,10 @@ CREATE TABLE IF NOT EXISTS apps (
     hwid_lock INTEGER NOT NULL DEFAULT 1,
     hash_check INTEGER NOT NULL DEFAULT 0,
     app_hash TEXT,
+    webhook_url TEXT,
+    download_url TEXT,
+    maintenance_mode INTEGER NOT NULL DEFAULT 0,
+    maintenance_msg TEXT DEFAULT 'Application is currently undergoing maintenance. Please check back later.',
     created_at INTEGER NOT NULL
 );
 
@@ -164,8 +168,21 @@ try {
     if (!hasSellerKey) {
         db.exec("ALTER TABLE apps ADD COLUMN seller_key TEXT;");
     }
+    const cols = new Set(tableInfo.map(c => c.name));
+    if (!cols.has('webhook_url')) {
+        db.exec("ALTER TABLE apps ADD COLUMN webhook_url TEXT;");
+    }
+    if (!cols.has('download_url')) {
+        db.exec("ALTER TABLE apps ADD COLUMN download_url TEXT;");
+    }
+    if (!cols.has('maintenance_mode')) {
+        db.exec("ALTER TABLE apps ADD COLUMN maintenance_mode INTEGER NOT NULL DEFAULT 0;");
+    }
+    if (!cols.has('maintenance_msg')) {
+        db.exec("ALTER TABLE apps ADD COLUMN maintenance_msg TEXT DEFAULT 'Application is currently undergoing maintenance. Please check back later.';");
+    }
 } catch (e) {
-    console.error('[DB Migration Error]', e);
+    console.error('[DB Migration Error - apps]', e);
 }
 
 // Generate seller_key for existing apps that don't have one
