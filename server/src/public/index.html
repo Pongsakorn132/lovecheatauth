@@ -64,10 +64,10 @@
                 <div class="text-xs text-gray-400 font-mono uppercase">Total Licenses</div>
                 <div id="statTotalKeys" class="text-3xl font-bold mt-2 text-white font-mono">0</div>
             </div>
-            <div id="engineStatusCard" class="glass-panel p-5 rounded-xl border-l-4 border-l-emerald-500 transition-colors">
+            <div id="engineStatusCard" class="glass-panel p-5 rounded-xl border-l-4 border-l-gray-600 transition-colors">
                 <div class="text-xs text-gray-400 font-mono uppercase">Engine Status</div>
-                <div id="engineStatusText" class="text-lg font-bold mt-2 text-emerald-400 font-mono flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> ACTIVE
+                <div id="engineStatusText" class="text-lg font-bold mt-2 text-gray-400 font-mono flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-gray-500 animate-pulse"></span> CONNECTING...
                 </div>
             </div>
         </div>
@@ -259,24 +259,25 @@
         let currentAppId = null;
         let isAuthorized = false;
 
-        function updateActionButtons(authorized, hasApp) {
-            isAuthorized = authorized;
+        function updateActionButtons() {
             const btnNewApp = document.getElementById('btnNewApp');
             const btnGenKey = document.getElementById('btnGenKey');
             const btnAddVar = document.getElementById('btnAddVar');
 
+            const hasApp = Boolean(isAuthorized && currentAppId);
+
             if (btnNewApp) {
-                if (authorized) btnNewApp.classList.remove('hidden');
+                if (isAuthorized) btnNewApp.classList.remove('hidden');
                 else btnNewApp.classList.add('hidden');
             }
 
             if (btnGenKey) {
-                if (authorized && hasApp) btnGenKey.classList.remove('hidden');
+                if (hasApp) btnGenKey.classList.remove('hidden');
                 else btnGenKey.classList.add('hidden');
             }
 
             if (btnAddVar) {
-                if (authorized && hasApp) btnAddVar.classList.remove('hidden');
+                if (hasApp) btnAddVar.classList.remove('hidden');
                 else btnAddVar.classList.add('hidden');
             }
         }
@@ -306,6 +307,7 @@
             document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('varsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            updateActionButtons();
         }
 
         function updateEngineStatus(active, label) {
@@ -328,13 +330,14 @@
             try {
                 const data = await api('/api/admin/apps');
                 if (!data || !data.success) {
+                    isAuthorized = false;
                     select.innerHTML = '<option value="">Invalid Admin Key</option>';
                     updateEngineStatus(false, 'UNAUTHORIZED');
                     clearAllData('Invalid Admin Key — authorization failed.');
-                    updateActionButtons(false, false);
                     return;
                 }
 
+                isAuthorized = true;
                 updateEngineStatus(true, 'ACTIVE');
 
                 select.innerHTML = '';
@@ -353,15 +356,15 @@
                     select.value = currentAppId;
                     onAppChanged();
                 } else {
+                    currentAppId = null;
                     select.innerHTML = '<option value="">No Apps Created</option>';
                     clearAllData('No applications found. Click "+ New App" above to create one.');
-                    updateActionButtons(true, false);
                 }
             } catch (err) {
+                isAuthorized = false;
                 select.innerHTML = '<option value="">Connection Error</option>';
                 updateEngineStatus(false, 'OFFLINE');
                 clearAllData('Failed to connect to KawaiiAuth server.');
-                updateActionButtons(false, false);
             }
         }
 
@@ -370,11 +373,10 @@
             currentAppId = select.value;
             if (!currentAppId) {
                 clearAllData('No application selected');
-                updateActionButtons(isAuthorized, false);
                 return;
             }
 
-            updateActionButtons(isAuthorized, true);
+            updateActionButtons();
 
             const selectedOpt = select.selectedOptions[0];
             const secret = selectedOpt ? selectedOpt.dataset.secret : '';
