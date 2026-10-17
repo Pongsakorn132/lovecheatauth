@@ -1,0 +1,26 @@
+# Build artifacts
+*.exe
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.lib
+build/
+bin/
+.vs/
+*.vcxproj.user
+
+# Database & Runtime data
+server/data/*.sqlite
+server/data/*.sqlite-wal
+server/data/*.sqlite-shm
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS specific
+Thumbs.db
+.DS_Store

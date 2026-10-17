@@ -1,0 +1,13 @@
+{
+  "name": "kawaiiauth-server",
+  "version": "1.0.0",
+  "description": "High-performance, secure license authentication server engine",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["auth", "licensing", "security", "anti-tamper", "hwid"],
+  "author": "Byte",
+  "license": "MIT"
+}

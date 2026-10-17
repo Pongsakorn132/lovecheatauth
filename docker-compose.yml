@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  kawaiiauth-api:
+    image: node:22-alpine
+    container_name: kawaiiauth-server
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./server:/app
+    environment:
+      - PORT=8080
+      - ADMIN_KEY=kawaii_master_secret
+    ports:
+      - "8080:8080"
+    command: ["node", "src/server.js"]
