@@ -173,6 +173,57 @@
                     <button onclick="deleteAllKeys()" class="px-3 py-1.5 bg-slate-800 hover:bg-red-900/60 border border-slate-700 hover:border-red-800 text-slate-300 hover:text-red-300 rounded-lg text-xs font-medium transition">
                         Delete All
                     </button>
+                    <!-- Export Keys Dropdown -->
+                    <div class="relative inline-block text-left" id="exportKeysDropdownContainer">
+                        <button onclick="toggleExportMenu(event)" id="btnExportKeys" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sky-300 hover:text-white rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                            <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span>Export Keys</span>
+                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="exportKeysMenu" class="hidden absolute right-0 mt-2 w-60 bg-slate-900/95 border border-slate-700/90 rounded-xl shadow-2xl py-1 z-30 font-sans text-xs divide-y divide-slate-800 backdrop-blur-xl">
+                            <div class="p-1">
+                                <button onclick="exportKeys('unused_txt')" class="w-full text-left px-3 py-2 rounded-lg text-slate-200 hover:bg-sky-950/70 hover:text-sky-300 transition flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-white">Unused Keys Only (.txt)</div>
+                                        <div class="text-[10px] text-slate-400">One key per line (Store ready)</div>
+                                    </div>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">TXT</span>
+                                </button>
+                                <button onclick="exportKeys('all_txt')" class="w-full text-left px-3 py-2 rounded-lg text-slate-200 hover:bg-sky-950/70 hover:text-sky-300 transition flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-white">All Keys (.txt)</div>
+                                        <div class="text-[10px] text-slate-400">All registered & unused keys</div>
+                                    </div>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono">TXT</span>
+                                </button>
+                                <button onclick="exportKeys('selected_txt')" class="w-full text-left px-3 py-2 rounded-lg text-slate-200 hover:bg-sky-950/70 hover:text-sky-300 transition flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-white">Selected Keys (.txt)</div>
+                                        <div class="text-[10px] text-slate-400">Only checked checkboxes</div>
+                                    </div>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800 font-mono">TXT</span>
+                                </button>
+                            </div>
+                            <div class="p-1">
+                                <button onclick="exportKeys('all_csv')" class="w-full text-left px-3 py-2 rounded-lg text-slate-200 hover:bg-sky-950/70 hover:text-sky-300 transition flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-white">Spreadsheet Report (.csv)</div>
+                                        <div class="text-[10px] text-slate-400">Key, Plan, Days, Status, Date</div>
+                                    </div>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 font-mono">CSV</span>
+                                </button>
+                                <button onclick="copyUnusedKeysToClipboard()" class="w-full text-left px-3 py-2 rounded-lg text-slate-200 hover:bg-sky-950/70 hover:text-sky-300 transition flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium text-white">Copy Unused to Clipboard</div>
+                                        <div class="text-[10px] text-slate-400">Instant paste to Discord/Store</div>
+                                    </div>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-mono">COPY</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                     <button id="btnGenKey" onclick="openModal('genKeyModal')" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-blue-900/40 border border-sky-400/20">
                         + Generate Keys
                     </button>
@@ -715,6 +766,49 @@
             <div class="flex justify-end gap-2.5 pt-2">
                 <button onclick="closeModal('genKeyModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
                 <button onclick="submitGenKeys()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Generate Keys</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Generated Keys Result -->
+    <div id="generatedResultModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('generatedResultModal')">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-lg space-y-4 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-700/80 text-emerald-400 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide">Keys Generated Successfully</h3>
+                        <p id="generatedResultSubTitle" class="text-xs text-slate-400">คีย์ใบอนุญาตชุดใหม่พร้อมใช้งาน</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('generatedResultModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <!-- Body -->
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-medium text-slate-300">Generated Keys List</label>
+                    <span id="generatedCountBadge" class="text-[11px] text-sky-400 font-mono font-medium">0 Keys</span>
+                </div>
+                <textarea id="generatedKeysTextarea" readonly class="w-full h-44 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-sky-300 font-mono text-xs focus:outline-none focus:border-sky-400 resize-none select-all leading-relaxed"></textarea>
+            </div>
+            <!-- Footer -->
+            <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2">
+                <button onclick="copyGeneratedKeysToClipboard()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    <span>Copy All</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <button onclick="closeModal('generatedResultModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Close</button>
+                    <button onclick="downloadGeneratedKeysFile()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition flex items-center gap-1.5 transform hover:-translate-y-0.5 active:translate-y-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Download (.txt)</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2328,6 +2422,168 @@
             }
         }
 
+        // ==========================================
+        // License Key Export & Download Subsystem
+        // ==========================================
+        let latestGeneratedKeys = [];
+
+        function toggleExportMenu(event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById('exportKeysMenu');
+            if (!menu) return;
+            menu.classList.toggle('hidden');
+        }
+
+        // Close export menu on outside click
+        document.addEventListener('click', (e) => {
+            const container = document.getElementById('exportKeysDropdownContainer');
+            const menu = document.getElementById('exportKeysMenu');
+            if (menu && !menu.classList.contains('hidden')) {
+                if (!container || !container.contains(e.target)) {
+                    menu.classList.add('hidden');
+                }
+            }
+        });
+
+        function exportKeys(format) {
+            const menu = document.getElementById('exportKeysMenu');
+            if (menu) menu.classList.add('hidden');
+
+            if (!currentAppId) {
+                return customAlert('Please select an application first', { type: 'warning' });
+            }
+            if (!allKeys || allKeys.length === 0) {
+                return customAlert('No license keys found to export', { type: 'warning' });
+            }
+
+            const appSelect = document.getElementById('appSelect');
+            const appName = (appSelect && appSelect.selectedOptions[0] ? appSelect.selectedOptions[0].dataset.name : 'App') || 'app';
+            const cleanAppName = appName.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const dateStr = new Date().toISOString().slice(0, 10);
+
+            let targetKeys = [];
+            let filename = '';
+            let content = '';
+            let mimeType = 'text/plain;charset=utf-8';
+
+            if (format === 'unused_txt') {
+                targetKeys = allKeys.filter(k => k.status === 'unregistered');
+                if (targetKeys.length === 0) {
+                    return customAlert('No unused license keys available to export', { type: 'warning' });
+                }
+                content = targetKeys.map(k => k.key).join('\r\n');
+                filename = `${cleanAppName}_unused_keys_${dateStr}.txt`;
+            } else if (format === 'all_txt') {
+                targetKeys = allKeys;
+                content = targetKeys.map(k => k.key).join('\r\n');
+                filename = `${cleanAppName}_all_keys_${dateStr}.txt`;
+            } else if (format === 'selected_txt') {
+                const checked = Array.from(document.querySelectorAll('.key-checkbox:checked')).map(cb => cb.value);
+                if (checked.length === 0) {
+                    return customAlert('Please check at least one license key to export', { type: 'warning' });
+                }
+                content = checked.join('\r\n');
+                filename = `${cleanAppName}_selected_keys_${dateStr}.txt`;
+                targetKeys = checked;
+            } else if (format === 'all_csv') {
+                mimeType = 'text/csv;charset=utf-8';
+                filename = `${cleanAppName}_licenses_${dateStr}.csv`;
+                const headers = ['License Key', 'Subscription Plan', 'Duration (Days)', 'Level', 'Status', 'Used By User', 'Created At'];
+                const rows = allKeys.map(k => {
+                    const days = Math.round((k.duration_seconds || 0) / 86400);
+                    const created = k.created_at ? new Date(k.created_at * 1000).toLocaleString().replace(/,/g, '') : '';
+                    return [
+                        `"${k.key}"`,
+                        `"${k.sub_name || 'default'}"`,
+                        days,
+                        k.level || 1,
+                        `"${k.status}"`,
+                        `"${k.used_by || ''}"`,
+                        `"${created}"`
+                    ].join(',');
+                });
+                content = '\uFEFF' + headers.join(',') + '\r\n' + rows.join('\r\n');
+                targetKeys = allKeys;
+            }
+
+            // Trigger file download
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`Exported ${targetKeys.length} license key(s) to ${filename}`, 'success');
+        }
+
+        async function copyUnusedKeysToClipboard() {
+            const menu = document.getElementById('exportKeysMenu');
+            if (menu) menu.classList.add('hidden');
+
+            if (!currentAppId) {
+                return customAlert('Please select an application first', { type: 'warning' });
+            }
+            const unused = allKeys.filter(k => k.status === 'unregistered');
+            if (unused.length === 0) {
+                return customAlert('No unused keys found to copy', { type: 'warning' });
+            }
+            const text = unused.map(k => k.key).join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(`Copied ${unused.length} unused keys to clipboard!`, 'success');
+            } catch (err) {
+                customAlert('Failed to copy keys to clipboard', { type: 'error' });
+            }
+        }
+
+        function showGeneratedResultModal(keys) {
+            latestGeneratedKeys = keys || [];
+            const textarea = document.getElementById('generatedKeysTextarea');
+            const badge = document.getElementById('generatedCountBadge');
+            const subTitle = document.getElementById('generatedResultSubTitle');
+            if (textarea) textarea.value = latestGeneratedKeys.join('\n');
+            if (badge) badge.textContent = `${latestGeneratedKeys.length} Keys`;
+            if (subTitle) subTitle.textContent = `Successfully created ${latestGeneratedKeys.length} license key(s)`;
+            openModal('generatedResultModal');
+        }
+
+        async function copyGeneratedKeysToClipboard() {
+            if (!latestGeneratedKeys || latestGeneratedKeys.length === 0) return;
+            const text = latestGeneratedKeys.join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast(`Copied ${latestGeneratedKeys.length} keys to clipboard!`, 'success');
+            } catch (err) {
+                customAlert('Failed to copy keys to clipboard', { type: 'error' });
+            }
+        }
+
+        function downloadGeneratedKeysFile() {
+            if (!latestGeneratedKeys || latestGeneratedKeys.length === 0) return;
+            const appSelect = document.getElementById('appSelect');
+            const appName = (appSelect && appSelect.selectedOptions[0] ? appSelect.selectedOptions[0].dataset.name : 'App') || 'app';
+            const cleanAppName = appName.replace(/[^a-zA-Z0-9_-]/g, '_');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const filename = `${cleanAppName}_batch_${latestGeneratedKeys.length}_keys_${dateStr}.txt`;
+            const content = latestGeneratedKeys.join('\r\n');
+
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast(`Downloaded ${latestGeneratedKeys.length} keys to ${filename}`, 'success');
+        }
+
         async function loadVars() {
             if (!currentAppId) {
                 document.getElementById('varsTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
@@ -2452,6 +2708,9 @@
                 loadKeys();
                 loadSubscriptions();
                 showToast(res.message || `Generated ${amount} license keys`, 'success');
+                if (res.keys && Array.isArray(res.keys) && res.keys.length > 0) {
+                    showGeneratedResultModal(res.keys);
+                }
             } else {
                 customAlert(res.message || 'Failed to generate keys', { type: 'error' });
             }
