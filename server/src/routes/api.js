@@ -14,7 +14,7 @@ function handleApiRequest(req, res, url, body) {
 
     // 1. Handshake: /api/v1/init
     if (pathname === '/api/v1/init' && req.method === 'POST') {
-        const { app_id, version, client_hash, timestamp: initTimestamp, nonce: initNonce } = body;
+        const { app_id, version, client_hash, timestamp: initTimestamp, nonce: initNonce, hwid } = body || {};
         if (!app_id) {
             return sendJson(res, 400, { success: false, message: 'Missing app_id' });
         }

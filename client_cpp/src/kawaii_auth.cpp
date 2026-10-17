@@ -467,7 +467,8 @@ namespace KawaiiAuth {
             { skCrypt("version"), m_version },
             { skCrypt("client_hash"), textHash },
             { skCrypt("timestamp"), ts },
-            { skCrypt("nonce"), nonce }
+            { skCrypt("nonce"), nonce },
+            { skCrypt("hwid"), m_hwid }
         };
 
         HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/init"), initPayload.dump());
