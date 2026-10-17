@@ -148,6 +148,18 @@ CREATE TABLE IF NOT EXISTS client_auth_sessions (
     is_pin_unlocked INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS blacklists (
+    id TEXT PRIMARY KEY,
+    app_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    value TEXT NOT NULL,
+    reason TEXT,
+    created_at INTEGER NOT NULL,
+    FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE,
+    UNIQUE(app_id, type, value)
+);
+CREATE INDEX IF NOT EXISTS idx_blacklists_lookup ON blacklists(app_id, type, value);
 `);
 
 // Migration: add last_seq to sessions if missing

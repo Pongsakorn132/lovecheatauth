@@ -40,6 +40,27 @@ function handleApiRequest(req, res, url, body) {
             return sendJson(res, 404, { success: false, message: 'Application not found' });
         }
 
+        // Blacklist Gate (IP and HWID check)
+        const ipBan = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "IP" AND value = ?').get(app.id, clientIp);
+        if (ipBan) {
+            return sendJson(res, 403, {
+                success: false,
+                blacklisted: true,
+                message: `Connection refused: Your IP address is blacklisted (${ipBan.reason || 'Security violation'})`
+            });
+        }
+
+        if (hwid) {
+            const hwidBan = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "HWID" AND value = ?').get(app.id, hwid);
+            if (hwidBan) {
+                return sendJson(res, 403, {
+                    success: false,
+                    blacklisted: true,
+                    message: `Connection refused: Your device HWID is blacklisted (${hwidBan.reason || 'Security violation'})`
+                });
+            }
+        }
+
         if (app.status !== 'active') {
             return sendJson(res, 403, { success: false, message: `Application status is: ${app.status}` });
         }
@@ -161,6 +182,28 @@ function handleApiRequest(req, res, url, body) {
         // Periodic cleanup of expired nonces (> 300s)
         if (Math.random() < 0.05) {
             db.prepare('DELETE FROM request_nonces WHERE created_at < ?').run(now - 300);
+        }
+
+        // Blacklist Gate for Action
+        const ipBanAction = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "IP" AND value = ?').get(session.app_id, clientIp);
+        if (ipBanAction) {
+            return sendEncrypted(res, session, {
+                success: false,
+                blacklisted: true,
+                message: `Access denied: Your IP address is blacklisted (${ipBanAction.reason || 'Security violation'})`
+            });
+        }
+
+        const currentHwid = decryptedPayload.hwid || (session.user_id ? db.prepare('SELECT hwid FROM users WHERE id = ?').get(session.user_id)?.hwid : null);
+        if (currentHwid) {
+            const hwidBanAction = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "HWID" AND value = ?').get(session.app_id, currentHwid);
+            if (hwidBanAction) {
+                return sendEncrypted(res, session, {
+                    success: false,
+                    blacklisted: true,
+                    message: `Access denied: Your device HWID is blacklisted (${hwidBanAction.reason || 'Security violation'})`
+                });
+            }
         }
 
         const app = db.prepare('SELECT * FROM apps WHERE id = ?').get(session.app_id);

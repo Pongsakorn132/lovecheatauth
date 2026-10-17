@@ -747,6 +747,166 @@ async function handleAdminRequest(req, res, url, body) {
         }
     }
 
+    // Blacklists API: /api/admin/blacklists
+    if (pathname === '/api/admin/blacklists' && method === 'GET') {
+        const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
+        if (!appId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
+        const blacklists = db.prepare(`
+            SELECT id, app_id, type, value, reason, created_at 
+            FROM blacklists 
+            WHERE app_id = ? 
+            ORDER BY created_at DESC
+        `).all(appId);
+        return sendJson(res, 200, { success: true, blacklists });
+    }
+
+    if (pathname === '/api/admin/blacklists' && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : body?.app_id;
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const { type, value, reason } = body || {};
+        const safeType = (type || '').toUpperCase().trim();
+        if (safeType !== 'HWID' && safeType !== 'IP') {
+            return sendJson(res, 400, { success: false, message: 'Type must be either HWID or IP' });
+        }
+
+        const safeValue = (value || '').trim();
+        if (!safeValue) {
+            return sendJson(res, 400, { success: false, message: `${safeType} value cannot be empty` });
+        }
+
+        const safeReason = (reason || '').trim() || 'Security enforcement';
+        const banId = crypto.randomUUID();
+
+        // Check if already blacklisted
+        const existing = db.prepare('SELECT id FROM blacklists WHERE app_id = ? AND type = ? AND value = ?').get(targetAppId, safeType, safeValue);
+        if (existing) {
+            db.prepare('UPDATE blacklists SET reason = ?, created_at = ? WHERE id = ?').run(safeReason, now, existing.id);
+        } else {
+            db.prepare(`
+                INSERT INTO blacklists (id, app_id, type, value, reason, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            `).run(banId, targetAppId, safeType, safeValue, safeReason, now);
+        }
+
+        logAudit(targetAppId, 'BLACKLIST_ADDED', `Blacklisted ${safeType}: ${safeValue} (${safeReason})`, clientIp);
+
+        sendDiscordWebhook({
+            appId: targetAppId,
+            title: `Blacklist Added (${safeType})`,
+            description: `Target **${safeType}** has been blacklisted.`,
+            color: 0xef4444,
+            fields: [
+                { name: 'Type', value: safeType, inline: true },
+                { name: 'Target Value', value: `\`${safeValue}\``, inline: true },
+                { name: 'Reason', value: safeReason, inline: false },
+                { name: 'Enforced By', value: clientIp, inline: true }
+            ]
+        });
+
+        return sendJson(res, 200, {
+            success: true,
+            message: `Successfully blacklisted ${safeType}: ${safeValue}`,
+            item: { id: existing ? existing.id : banId, type: safeType, value: safeValue, reason: safeReason }
+        });
+    }
+
+    if (pathname === '/api/admin/blacklists' && method === 'DELETE') {
+        const { id, app_id, type, value } = body || {};
+        const queryId = url.searchParams.get('id') || id;
+
+        if (queryId) {
+            const entry = db.prepare('SELECT * FROM blacklists WHERE id = ?').get(queryId);
+            if (entry) {
+                db.prepare('DELETE FROM blacklists WHERE id = ?').run(queryId);
+                logAudit(entry.app_id, 'BLACKLIST_REMOVED', `Unbanned ${entry.type}: ${entry.value}`, clientIp);
+
+                sendDiscordWebhook({
+                    appId: entry.app_id,
+                    title: `Blacklist Lifted (${entry.type})`,
+                    description: `Target **${entry.type}** has been unbanned.`,
+                    color: 0x10b981,
+                    fields: [
+                        { name: 'Type', value: entry.type, inline: true },
+                        { name: 'Target Value', value: `\`${entry.value}\``, inline: true },
+                        { name: 'Previous Reason', value: entry.reason || 'None', inline: false }
+                    ]
+                });
+            }
+            return sendJson(res, 200, { success: true, message: 'Blacklist entry removed. Access restored.' });
+        } else if (app_id && type && value) {
+            const safeType = String(type).toUpperCase().trim();
+            const safeVal = String(value).trim();
+            db.prepare('DELETE FROM blacklists WHERE app_id = ? AND type = ? AND value = ?').run(app_id, safeType, safeVal);
+            logAudit(app_id, 'BLACKLIST_REMOVED', `Unbanned ${safeType}: ${safeVal}`, clientIp);
+            return sendJson(res, 200, { success: true, message: 'Blacklist entry removed. Access restored.' });
+        } else {
+            return sendJson(res, 400, { success: false, message: 'Missing blacklist id parameter' });
+        }
+    }
+
+    // Quick Ban User HWID & IP: /api/admin/users/blacklist
+    if (pathname === '/api/admin/users/blacklist' && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : body?.app_id;
+        const { user_id, ban_hwid = true, ban_ip = true, reason } = body || {};
+        if (!targetAppId || !user_id) {
+            return sendJson(res, 400, { success: false, message: 'Missing app_id or user_id' });
+        }
+
+        const user = db.prepare('SELECT * FROM users WHERE id = ? AND app_id = ?').get(user_id, targetAppId);
+        if (!user) return sendJson(res, 404, { success: false, message: 'User not found' });
+
+        const safeReason = (reason || '').trim() || 'Administrative user blacklist';
+
+        // 1. Mark user account as banned
+        db.prepare('UPDATE users SET banned = 1, ban_reason = ? WHERE id = ?').run(safeReason, user_id);
+
+        let hwidBlacklisted = false;
+        let ipBlacklisted = false;
+
+        // 2. Blacklist HWID if present
+        if (ban_hwid && user.hwid) {
+            const ex = db.prepare('SELECT id FROM blacklists WHERE app_id = ? AND type = "HWID" AND value = ?').get(targetAppId, user.hwid);
+            if (!ex) {
+                db.prepare('INSERT INTO blacklists (id, app_id, type, value, reason, created_at) VALUES (?, ?, "HWID", ?, ?, ?)')
+                    .run(crypto.randomUUID(), targetAppId, user.hwid, safeReason, now);
+            }
+            hwidBlacklisted = true;
+        }
+
+        // 3. Blacklist IP if present
+        if (ban_ip && user.ip_address && user.ip_address !== '127.0.0.1' && user.ip_address !== '::1') {
+            const ex = db.prepare('SELECT id FROM blacklists WHERE app_id = ? AND type = "IP" AND value = ?').get(targetAppId, user.ip_address);
+            if (!ex) {
+                db.prepare('INSERT INTO blacklists (id, app_id, type, value, reason, created_at) VALUES (?, ?, "IP", ?, ?, ?)')
+                    .run(crypto.randomUUID(), targetAppId, user.ip_address, safeReason, now);
+            }
+            ipBlacklisted = true;
+        }
+
+        logAudit(targetAppId, 'USER_BLACK_BANNED', `User ${user.username} account banned, HWID: ${hwidBlacklisted ? 'BANNED' : 'SKIP'}, IP: ${ipBlacklisted ? 'BANNED' : 'SKIP'}`, clientIp);
+
+        sendDiscordWebhook({
+            appId: targetAppId,
+            title: 'User & Hardware Blacklisted',
+            description: `User **${user.username}** and associated hardware/network have been blacklisted.`,
+            color: 0xef4444,
+            fields: [
+                { name: 'Username', value: user.username, inline: true },
+                { name: 'Reason', value: safeReason, inline: false },
+                { name: 'HWID Banned', value: user.hwid ? `\`${user.hwid}\`` : 'None', inline: true },
+                { name: 'IP Banned', value: user.ip_address || 'None', inline: true }
+            ]
+        });
+
+        return sendJson(res, 200, {
+            success: true,
+            message: `User ${user.username} and hardware/IP successfully blacklisted`,
+            hwid_banned: hwidBlacklisted,
+            ip_banned: ipBlacklisted
+        });
+    }
+
     // Logs: /api/admin/logs
     if (pathname === '/api/admin/logs' && method === 'GET') {
         const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');

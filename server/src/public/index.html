@@ -147,6 +147,10 @@
             <button onclick="switchTab('keysTab')" id="tabBtn-keysTab" class="pb-3 border-b-2 border-sky-400 text-sky-300 font-bold tracking-wide">Licenses & Keys</button>
             <button onclick="switchTab('subsTab')" id="tabBtn-subsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Subscriptions</button>
             <button onclick="switchTab('usersTab')" id="tabBtn-usersTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Registered Users</button>
+            <button onclick="switchTab('blacklistsTab')" id="tabBtn-blacklistsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition flex items-center gap-1.5">
+                <span>Blacklist &amp; Bans</span>
+                <span id="blacklistBadgeCount" class="px-1.5 py-0.5 rounded-full bg-red-950/80 text-red-300 border border-red-800/80 text-[10px] font-mono hidden">0</span>
+            </button>
             <button onclick="switchTab('varsTab')" id="tabBtn-varsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Server Variables</button>
             <button onclick="switchTab('filesTab')" id="tabBtn-filesTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Files & Payloads</button>
             <button onclick="switchTab('logsTab')" id="tabBtn-logsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Audit Logs</button>
@@ -344,6 +348,65 @@
                         <button id="btnUsersLast" onclick="goToUsersPage('last')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="Last Page">&raquo;</button>
                     </div>
                 </div>
+            </div>
+        </section>
+
+        <!-- TAB: Blacklist & Bans (HWID & IP) -->
+        <section id="blacklistsTab" class="space-y-4 hidden">
+            <!-- Header & Metric Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="glass-panel p-4 rounded-xl border-l-4 border-l-red-500">
+                    <div class="text-[11px] text-slate-400 font-mono uppercase tracking-wider font-semibold">Total Blacklisted</div>
+                    <div id="statTotalBans" class="text-2xl font-bold mt-1 text-white font-mono">0</div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl border-l-4 border-l-purple-500">
+                    <div class="text-[11px] text-slate-400 font-mono uppercase tracking-wider font-semibold">HWID Bans (เครื่อง)</div>
+                    <div id="statHwidBans" class="text-2xl font-bold mt-1 text-purple-300 font-mono">0</div>
+                </div>
+                <div class="glass-panel p-4 rounded-xl border-l-4 border-l-sky-500">
+                    <div class="text-[11px] text-slate-400 font-mono uppercase tracking-wider font-semibold">IP Bans (เน็ตเวิร์ก)</div>
+                    <div id="statIpBans" class="text-2xl font-bold mt-1 text-sky-300 font-mono">0</div>
+                </div>
+            </div>
+
+            <!-- Controls Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h3 class="text-lg font-semibold text-white">HWID &amp; IP Blacklist</h3>
+                    <div class="relative">
+                        <input type="text" id="blacklistsSearchInput" oninput="onBlacklistsSearch(this.value)" placeholder="Search HWID, IP, or reason..." class="bg-slate-900/90 border border-slate-700 pl-8 pr-3 py-1.5 rounded-lg text-white text-xs w-64 focus:outline-none focus:border-sky-400 font-mono placeholder-slate-500">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <div class="flex items-center gap-1 bg-slate-900/80 p-1 rounded-lg border border-slate-800 text-xs font-mono">
+                        <button onclick="setBlacklistsFilter('ALL')" id="filterBtn-ALL" class="px-2.5 py-1 rounded bg-sky-950 text-sky-300 border border-sky-800 font-bold transition">All</button>
+                        <button onclick="setBlacklistsFilter('HWID')" id="filterBtn-HWID" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">HWID</button>
+                        <button onclick="setBlacklistsFilter('IP')" id="filterBtn-IP" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition">IP</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btnAddBlacklist" onclick="openModal('newBlacklistModal')" class="px-4 py-2 bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:from-red-500 hover:via-rose-500 hover:to-pink-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-red-950/40 border border-red-400/20 transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                        <span>+ Add to Blacklist</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-panel rounded-xl overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
+                        <tr>
+                            <th class="px-4 py-3 w-28">Type</th>
+                            <th class="px-4 py-3">Blacklisted Target (HWID / IP)</th>
+                            <th class="px-4 py-3">Ban Reason</th>
+                            <th class="px-4 py-3 w-48">Date Added</th>
+                            <th class="px-4 py-3 text-right w-44">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="blacklistsTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No blacklisted entries</td></tr>
+                    </tbody>
+                </table>
             </div>
         </section>
 
@@ -1102,6 +1165,50 @@
         </div>
     </div>
 
+    <!-- Modal: New Blacklist Entry -->
+    <div id="newBlacklistModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newBlacklistModal')">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-red-500/20 shadow-2xl shadow-red-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-red-950/80 border border-red-700/80 text-red-400 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide">Add Target to Blacklist</h3>
+                        <p class="text-xs text-slate-400">บล็อกการเข้าถึงของเครื่องหรือไอพีที่ Gateway ถาวร (สามารถปลดแบนได้ภายหลัง)</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('newBlacklistModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <!-- Body -->
+            <div class="space-y-3.5 text-sm">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Blacklist Target Type</label>
+                    <select id="newBlacklistType" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-red-400 font-mono">
+                        <option value="HWID">Hardware ID (HWID Hash)</option>
+                        <option value="IP">IP Address (IPv4 / IPv6)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Target Value</label>
+                    <input type="text" id="newBlacklistValue" placeholder="e.g. HWID SHA256 หรือ 192.168.1.50" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-red-400 font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Reason for Ban</label>
+                    <input type="text" id="newBlacklistReason" placeholder="e.g. Memory dumping / Attempted crack" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-red-400">
+                </div>
+            </div>
+            <!-- Footer -->
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button onclick="closeModal('newBlacklistModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitNewBlacklist()" class="px-5 py-2.5 bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:from-red-500 hover:via-rose-500 hover:to-pink-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-950/40 border border-red-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Add Blacklist</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Custom Dialog Modal (Replaces browser alert/confirm) -->
     <div id="customDialogModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-[100] transition-opacity duration-200" onclick="if(event.target === this) closeCustomDialog(false)">
         <div class="glass-panel p-6 rounded-2xl w-full max-w-sm space-y-4 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0" id="customDialogCard" onclick="event.stopPropagation()">
@@ -1138,6 +1245,10 @@
         let usersCurrentPage = 1;
         const usersPageSize = 10;
         let usersSearchQuery = '';
+
+        let loadedBlacklists = [];
+        let blacklistsFilterType = 'ALL';
+        let blacklistsSearchQuery = '';
 
         let dialogResolver = null;
 
@@ -1294,7 +1405,7 @@
                 return;
             }
             if (e.key === 'Escape') {
-                ['clientPinModal', 'newAppModal', 'genKeyModal', 'extendModal', 'newVarModal', 'newSubModal', 'editSubModal'].forEach(id => {
+                ['clientPinModal', 'newAppModal', 'genKeyModal', 'extendModal', 'newVarModal', 'newSubModal', 'editSubModal', 'newBlacklistModal'].forEach(id => {
                     const m = document.getElementById(id);
                     if (m && !m.classList.contains('hidden')) closeModal(id);
                 });
@@ -1371,6 +1482,12 @@
             if (btnAddFile) {
                 if (hasApp) btnAddFile.classList.remove('hidden');
                 else btnAddFile.classList.add('hidden');
+            }
+
+            const btnAddBlacklist = document.getElementById('btnAddBlacklist');
+            if (btnAddBlacklist) {
+                if (hasApp) btnAddBlacklist.classList.remove('hidden');
+                else btnAddBlacklist.classList.add('hidden');
             }
         }
 
@@ -1677,6 +1794,17 @@
             document.getElementById('varsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('filesTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            const blBody = document.getElementById('blacklistsTableBody');
+            if (blBody) blBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">${escapeHtml(message)}</td></tr>`;
+            const sTotalBans = document.getElementById('statTotalBans');
+            if (sTotalBans) sTotalBans.textContent = '0';
+            const sHwidBans = document.getElementById('statHwidBans');
+            if (sHwidBans) sHwidBans.textContent = '0';
+            const sIpBans = document.getElementById('statIpBans');
+            if (sIpBans) sIpBans.textContent = '0';
+            const blBadge = document.getElementById('blacklistBadgeCount');
+            if (blBadge) blBadge.classList.add('hidden');
+            loadedBlacklists = [];
             
             const genSubEl = document.getElementById('genSubName');
             if (genSubEl) genSubEl.innerHTML = '<option value="default" selected>default</option>';
@@ -1849,6 +1977,7 @@
             loadVars();
             loadFiles();
             loadLogs();
+            loadBlacklists();
             loadAppSettings();
         }
 
@@ -2232,6 +2361,7 @@
                         <button onclick="openExtendModal('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-sky-950/70 hover:bg-sky-900 border border-sky-800 text-xs rounded text-sky-300 transition">+ Extend</button>
                         <button onclick="resetHwid('${u.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded text-slate-300 transition">Reset HWID</button>
                         <button onclick="toggleBan('${u.id}', ${u.banned ? 0 : 1})" class="px-2 py-1 ${u.banned ? 'bg-emerald-800 hover:bg-emerald-700' : 'bg-red-800 hover:bg-red-700'} text-xs rounded text-white transition">${u.banned ? 'Unban' : 'Ban'}</button>
+                        <button onclick="quickBlacklistUser('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-red-950/80 hover:bg-red-900 border border-red-800 text-xs rounded text-red-300 hover:text-white transition" title="Ban Account, HWID, and IP address simultaneously">Ban HWID/IP</button>
                         <button onclick="deleteSingleUser('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-red-950/70 hover:bg-red-900 border border-red-800/70 text-xs rounded text-red-400 transition">Delete</button>
                     </td>
                 `;
@@ -3006,22 +3136,227 @@
         }
 
         function switchTab(tabId) {
-            ['keysTab', 'subsTab', 'usersTab', 'varsTab', 'filesTab', 'logsTab', 'settingsTab'].forEach(t => {
+            ['keysTab', 'subsTab', 'usersTab', 'blacklistsTab', 'varsTab', 'filesTab', 'logsTab', 'settingsTab'].forEach(t => {
                 const el = document.getElementById(t);
                 const btn = document.getElementById(`tabBtn-${t}`);
                 if (el) el.classList.add('hidden');
-                if (btn) btn.className = 'pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition';
+                if (btn) btn.className = 'pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition flex items-center gap-1.5';
             });
             const targetEl = document.getElementById(tabId);
             const targetBtn = document.getElementById(`tabBtn-${tabId}`);
             if (targetEl) targetEl.classList.remove('hidden');
-            if (targetBtn) targetBtn.className = 'pb-3 border-b-2 border-sky-400 text-sky-300 font-bold tracking-wide';
+            if (targetBtn) targetBtn.className = 'pb-3 border-b-2 border-sky-400 text-sky-300 font-bold tracking-wide flex items-center gap-1.5';
             if (tabId === 'settingsTab') {
                 loadAppSettings();
             } else if (tabId === 'subsTab') {
                 loadSubscriptions();
             } else if (tabId === 'filesTab') {
                 loadFiles();
+            } else if (tabId === 'blacklistsTab') {
+                loadBlacklists();
+            }
+        }
+
+        // ==========================================
+        // HWID & IP Blacklist Management Engine
+        // ==========================================
+        function onBlacklistsSearch(q) {
+            blacklistsSearchQuery = (q || '').toLowerCase().trim();
+            renderBlacklistsTable();
+        }
+
+        function setBlacklistsFilter(type) {
+            blacklistsFilterType = type;
+            ['ALL', 'HWID', 'IP'].forEach(t => {
+                const btn = document.getElementById(`filterBtn-${t}`);
+                if (btn) {
+                    if (t === type) {
+                        btn.className = 'px-2.5 py-1 rounded bg-sky-950 text-sky-300 border border-sky-800 font-bold transition';
+                    } else {
+                        btn.className = 'px-2.5 py-1 rounded text-slate-400 hover:text-white transition';
+                    }
+                }
+            });
+            renderBlacklistsTable();
+        }
+
+        async function loadBlacklists() {
+            if (!currentAppId) {
+                const tbody = document.getElementById('blacklistsTableBody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
+                const sTotal = document.getElementById('statTotalBans');
+                if (sTotal) sTotal.textContent = '0';
+                const sHwid = document.getElementById('statHwidBans');
+                if (sHwid) sHwid.textContent = '0';
+                const sIp = document.getElementById('statIpBans');
+                if (sIp) sIp.textContent = '0';
+                const badge = document.getElementById('blacklistBadgeCount');
+                if (badge) badge.classList.add('hidden');
+                loadedBlacklists = [];
+                return;
+            }
+            const res = await api(`/api/admin/blacklists?app_id=${currentAppId}`);
+            const tbody = document.getElementById('blacklistsTableBody');
+            if (!res || !res.success) {
+                if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load blacklists')}</td></tr>`;
+                return;
+            }
+            loadedBlacklists = res.blacklists || [];
+            const hwidCount = loadedBlacklists.filter(b => b.type === 'HWID').length;
+            const ipCount = loadedBlacklists.filter(b => b.type === 'IP').length;
+            
+            const sTotal = document.getElementById('statTotalBans');
+            if (sTotal) sTotal.textContent = loadedBlacklists.length;
+            const sHwid = document.getElementById('statHwidBans');
+            if (sHwid) sHwid.textContent = hwidCount;
+            const sIp = document.getElementById('statIpBans');
+            if (sIp) sIp.textContent = ipCount;
+
+            const badge = document.getElementById('blacklistBadgeCount');
+            if (badge) {
+                if (loadedBlacklists.length > 0) {
+                    badge.textContent = loadedBlacklists.length;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+            renderBlacklistsTable();
+        }
+
+        function renderBlacklistsTable() {
+            const tbody = document.getElementById('blacklistsTableBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let filtered = loadedBlacklists;
+            if (blacklistsFilterType !== 'ALL') {
+                filtered = filtered.filter(b => b.type === blacklistsFilterType);
+            }
+            if (blacklistsSearchQuery) {
+                filtered = filtered.filter(b => 
+                    (b.value && b.value.toLowerCase().includes(blacklistsSearchQuery)) ||
+                    (b.reason && b.reason.toLowerCase().includes(blacklistsSearchQuery)) ||
+                    (b.type && b.type.toLowerCase().includes(blacklistsSearchQuery))
+                );
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">${blacklistsSearchQuery ? 'No blacklisted items matched your search' : 'No blacklisted targets registered'}</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                const isHwid = item.type === 'HWID';
+                const typeBadge = isHwid
+                    ? '<span class="px-2 py-0.5 rounded bg-purple-950/80 text-purple-300 border border-purple-800/80 font-mono text-[11px] font-semibold">HWID</span>'
+                    : '<span class="px-2 py-0.5 rounded bg-sky-950/80 text-sky-300 border border-sky-800/80 font-mono text-[11px] font-semibold">IP ADDR</span>';
+
+                const dateStr = item.created_at ? new Date(item.created_at * 1000).toLocaleString() : 'N/A';
+                const displayVal = item.value || '';
+
+                tr.innerHTML = `
+                    <td class="px-4 py-3">${typeBadge}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-2">
+                            <code class="font-mono text-xs text-white bg-slate-900/90 px-2 py-1 rounded border border-slate-800 select-all max-w-[280px] sm:max-w-md truncate" title="${escapeHtml(displayVal)}">${escapeHtml(displayVal)}</code>
+                            <button onclick="copyToClipboard('${escapeHtml(displayVal)}', this)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-[10px] transition shrink-0" title="Copy">Copy</button>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-slate-300 text-xs">${escapeHtml(item.reason || 'None')}</td>
+                    <td class="px-4 py-3 text-slate-400 font-mono text-xs whitespace-nowrap">${escapeHtml(dateStr)}</td>
+                    <td class="px-4 py-3 text-right">
+                        <button onclick="deleteBlacklistEntry('${item.id}', '${item.type}', '${escapeHtml(displayVal)}')" class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-700/80 text-emerald-300 hover:text-white text-xs font-medium rounded-lg transition shadow-sm" title="Unban this target">
+                            <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                            <span>Unban (ปลดแบน)</span>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function submitNewBlacklist() {
+            if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
+            const typeEl = document.getElementById('newBlacklistType');
+            const valEl = document.getElementById('newBlacklistValue');
+            const reasonEl = document.getElementById('newBlacklistReason');
+
+            const type = typeEl ? typeEl.value : 'HWID';
+            const value = valEl ? valEl.value.trim() : '';
+            const reason = reasonEl ? reasonEl.value.trim() : '';
+
+            if (!value) return customAlert('Target value (HWID hash or IP address) is required', { type: 'warning' });
+
+            const res = await api('/api/admin/blacklists', {
+                method: 'POST',
+                body: { app_id: currentAppId, type, value, reason }
+            });
+
+            if (res && res.success) {
+                closeModal('newBlacklistModal');
+                if (valEl) valEl.value = '';
+                if (reasonEl) reasonEl.value = '';
+                showToast('Target added to blacklist successfully', 'success');
+                loadBlacklists();
+            } else {
+                customAlert(res && res.message ? res.message : 'Failed to add blacklist entry', { type: 'error' });
+            }
+        }
+
+        async function deleteBlacklistEntry(id, type, value) {
+            const ok = await customConfirm(`Are you sure you want to Unban (ปลดแบน) ${type}:\n${value}\n\nAccess will be restored immediately without restarting the server.`, {
+                title: 'Confirm Real-Time Unban',
+                confirmText: 'Unban Now'
+            });
+            if (!ok) return;
+
+            const res = await api(`/api/admin/blacklists?id=${encodeURIComponent(id)}`, {
+                method: 'DELETE'
+            });
+
+            if (res && res.success) {
+                showToast('Target unbanned successfully! Access restored.', 'success');
+                loadBlacklists();
+            } else {
+                customAlert(res && res.message ? res.message : 'Failed to unban entry', { type: 'error' });
+            }
+        }
+
+        async function quickBlacklistUser(userId, username) {
+            if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
+            const user = loadedUsers.find(u => u.id === userId);
+            const hwid = (user && user.hwid) ? user.hwid : 'None';
+            const ip = (user && user.ip_address) ? user.ip_address : 'None';
+
+            const ok = await customConfirm(
+                `Are you sure you want to Ban & Blacklist user "${username}"?\n\nThis will simultaneously:\n• Ban user account in database\n• Blacklist HWID: ${hwid}\n• Blacklist IP: ${ip}\n\nClient will be immediately blocked at the Gateway level.`,
+                {
+                    title: 'Ban Account + HWID + IP',
+                    isDanger: true,
+                    confirmText: 'Ban & Blacklist All'
+                }
+            );
+            if (!ok) return;
+
+            const res = await api('/api/admin/users/blacklist', {
+                method: 'POST',
+                body: {
+                    app_id: currentAppId,
+                    user_id: userId,
+                    ban_hwid: true,
+                    ban_ip: true,
+                    reason: `Admin quick-ban of user ${username}`
+                }
+            });
+
+            if (res && res.success) {
+                showToast(`User ${username} and hardware blacklisted successfully`, 'success');
+                loadUsers();
+                loadBlacklists();
+            } else {
+                customAlert(res && res.message ? res.message : 'Failed to blacklist user', { type: 'error' });
             }
         }
 
