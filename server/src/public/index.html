@@ -125,13 +125,12 @@
                             <th class="px-4 py-3">License Key</th>
                             <th class="px-4 py-3">Sub Plan</th>
                             <th class="px-4 py-3">Duration</th>
-                            <th class="px-4 py-3">Level</th>
                             <th class="px-4 py-3">Status</th>
                             <th class="px-4 py-3">Created</th>
                         </tr>
                     </thead>
                     <tbody id="keysTableBody" class="divide-y divide-gray-800/50 font-mono text-xs text-gray-300">
-                        <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">Select an app or generate keys</td></tr>
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">Select an app or generate keys</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -444,7 +443,7 @@
 
         async function loadKeys() {
             if (!currentAppId) {
-                document.getElementById('keysTableBody').innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('keysTableBody').innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
                 document.getElementById('statTotalKeys').textContent = '0';
                 document.getElementById('statUnusedKeys').textContent = '0';
                 return;
@@ -453,7 +452,7 @@
             const tbody = document.getElementById('keysTableBody');
             tbody.innerHTML = '';
             if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load licenses')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load licenses')}</td></tr>`;
                 document.getElementById('statTotalKeys').textContent = '0';
                 document.getElementById('statUnusedKeys').textContent = '0';
                 return;
@@ -463,7 +462,7 @@
             document.getElementById('statUnusedKeys').textContent = keys.filter(k => k.status === 'unregistered').length;
 
             if (keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No licenses generated yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">No licenses generated yet</td></tr>';
                 return;
             }
 
@@ -481,7 +480,6 @@
                     <td class="px-4 py-3 font-bold text-pink-300 font-mono">${escapeHtml(k.key)}</td>
                     <td class="px-4 py-3">${escapeHtml(k.sub_name)}</td>
                     <td class="px-4 py-3">${days} days</td>
-                    <td class="px-4 py-3">Lvl ${k.level}</td>
                     <td class="px-4 py-3">${statusBadge}</td>
                     <td class="px-4 py-3 text-gray-400">${dateStr}</td>
                 `;

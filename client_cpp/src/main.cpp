@@ -96,7 +96,6 @@ int main() {
     } else {
         std::cout << "[+] " << resp.message << std::endl;
         std::cout << "[+] Authenticated as: " << resp.user.username << std::endl;
-        std::cout << "[+] Subscription Level: " << resp.user.level << std::endl;
         
         std::time_t expTime = static_cast<std::time_t>(resp.user.expires_at);
         std::cout << "[+] Expires At: " << std::asctime(std::localtime(&expTime));
