@@ -113,7 +113,13 @@
         <!-- TAB 1: Licenses -->
         <section id="keysTab" class="space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h3 class="text-lg font-semibold text-white">License Keys</h3>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h3 class="text-lg font-semibold text-white">License Keys</h3>
+                    <div class="relative">
+                        <input type="text" id="keysSearchInput" oninput="onKeysSearch(this.value)" placeholder="Search keys, plan, status..." class="bg-gray-800 border border-gray-700 pl-8 pr-3 py-1.5 rounded-lg text-white text-xs w-60 focus:outline-none focus:border-pink-500 font-mono">
+                        <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
                 <div id="keysActionsGroup" class="flex flex-wrap items-center gap-2">
                     <button onclick="deleteSelectedKeys()" class="px-3 py-1.5 bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg text-xs font-medium transition">
                         Delete Selected
@@ -146,13 +152,30 @@
                         <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Select an app or generate keys</td></tr>
                     </tbody>
                 </table>
+                <!-- Keys Pagination -->
+                <div id="keysPaginationBar" class="p-3 bg-gray-900/60 border-t border-gray-800 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400 font-mono">
+                    <span id="keysPageInfo">Page 1 of 1 (0 keys)</span>
+                    <div class="flex items-center gap-1">
+                        <button id="btnKeysFirst" onclick="goToKeysPage(1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="First Page">&laquo;</button>
+                        <button id="btnKeysPrev" onclick="goToKeysPage(keysCurrentPage - 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Previous Page">&lsaquo;</button>
+                        <span id="keysPageIndicator" class="px-2.5 py-1 bg-gray-900 border border-gray-700 rounded text-pink-400 font-bold">1</span>
+                        <button id="btnKeysNext" onclick="goToKeysPage(keysCurrentPage + 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Next Page">&rsaquo;</button>
+                        <button id="btnKeysLast" onclick="goToKeysPage('last')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Last Page">&raquo;</button>
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- TAB 2: Users -->
         <section id="usersTab" class="space-y-4 hidden">
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <h3 class="text-lg font-semibold text-white">User Accounts & HWID Records</h3>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <h3 class="text-lg font-semibold text-white">User Accounts & HWID Records</h3>
+                    <div class="relative">
+                        <input type="text" id="usersSearchInput" oninput="onUsersSearch(this.value)" placeholder="Search username, HWID, IP..." class="bg-gray-800 border border-gray-700 pl-8 pr-3 py-1.5 rounded-lg text-white text-xs w-60 focus:outline-none focus:border-pink-500 font-mono">
+                        <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                </div>
                 <div id="usersActionsGroup" class="flex flex-wrap items-center gap-2">
                     <button onclick="openExtendModal()" class="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-pink-900/30">
                         + Extend Timer
@@ -185,6 +208,17 @@
                         <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No users found</td></tr>
                     </tbody>
                 </table>
+                <!-- Users Pagination -->
+                <div id="usersPaginationBar" class="p-3 bg-gray-900/60 border-t border-gray-800 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400 font-mono">
+                    <span id="usersPageInfo">Page 1 of 1 (0 users)</span>
+                    <div class="flex items-center gap-1">
+                        <button id="btnUsersFirst" onclick="goToUsersPage(1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="First Page">&laquo;</button>
+                        <button id="btnUsersPrev" onclick="goToUsersPage(usersCurrentPage - 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Previous Page">&lsaquo;</button>
+                        <span id="usersPageIndicator" class="px-2.5 py-1 bg-gray-900 border border-gray-700 rounded text-pink-400 font-bold">1</span>
+                        <button id="btnUsersNext" onclick="goToUsersPage(usersCurrentPage + 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Next Page">&rsaquo;</button>
+                        <button id="btnUsersLast" onclick="goToUsersPage('last')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Last Page">&raquo;</button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -365,6 +399,16 @@
         let currentAppId = null;
         let isAuthorized = false;
 
+        let allKeys = [];
+        let keysCurrentPage = 1;
+        const keysPageSize = 10;
+        let keysSearchQuery = '';
+
+        let loadedUsers = [];
+        let usersCurrentPage = 1;
+        const usersPageSize = 10;
+        let usersSearchQuery = '';
+
         async function copyToClipboard(text, btn) {
             try {
                 await navigator.clipboard.writeText(text);
@@ -430,6 +474,17 @@
 
         function clearAllData(message = 'No application selected') {
             currentAppId = null;
+            allKeys = [];
+            loadedUsers = [];
+            keysCurrentPage = 1;
+            usersCurrentPage = 1;
+            keysSearchQuery = '';
+            usersSearchQuery = '';
+            const ki = document.getElementById('keysSearchInput');
+            if (ki) ki.value = '';
+            const ui = document.getElementById('usersSearchInput');
+            if (ui) ui.value = '';
+
             document.getElementById('appInfoBar').innerHTML = '';
             document.getElementById('statUsers').textContent = '0';
             document.getElementById('statUnusedKeys').textContent = '0';
@@ -438,6 +493,33 @@
             document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('varsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            const kpi = document.getElementById('keysPageInfo');
+            if (kpi) kpi.textContent = 'Page 1 of 1 (0 keys)';
+            const upi = document.getElementById('usersPageInfo');
+            if (upi) upi.textContent = 'Page 1 of 1 (0 users)';
+            const kInd = document.getElementById('keysPageIndicator');
+            if (kInd) kInd.textContent = '1';
+            const uInd = document.getElementById('usersPageIndicator');
+            if (uInd) uInd.textContent = '1';
+
+            const btnKFirst = document.getElementById('btnKeysFirst');
+            const btnKPrev = document.getElementById('btnKeysPrev');
+            const btnKNext = document.getElementById('btnKeysNext');
+            const btnKLast = document.getElementById('btnKeysLast');
+            if (btnKFirst) btnKFirst.disabled = true;
+            if (btnKPrev) btnKPrev.disabled = true;
+            if (btnKNext) btnKNext.disabled = true;
+            if (btnKLast) btnKLast.disabled = true;
+
+            const btnUFirst = document.getElementById('btnUsersFirst');
+            const btnUPrev = document.getElementById('btnUsersPrev');
+            const btnUNext = document.getElementById('btnUsersNext');
+            const btnULast = document.getElementById('btnUsersLast');
+            if (btnUFirst) btnUFirst.disabled = true;
+            if (btnUPrev) btnUPrev.disabled = true;
+            if (btnUNext) btnUNext.disabled = true;
+            if (btnULast) btnULast.disabled = true;
+
             updateActionButtons();
         }
 
@@ -530,35 +612,76 @@
             loadLogs();
         }
 
-        async function loadKeys() {
-            if (!currentAppId) {
-                document.getElementById('keysTableBody').innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
-                document.getElementById('statTotalKeys').textContent = '0';
-                document.getElementById('statUnusedKeys').textContent = '0';
-                return;
+        function getFilteredKeys() {
+            if (!keysSearchQuery) return allKeys;
+            const q = keysSearchQuery.toLowerCase();
+            return allKeys.filter(k => {
+                const keyStr = (k.key || '').toLowerCase();
+                const subStr = (k.sub_name || '').toLowerCase();
+                const statusStr = k.status === 'unregistered' ? 'unused unregistered' : 'activated used';
+                return keyStr.includes(q) || subStr.includes(q) || statusStr.includes(q);
+            });
+        }
+
+        function onKeysSearch(query) {
+            keysSearchQuery = (query || '').trim();
+            keysCurrentPage = 1;
+            renderKeysTable();
+        }
+
+        function goToKeysPage(page) {
+            const filtered = getFilteredKeys();
+            const totalPages = Math.max(1, Math.ceil(filtered.length / keysPageSize));
+            if (page === 'last') {
+                keysCurrentPage = totalPages;
+            } else {
+                keysCurrentPage = Math.max(1, Math.min(totalPages, Number(page) || 1));
             }
-            const res = await api(`/api/admin/licenses?app_id=${currentAppId}`);
+            renderKeysTable();
+        }
+
+        function renderKeysTable() {
             const tbody = document.getElementById('keysTableBody');
-            tbody.innerHTML = '';
             const checkAll = document.getElementById('checkAllKeys');
             if (checkAll) checkAll.checked = false;
 
-            if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load licenses')}</td></tr>`;
-                document.getElementById('statTotalKeys').textContent = '0';
-                document.getElementById('statUnusedKeys').textContent = '0';
+            const filtered = getFilteredKeys();
+            const totalItems = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / keysPageSize));
+
+            if (keysCurrentPage > totalPages) keysCurrentPage = totalPages;
+            if (keysCurrentPage < 1) keysCurrentPage = 1;
+
+            const startIndex = (keysCurrentPage - 1) * keysPageSize;
+            const pageKeys = filtered.slice(startIndex, startIndex + keysPageSize);
+
+            const pageInfo = document.getElementById('keysPageInfo');
+            if (pageInfo) {
+                if (keysSearchQuery) {
+                    pageInfo.textContent = `Page ${keysCurrentPage} of ${totalPages} (${totalItems} matched, ${allKeys.length} total)`;
+                } else {
+                    pageInfo.textContent = `Page ${keysCurrentPage} of ${totalPages} (${totalItems} keys)`;
+                }
+            }
+            const pageIndicator = document.getElementById('keysPageIndicator');
+            if (pageIndicator) pageIndicator.textContent = keysCurrentPage;
+
+            const btnFirst = document.getElementById('btnKeysFirst');
+            const btnPrev = document.getElementById('btnKeysPrev');
+            const btnNext = document.getElementById('btnKeysNext');
+            const btnLast = document.getElementById('btnKeysLast');
+            if (btnFirst) btnFirst.disabled = (keysCurrentPage <= 1);
+            if (btnPrev) btnPrev.disabled = (keysCurrentPage <= 1);
+            if (btnNext) btnNext.disabled = (keysCurrentPage >= totalPages);
+            if (btnLast) btnLast.disabled = (keysCurrentPage >= totalPages);
+
+            tbody.innerHTML = '';
+            if (pageKeys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">${keysSearchQuery ? 'No license keys matched your search' : 'No licenses generated yet'}</td></tr>`;
                 return;
             }
-            const keys = res.licenses || [];
-            document.getElementById('statTotalKeys').textContent = keys.length;
-            document.getElementById('statUnusedKeys').textContent = keys.filter(k => k.status === 'unregistered').length;
 
-            if (keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No licenses generated yet</td></tr>';
-                return;
-            }
-
-            keys.forEach(k => {
+            pageKeys.forEach(k => {
                 const tr = document.createElement('tr');
                 const isUnused = k.status === 'unregistered';
                 const statusBadge = isUnused
@@ -583,38 +706,106 @@
             });
         }
 
-        let loadedUsers = [];
-
-        async function loadUsers() {
+        async function loadKeys() {
             if (!currentAppId) {
-                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
-                document.getElementById('statUsers').textContent = '0';
-                loadedUsers = [];
+                document.getElementById('keysTableBody').innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('statTotalKeys').textContent = '0';
+                document.getElementById('statUnusedKeys').textContent = '0';
+                allKeys = [];
+                renderKeysTable();
                 return;
             }
-            const res = await api(`/api/admin/users?app_id=${currentAppId}`);
+            const res = await api(`/api/admin/licenses?app_id=${currentAppId}`);
+            const tbody = document.getElementById('keysTableBody');
+
+            if (!res || !res.success) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load licenses')}</td></tr>`;
+                document.getElementById('statTotalKeys').textContent = '0';
+                document.getElementById('statUnusedKeys').textContent = '0';
+                allKeys = [];
+                return;
+            }
+            allKeys = res.licenses || [];
+            document.getElementById('statTotalKeys').textContent = allKeys.length;
+            document.getElementById('statUnusedKeys').textContent = allKeys.filter(k => k.status === 'unregistered').length;
+
+            renderKeysTable();
+        }
+
+        function getFilteredUsers() {
+            if (!usersSearchQuery) return loadedUsers;
+            const q = usersSearchQuery.toLowerCase();
+            const now = Math.floor(Date.now() / 1000);
+            return loadedUsers.filter(u => {
+                const username = (u.username || '').toLowerCase();
+                const hwid = (u.hwid || '').toLowerCase();
+                const ip = (u.ip_address || '').toLowerCase();
+                const isExpired = u.expires_at <= now;
+                const statusStr = (u.banned ? 'banned ' : '') + (isExpired ? 'expired ' : 'active ');
+                return username.includes(q) || hwid.includes(q) || ip.includes(q) || statusStr.includes(q);
+            });
+        }
+
+        function onUsersSearch(query) {
+            usersSearchQuery = (query || '').trim();
+            usersCurrentPage = 1;
+            renderUsersTable();
+        }
+
+        function goToUsersPage(page) {
+            const filtered = getFilteredUsers();
+            const totalPages = Math.max(1, Math.ceil(filtered.length / usersPageSize));
+            if (page === 'last') {
+                usersCurrentPage = totalPages;
+            } else {
+                usersCurrentPage = Math.max(1, Math.min(totalPages, Number(page) || 1));
+            }
+            renderUsersTable();
+        }
+
+        function renderUsersTable() {
             const tbody = document.getElementById('usersTableBody');
-            tbody.innerHTML = '';
             const checkAll = document.getElementById('checkAllUsers');
             if (checkAll) checkAll.checked = false;
 
-            if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load users')}</td></tr>`;
-                document.getElementById('statUsers').textContent = '0';
-                loadedUsers = [];
-                return;
-            }
-            const users = res.users || [];
-            loadedUsers = users;
-            document.getElementById('statUsers').textContent = users.length;
+            const filtered = getFilteredUsers();
+            const totalItems = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / usersPageSize));
 
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No users registered yet</td></tr>';
+            if (usersCurrentPage > totalPages) usersCurrentPage = totalPages;
+            if (usersCurrentPage < 1) usersCurrentPage = 1;
+
+            const startIndex = (usersCurrentPage - 1) * usersPageSize;
+            const pageUsers = filtered.slice(startIndex, startIndex + usersPageSize);
+
+            const pageInfo = document.getElementById('usersPageInfo');
+            if (pageInfo) {
+                if (usersSearchQuery) {
+                    pageInfo.textContent = `Page ${usersCurrentPage} of ${totalPages} (${totalItems} matched, ${loadedUsers.length} total)`;
+                } else {
+                    pageInfo.textContent = `Page ${usersCurrentPage} of ${totalPages} (${totalItems} users)`;
+                }
+            }
+            const pageIndicator = document.getElementById('usersPageIndicator');
+            if (pageIndicator) pageIndicator.textContent = usersCurrentPage;
+
+            const btnFirst = document.getElementById('btnUsersFirst');
+            const btnPrev = document.getElementById('btnUsersPrev');
+            const btnNext = document.getElementById('btnUsersNext');
+            const btnLast = document.getElementById('btnUsersLast');
+            if (btnFirst) btnFirst.disabled = (usersCurrentPage <= 1);
+            if (btnPrev) btnPrev.disabled = (usersCurrentPage <= 1);
+            if (btnNext) btnNext.disabled = (usersCurrentPage >= totalPages);
+            if (btnLast) btnLast.disabled = (usersCurrentPage >= totalPages);
+
+            tbody.innerHTML = '';
+            if (pageUsers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">${usersSearchQuery ? 'No users matched your search' : 'No users registered yet'}</td></tr>`;
                 return;
             }
 
             const now = Math.floor(Date.now() / 1000);
-            users.forEach(u => {
+            pageUsers.forEach(u => {
                 const tr = document.createElement('tr');
                 const hwidText = u.hwid ? `${escapeHtml(u.hwid.slice(0, 16))}...` : '<span class="text-amber-400">Unbound</span>';
                 const isExpired = u.expires_at <= now;
@@ -641,6 +832,29 @@
                 `;
                 tbody.appendChild(tr);
             });
+        }
+
+        async function loadUsers() {
+            if (!currentAppId) {
+                document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('statUsers').textContent = '0';
+                loadedUsers = [];
+                renderUsersTable();
+                return;
+            }
+            const res = await api(`/api/admin/users?app_id=${currentAppId}`);
+            const tbody = document.getElementById('usersTableBody');
+
+            if (!res || !res.success) {
+                tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load users')}</td></tr>`;
+                document.getElementById('statUsers').textContent = '0';
+                loadedUsers = [];
+                return;
+            }
+            loadedUsers = res.users || [];
+            document.getElementById('statUsers').textContent = loadedUsers.length;
+
+            renderUsersTable();
         }
 
         // Extend Timer Functions
