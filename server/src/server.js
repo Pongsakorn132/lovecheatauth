@@ -49,7 +49,7 @@ const server = http.createServer((req, res) => {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Admin-Key');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Session-Token, X-Admin-Key, X-Seller-Key');
 
     if (req.method === 'OPTIONS') {
         res.writeHead(204);
@@ -95,7 +95,7 @@ const server = http.createServer((req, res) => {
                 return handleApiRequest(req, res, url, body);
             }
 
-            if (url.pathname.startsWith('/api/admin/')) {
+            if (url.pathname.startsWith('/api/admin/') || url.pathname.startsWith('/api/seller/')) {
                 return handleAdminRequest(req, res, url, body);
             }
 

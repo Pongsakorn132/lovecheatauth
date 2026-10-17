@@ -4,50 +4,17 @@ const cryptoUtils = require('../crypto');
 
 const MASTER_KEY = process.env.ADMIN_KEY || 'kawaii_master_secret';
 
-function handleAdminRequest(req, res, url, body) {
-    const adminKey = req.headers['x-admin-key'] || url.searchParams.get('admin_key');
-    if (adminKey !== MASTER_KEY) {
-        return sendJson(res, 401, { success: false, message: 'Invalid X-Admin-Key authorization' });
+function logAudit(appId, event, details, ip) {
+    try {
+        const now = Math.floor(Date.now() / 1000);
+        db.prepare(`
+            INSERT INTO audit_logs (app_id, event, details, ip, created_at)
+            VALUES (?, ?, ?, ?, ?)
+        `).run(appId || null, event, details, ip || '127.0.0.1', now);
+    } catch (e) {
+        console.error('[Audit Log Error]', e);
     }
-
-    const pathname = url.pathname;
-    const method = req.method;
-    const now = Math.floor(Date.now() / 1000);
-
-    // List all apps
-    if (pathname === '/api/admin/apps' && method === 'GET') {
-        const apps = db.prepare('SELECT * FROM apps ORDER BY created_at DESC').all();
-        const stats = apps.map(app => {
-            const userCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE app_id = ?').get(app.id).count;
-            const licenseCount = db.prepare('SELECT COUNT(*) as count FROM licenses WHERE app_id = ?').get(app.id).count;
-            return { ...app, userCount, licenseCount };
-        });
-        return sendJson(res, 200, { success: true, apps: stats });
-    }
-
-    // Create app
-    if (pathname === '/api/admin/apps' && method === 'POST') {
-        const { name, version, hwid_lock, hash_check, app_hash } = body;
-        if (!name) return sendJson(res, 400, { success: false, message: 'App name is required' });
-
-        const appId = crypto.randomUUID();
-        const secretHash = cryptoUtils.generateRandomHex(32);
-
-        try {
-            db.prepare(`
-                INSERT INTO apps (id, name, secret_hash, version, status, hwid_lock, hash_check, app_hash, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(appId, name, secretHash, version || '1.0', 'active', hwid_lock !== false ? 1 : 0, hash_check ? 1 : 0, app_hash || null, now);
-            
-            return sendJson(res, 201, {
-                success: true,
-                message: 'Application created',
-                app: { id: appId, name, secret_hash: secretHash, version: version || '1.0' }
-            });
-        } catch (err) {
-            return sendJson(res, 400, { success: false, message: 'App name already exists' });
-        }
-    }
+}
 
 function getRandomChar(caseMode) {
     let chars;
@@ -56,7 +23,6 @@ function getRandomChar(caseMode) {
     } else if (caseMode === 'lower') {
         chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     } else {
-        // mixed: both uppercase, lowercase, and numbers 0-9
         chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     }
     return chars[crypto.randomInt(0, chars.length)];
@@ -74,9 +40,157 @@ function generateKeyFromPattern(pattern, caseMode) {
     return (trimmed + sep + '****-****-****-****').replace(/[*]/g, () => getRandomChar(caseMode));
 }
 
+function handleAdminRequest(req, res, url, body) {
+    const rawPath = url.pathname;
+    const pathname = rawPath.replace(/^\/api\/seller\//, '/api/admin/');
+    const method = req.method;
+    const now = Math.floor(Date.now() / 1000);
+    const clientIp = req.socket?.remoteAddress || '127.0.0.1';
+
+    const adminKey = req.headers['x-admin-key'] || url.searchParams.get('admin_key');
+    const sellerKey = req.headers['x-seller-key'] || url.searchParams.get('seller_key') || (body && typeof body === 'object' ? body.seller_key : null);
+
+    let isAdmin = false;
+    let isSeller = false;
+    let sellerApp = null;
+
+    if (adminKey === MASTER_KEY) {
+        isAdmin = true;
+    } else {
+        const testSellerKey = sellerKey || adminKey;
+        if (testSellerKey) {
+            sellerApp = db.prepare('SELECT * FROM apps WHERE seller_key = ?').get(testSellerKey);
+            if (sellerApp) {
+                isSeller = true;
+            }
+        }
+    }
+
+    if (!isAdmin && !isSeller) {
+        return sendJson(res, 401, { success: false, message: 'Invalid X-Admin-Key or X-Seller-Key authorization' });
+    }
+
+    // If request is from a seller, force app_id scope to seller's application
+    if (isSeller) {
+        url.searchParams.set('app_id', sellerApp.id);
+        if (body && typeof body === 'object') {
+            body.app_id = sellerApp.id;
+        }
+    }
+
+    // List all apps (or seller's app only)
+    if (pathname === '/api/admin/apps' && method === 'GET') {
+        if (isSeller) {
+            const userCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE app_id = ?').get(sellerApp.id).count;
+            const licenseCount = db.prepare('SELECT COUNT(*) as count FROM licenses WHERE app_id = ?').get(sellerApp.id).count;
+            return sendJson(res, 200, { success: true, apps: [{ ...sellerApp, userCount, licenseCount }] });
+        }
+        const apps = db.prepare('SELECT * FROM apps ORDER BY created_at DESC').all();
+        const stats = apps.map(app => {
+            const userCount = db.prepare('SELECT COUNT(*) as count FROM users WHERE app_id = ?').get(app.id).count;
+            const licenseCount = db.prepare('SELECT COUNT(*) as count FROM licenses WHERE app_id = ?').get(app.id).count;
+            return { ...app, userCount, licenseCount };
+        });
+        return sendJson(res, 200, { success: true, apps: stats });
+    }
+
+    // Create app (Admin only)
+    if (pathname === '/api/admin/apps' && method === 'POST') {
+        if (isSeller) {
+            return sendJson(res, 403, { success: false, message: 'Sellers cannot create new applications' });
+        }
+
+        const { name, version, hwid_lock, hash_check, app_hash } = body || {};
+        if (!name) return sendJson(res, 400, { success: false, message: 'App name is required' });
+
+        const appId = crypto.randomUUID();
+        const secretHash = cryptoUtils.generateRandomHex(32);
+        const newSellerKey = 'seller_' + crypto.randomBytes(16).toString('hex');
+
+        try {
+            db.prepare(`
+                INSERT INTO apps (id, name, secret_hash, seller_key, version, status, hwid_lock, hash_check, app_hash, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(appId, name, secretHash, newSellerKey, version || '1.0', 'active', hwid_lock !== false ? 1 : 0, hash_check ? 1 : 0, app_hash || null, now);
+            
+            logAudit(appId, 'APP_CREATED', `Application '${name}' created`, clientIp);
+
+            return sendJson(res, 201, {
+                success: true,
+                message: 'Application created',
+                app: { id: appId, name, secret_hash: secretHash, seller_key: newSellerKey, version: version || '1.0' }
+            });
+        } catch (err) {
+            return sendJson(res, 400, { success: false, message: 'App name already exists' });
+        }
+    }
+
+    // App Settings: Update Version (/api/admin/apps/settings)
+    if (pathname === '/api/admin/apps/settings' && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const { version } = body || {};
+        if (!version || typeof version !== 'string' || !version.trim()) {
+            return sendJson(res, 400, { success: false, message: 'Version is required' });
+        }
+
+        const newVersion = version.trim();
+        const result = db.prepare('UPDATE apps SET version = ? WHERE id = ?').run(newVersion, targetAppId);
+        if (result.changes === 0) {
+            return sendJson(res, 404, { success: false, message: 'Application not found' });
+        }
+
+        logAudit(targetAppId, 'APP_VERSION_UPDATED', `Version updated to ${newVersion}`, clientIp);
+        const updatedApp = db.prepare('SELECT * FROM apps WHERE id = ?').get(targetAppId);
+        return sendJson(res, 200, {
+            success: true,
+            message: `Version updated to ${newVersion}`,
+            app: updatedApp
+        });
+    }
+
+    // Refresh Application Secret: /api/admin/apps/refresh-secret
+    if (pathname === '/api/admin/apps/refresh-secret' && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const newSecret = cryptoUtils.generateRandomHex(32);
+        const result = db.prepare('UPDATE apps SET secret_hash = ? WHERE id = ?').run(newSecret, targetAppId);
+        if (result.changes === 0) {
+            return sendJson(res, 404, { success: false, message: 'Application not found' });
+        }
+
+        logAudit(targetAppId, 'APP_SECRET_REFRESHED', 'Application secret regenerated', clientIp);
+        return sendJson(res, 200, {
+            success: true,
+            message: 'Application secret refreshed',
+            secret_hash: newSecret
+        });
+    }
+
+    // Refresh Seller API Key: /api/admin/apps/refresh-seller-key
+    if (pathname === '/api/admin/apps/refresh-seller-key' && method === 'POST') {
+        const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+
+        const newSellerKey = 'seller_' + crypto.randomBytes(16).toString('hex');
+        const result = db.prepare('UPDATE apps SET seller_key = ? WHERE id = ?').run(newSellerKey, targetAppId);
+        if (result.changes === 0) {
+            return sendJson(res, 404, { success: false, message: 'Application not found' });
+        }
+
+        logAudit(targetAppId, 'SELLER_KEY_REFRESHED', 'Seller API key regenerated', clientIp);
+        return sendJson(res, 200, {
+            success: true,
+            message: 'Seller API key refreshed',
+            seller_key: newSellerKey
+        });
+    }
+
     // Generate Licenses: /api/admin/licenses/generate
     if (pathname === '/api/admin/licenses/generate' && method === 'POST') {
-        const { app_id, amount, duration_days, level, prefix, sub_name, char_case, mask } = body;
+        const { app_id, amount, duration_days, level, prefix, sub_name, char_case, mask } = body || {};
         if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
 
         const count = Math.min(Math.max(Number(amount) || 1, 1), 100);
@@ -96,6 +210,8 @@ function generateKeyFromPattern(pattern, caseMode) {
             insertStmt.run(fullKey, app_id, sub_name || 'Standard', durationSeconds, subLevel, now);
             generatedKeys.push(fullKey);
         }
+
+        logAudit(app_id, 'LICENSES_GENERATED', `Generated ${generatedKeys.length} license key(s)`, clientIp);
 
         return sendJson(res, 201, {
             success: true,
@@ -137,6 +253,8 @@ function generateKeyFromPattern(pattern, caseMode) {
         } else {
             return sendJson(res, 400, { success: false, message: 'Invalid delete target' });
         }
+
+        logAudit(app_id, 'LICENSES_DELETED', `Deleted ${result.changes} license(s) [target: ${target || 'single'}]`, clientIp);
 
         return sendJson(res, 200, {
             success: true,
@@ -221,6 +339,8 @@ function generateKeyFromPattern(pattern, caseMode) {
             return sendJson(res, 400, { success: false, message: 'Invalid extend target' });
         }
 
+        logAudit(app_id, 'USERS_TIME_EXTENDED', `Extended time for ${result.changes} user(s) by ${displayUnit}`, clientIp);
+
         return sendJson(res, 200, {
             success: true,
             message: `Extended time for ${result.changes} user(s) by ${displayUnit}`,
@@ -252,6 +372,8 @@ function generateKeyFromPattern(pattern, caseMode) {
             return sendJson(res, 400, { success: false, message: 'Invalid delete target' });
         }
 
+        logAudit(app_id, 'USERS_DELETED', `Deleted ${result.changes} user(s) [target: ${target || 'single'}]`, clientIp);
+
         return sendJson(res, 200, {
             success: true,
             message: `Deleted ${result.changes} user(s)`,
@@ -261,18 +383,35 @@ function generateKeyFromPattern(pattern, caseMode) {
 
     // Reset User HWID
     if (pathname === '/api/admin/users/reset-hwid' && method === 'POST') {
-        const { user_id } = body;
+        const { user_id } = body || {};
         if (!user_id) return sendJson(res, 400, { success: false, message: 'Missing user_id' });
+
+        const user = db.prepare('SELECT app_id FROM users WHERE id = ?').get(user_id);
+        if (!user) return sendJson(res, 404, { success: false, message: 'User not found' });
+        if (isSeller && user.app_id !== sellerApp.id) {
+            return sendJson(res, 403, { success: false, message: 'User does not belong to this application' });
+        }
+
         db.prepare('UPDATE users SET hwid = NULL WHERE id = ?').run(user_id);
+        logAudit(user.app_id, 'USER_HWID_RESET', `User ${user_id} HWID reset`, clientIp);
         return sendJson(res, 200, { success: true, message: 'HWID reset successful' });
     }
 
     // Ban / Unban User
     if (pathname === '/api/admin/users/ban-toggle' && method === 'POST') {
-        const { user_id, banned, ban_reason } = body;
+        const { user_id, banned, ban_reason } = body || {};
         if (!user_id) return sendJson(res, 400, { success: false, message: 'Missing user_id' });
+
+        const user = db.prepare('SELECT app_id FROM users WHERE id = ?').get(user_id);
+        if (!user) return sendJson(res, 404, { success: false, message: 'User not found' });
+        if (isSeller && user.app_id !== sellerApp.id) {
+            return sendJson(res, 403, { success: false, message: 'User does not belong to this application' });
+        }
+
         db.prepare('UPDATE users SET banned = ?, ban_reason = ? WHERE id = ?')
             .run(banned ? 1 : 0, banned ? (ban_reason || 'Banned by admin') : null, user_id);
+
+        logAudit(user.app_id, banned ? 'USER_BANNED' : 'USER_UNBANNED', `User ${user_id} ban status updated (${banned ? 'Banned' : 'Unbanned'})`, clientIp);
         return sendJson(res, 200, { success: true, message: `User ${banned ? 'banned' : 'unbanned'}` });
     }
 
@@ -300,6 +439,8 @@ function generateKeyFromPattern(pattern, caseMode) {
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(app_id, var_key) DO UPDATE SET var_value = excluded.var_value, authed_only = excluded.authed_only
         `).run(id, app_id, var_key.trim(), String(var_value), authed_only ? 1 : 0);
+
+        logAudit(app_id, 'VARIABLE_SAVED', `Saved variable '${var_key.trim()}'`, clientIp);
         return sendJson(res, 200, { success: true, message: 'Variable saved' });
     }
 
@@ -311,6 +452,7 @@ function generateKeyFromPattern(pattern, caseMode) {
             return sendJson(res, 200, { success: true, message: 'Variable deleted' });
         } else if (app_id && var_key) {
             db.prepare('DELETE FROM variables WHERE app_id = ? AND var_key = ?').run(app_id, var_key);
+            logAudit(app_id, 'VARIABLE_DELETED', `Deleted variable '${var_key}'`, clientIp);
             return sendJson(res, 200, { success: true, message: 'Variable deleted' });
         } else {
             return sendJson(res, 400, { success: false, message: 'Missing variable id or app_id/var_key' });
@@ -319,7 +461,7 @@ function generateKeyFromPattern(pattern, caseMode) {
 
     // Logs: /api/admin/logs
     if (pathname === '/api/admin/logs' && method === 'GET') {
-        const appId = url.searchParams.get('app_id');
+        const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
         const logs = appId
             ? db.prepare('SELECT * FROM audit_logs WHERE app_id = ? ORDER BY created_at DESC LIMIT 100').all(appId)
             : db.prepare('SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100').all();

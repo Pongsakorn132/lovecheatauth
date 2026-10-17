@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS apps (
     id TEXT PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     secret_hash TEXT NOT NULL,
+    seller_key TEXT,
     version TEXT NOT NULL DEFAULT '1.0',
     status TEXT NOT NULL DEFAULT 'active',
     hwid_lock INTEGER NOT NULL DEFAULT 1,
@@ -106,5 +107,29 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at INTEGER NOT NULL
 );
 `);
+
+// Migration: add seller_key to apps if missing
+try {
+    const tableInfo = db.prepare("PRAGMA table_info(apps)").all();
+    const hasSellerKey = tableInfo.some(col => col.name === 'seller_key');
+    if (!hasSellerKey) {
+        db.exec("ALTER TABLE apps ADD COLUMN seller_key TEXT;");
+    }
+} catch (e) {
+    console.error('[DB Migration Error]', e);
+}
+
+// Generate seller_key for existing apps that don't have one
+try {
+    const nodeCrypto = require('node:crypto');
+    const appsWithoutSeller = db.prepare("SELECT id FROM apps WHERE seller_key IS NULL OR seller_key = ''").all();
+    const updateStmt = db.prepare("UPDATE apps SET seller_key = ? WHERE id = ?");
+    for (const app of appsWithoutSeller) {
+        const newSellerKey = 'seller_' + nodeCrypto.randomBytes(16).toString('hex');
+        updateStmt.run(newSellerKey, app.id);
+    }
+} catch (e) {
+    console.error('[DB Migration Error]', e);
+}
 
 module.exports = db;
