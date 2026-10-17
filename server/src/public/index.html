@@ -108,10 +108,7 @@
             <button onclick="switchTab('usersTab')" id="tabBtn-usersTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">Registered Users</button>
             <button onclick="switchTab('varsTab')" id="tabBtn-varsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">Server Variables</button>
             <button onclick="switchTab('logsTab')" id="tabBtn-logsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">Audit Logs</button>
-            <button onclick="switchTab('settingsTab')" id="tabBtn-settingsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-1.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                <span>App Settings</span>
-            </button>
+            <button onclick="switchTab('settingsTab')" id="tabBtn-settingsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">App Settings</button>
         </div>
 
         <!-- TAB 1: Licenses -->
@@ -277,10 +274,7 @@
         <section id="settingsTab" class="space-y-6 hidden">
             <div class="flex items-center justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-                        <svg class="w-5 h-5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        <span>Application Settings &amp; Seller API</span>
-                    </h3>
+                    <h3 class="text-lg font-semibold text-white">Application Settings &amp; Seller API</h3>
                     <p class="text-xs text-gray-400 mt-1">จัดการการตั้งค่าเวอร์ชัน, Application Secret Key และ Seller API สำหรับบอทหรือร้านค้า</p>
                 </div>
             </div>
@@ -1772,12 +1766,12 @@
                 const el = document.getElementById(t);
                 const btn = document.getElementById(`tabBtn-${t}`);
                 if (el) el.classList.add('hidden');
-                if (btn) btn.className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white flex items-center gap-1.5';
+                if (btn) btn.className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white';
             });
             const targetEl = document.getElementById(tabId);
             const targetBtn = document.getElementById(`tabBtn-${tabId}`);
             if (targetEl) targetEl.classList.remove('hidden');
-            if (targetBtn) targetBtn.className = 'pb-3 border-b-2 border-pink-500 text-pink-400 font-semibold flex items-center gap-1.5';
+            if (targetBtn) targetBtn.className = 'pb-3 border-b-2 border-pink-500 text-pink-400 font-semibold';
             if (tabId === 'settingsTab') {
                 loadAppSettings();
             }
