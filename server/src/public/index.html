@@ -43,7 +43,7 @@
                 <select id="appSelect" onchange="onAppChanged()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm font-mono text-pink-300 focus:outline-none focus:border-pink-500 min-w-[200px]">
                     <option value="">Loading apps...</option>
                 </select>
-                <button onclick="openModal('newAppModal')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-medium rounded-lg text-white transition flex items-center gap-1.5">
+                <button id="btnNewApp" onclick="openModal('newAppModal')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-medium rounded-lg text-white transition flex items-center gap-1.5">
                     <span>+ New App</span>
                 </button>
             </div>
@@ -84,7 +84,7 @@
         <section id="keysTab" class="space-y-4">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-white">License Keys</h3>
-                <button onclick="openModal('genKeyModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-pink-900/30">
+                <button id="btnGenKey" onclick="openModal('genKeyModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-medium transition shadow-lg shadow-pink-900/30">
                     + Generate Keys
                 </button>
             </div>
@@ -135,7 +135,7 @@
         <section id="varsTab" class="space-y-4 hidden">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-white">Application Variables (Encrypted Payload Fetch)</h3>
-                <button onclick="openModal('newVarModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-medium transition">
+                <button id="btnAddVar" onclick="openModal('newVarModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-medium transition">
                     + Add Variable
                 </button>
             </div>
@@ -257,6 +257,29 @@
 
     <script>
         let currentAppId = null;
+        let isAuthorized = false;
+
+        function updateActionButtons(authorized, hasApp) {
+            isAuthorized = authorized;
+            const btnNewApp = document.getElementById('btnNewApp');
+            const btnGenKey = document.getElementById('btnGenKey');
+            const btnAddVar = document.getElementById('btnAddVar');
+
+            if (btnNewApp) {
+                if (authorized) btnNewApp.classList.remove('hidden');
+                else btnNewApp.classList.add('hidden');
+            }
+
+            if (btnGenKey) {
+                if (authorized && hasApp) btnGenKey.classList.remove('hidden');
+                else btnGenKey.classList.add('hidden');
+            }
+
+            if (btnAddVar) {
+                if (authorized && hasApp) btnAddVar.classList.remove('hidden');
+                else btnAddVar.classList.add('hidden');
+            }
+        }
 
         function getAdminKey() {
             return document.getElementById('adminKeyInput').value;
@@ -308,6 +331,7 @@
                     select.innerHTML = '<option value="">Invalid Admin Key</option>';
                     updateEngineStatus(false, 'UNAUTHORIZED');
                     clearAllData('Invalid Admin Key — authorization failed.');
+                    updateActionButtons(false, false);
                     return;
                 }
 
@@ -331,11 +355,13 @@
                 } else {
                     select.innerHTML = '<option value="">No Apps Created</option>';
                     clearAllData('No applications found. Click "+ New App" above to create one.');
+                    updateActionButtons(true, false);
                 }
             } catch (err) {
                 select.innerHTML = '<option value="">Connection Error</option>';
                 updateEngineStatus(false, 'OFFLINE');
                 clearAllData('Failed to connect to KawaiiAuth server.');
+                updateActionButtons(false, false);
             }
         }
 
@@ -344,8 +370,11 @@
             currentAppId = select.value;
             if (!currentAppId) {
                 clearAllData('No application selected');
+                updateActionButtons(isAuthorized, false);
                 return;
             }
+
+            updateActionButtons(isAuthorized, true);
 
             const selectedOpt = select.selectedOptions[0];
             const secret = selectedOpt ? selectedOpt.dataset.secret : '';
@@ -624,7 +653,11 @@
         }
 
         function openModal(id) {
-            if ((id === 'genKeyModal' || id === 'newVarModal') && !currentAppId) {
+            if (id === 'newAppModal' && !isAuthorized) {
+                alert('Please connect with a valid Admin Key first.');
+                return;
+            }
+            if ((id === 'genKeyModal' || id === 'newVarModal') && (!isAuthorized || !currentAppId)) {
                 alert('Please connect with a valid Admin Key and select/create an application first.');
                 return;
             }
