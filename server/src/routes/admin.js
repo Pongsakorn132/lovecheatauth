@@ -155,14 +155,47 @@ function generateKeyFromPattern(pattern, caseMode) {
 
     // Extend User Timer: /api/admin/users/extend
     if (pathname === '/api/admin/users/extend' && method === 'POST') {
-        const { app_id, target, user_id, days } = body || {};
+        const { app_id, target, user_id, days, duration, unit } = body || {};
         if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
 
-        const addDays = Number(days);
-        if (isNaN(addDays) || addDays <= 0) {
-            return sendJson(res, 400, { success: false, message: 'Invalid duration days' });
+        const dur = Number(duration !== undefined ? duration : days);
+        if (isNaN(dur) || dur <= 0) {
+            return sendJson(res, 400, { success: false, message: 'Invalid duration value' });
         }
-        const addSeconds = Math.round(addDays * 86400);
+
+        let addSeconds = 0;
+        let displayUnit = '';
+
+        const selectedUnit = (unit || 'day').toLowerCase();
+        switch (selectedUnit) {
+            case 'hour':
+            case 'hours':
+                addSeconds = Math.round(dur * 3600);
+                displayUnit = `${dur} hour(s)`;
+                break;
+            case 'day':
+            case 'days':
+                addSeconds = Math.round(dur * 86400);
+                displayUnit = `${dur} day(s)`;
+                break;
+            case 'week':
+            case 'weeks':
+                addSeconds = Math.round(dur * 7 * 86400);
+                displayUnit = `${dur} week(s)`;
+                break;
+            case 'month':
+            case 'months':
+                addSeconds = Math.round(dur * 30 * 86400);
+                displayUnit = `${dur} month(s)`;
+                break;
+            case 'year':
+            case 'years':
+                addSeconds = Math.round(dur * 365 * 86400);
+                displayUnit = `${dur} year(s)`;
+                break;
+            default:
+                return sendJson(res, 400, { success: false, message: 'Invalid time unit. Choose hour, day, week, month, or year.' });
+        }
 
         let result;
         if (target === 'single') {
@@ -190,7 +223,7 @@ function generateKeyFromPattern(pattern, caseMode) {
 
         return sendJson(res, 200, {
             success: true,
-            message: `Extended time for ${result.changes} user(s) by ${addDays} day(s)`,
+            message: `Extended time for ${result.changes} user(s) by ${displayUnit}`,
             count: result.changes
         });
     }

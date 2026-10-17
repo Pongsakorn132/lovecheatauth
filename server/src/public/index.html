@@ -359,8 +359,21 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs text-gray-400 mb-1">Add Duration (Days / จำนวนวัน)</label>
-                    <input type="number" id="extendDays" value="30" min="1" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
+                    <label class="block text-xs text-gray-400 mb-1">Add Duration (ระยะเวลาที่จะเพิ่ม)</label>
+                    <div class="grid grid-cols-5 gap-2">
+                        <div class="col-span-3">
+                            <input type="number" id="extendDuration" value="1" min="1" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500 font-mono" placeholder="จำนวน">
+                        </div>
+                        <div class="col-span-2">
+                            <select id="extendUnit" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-pink-500">
+                                <option value="hour">ชั่วโมง</option>
+                                <option value="day" selected>วัน</option>
+                                <option value="week">สัปดาห์</option>
+                                <option value="month">เดือน</option>
+                                <option value="year">ปี</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-4">
@@ -880,6 +893,12 @@
                 targetSelect.value = 'active';
                 userDiv.classList.add('hidden');
             }
+
+            const durInput = document.getElementById('extendDuration');
+            if (durInput && !durInput.value) durInput.value = '1';
+            const unitSelect = document.getElementById('extendUnit');
+            if (unitSelect && !unitSelect.value) unitSelect.value = 'day';
+
             openModal('extendModal');
         }
 
@@ -896,15 +915,17 @@
         async function submitExtendTimer() {
             if (!currentAppId) return alert('Please select an application first');
             const target = document.getElementById('extendTarget').value;
-            const days = document.getElementById('extendDays').value;
+            const duration = document.getElementById('extendDuration').value;
+            const unit = document.getElementById('extendUnit').value;
             const userId = document.getElementById('extendUserId').value;
 
-            if (!days || Number(days) <= 0) return alert('Please enter a valid number of days');
+            if (!duration || Number(duration) <= 0) return alert('Please enter a valid duration number');
 
             const payload = {
                 app_id: currentAppId,
                 target: target,
-                days: days
+                duration: Number(duration),
+                unit: unit
             };
             if (target === 'single') {
                 if (!userId) return alert('Please select a user');
