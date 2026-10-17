@@ -77,7 +77,8 @@
                 <div class="flex items-center gap-2 text-xs text-gray-400 font-mono">
                     <span class="text-gray-300">Client Key:</span>
                     <input type="password" id="clientKeyInput" placeholder="CK-••••-••••-••••" onkeydown="if(event.key==='Enter') initiateClientConnect()" class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-white text-xs w-48 focus:outline-none focus:border-pink-500 font-mono">
-                    <button onclick="initiateClientConnect()" class="px-3.5 py-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold rounded text-xs transition shadow-sm">Connect</button>
+                    <button onclick="initiateClientConnect()" id="btnConnect" class="px-3.5 py-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold rounded text-xs transition shadow-sm">Connect</button>
+                    <button onclick="disconnectClient()" id="btnDisconnect" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 hover:text-white rounded text-xs transition hidden">Disconnect</button>
                 </div>
             </div>
         </div>
@@ -91,10 +92,14 @@
             <div class="flex items-center gap-3">
                 <span class="text-sm font-medium text-gray-300">Active Application:</span>
                 <select id="appSelect" onchange="onAppChanged()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm font-mono text-pink-300 focus:outline-none focus:border-pink-500 min-w-[200px]">
-                    <option value="">Loading apps...</option>
+                    <option value="">Waiting for Client Key connection...</option>
                 </select>
                 <button id="btnNewApp" onclick="openModal('newAppModal')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-medium rounded-lg text-white transition flex items-center gap-1.5">
                     <span>+ New App</span>
+                </button>
+                <button id="btnDeleteApp" onclick="deleteCurrentApp()" class="px-3 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5 hidden">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    <span>Delete App</span>
                 </button>
             </div>
             <div id="appInfoBar" class="text-xs font-mono text-gray-400 flex items-center gap-4"></div>
@@ -481,6 +486,23 @@
                                 <pre class="text-[10px] text-gray-300 bg-gray-900 p-2 rounded overflow-x-auto">{"target": "expired"}</pre>
                             </div>
                         </div>
+                    </div>
+                <!-- 4. Danger Zone: Delete Application -->
+                <div class="glass-panel p-6 rounded-2xl border border-red-800/40 bg-red-950/15 space-y-4 lg:col-span-2">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2.5 rounded-xl bg-red-950/80 border border-red-800/80 text-red-400 shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-red-300">Danger Zone: Delete Application</h4>
+                                <p class="text-xs text-gray-400">ลบแอปพลิเคชันนี้อย่างถาวร ข้อมูลคีย์ (Licenses), สมาชิก (Users), แผนการใช้งาน (Subscriptions) และตัวแปรทั้งหมดจะถูกลบทันทีและไม่สามารถกู้คืนได้</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteCurrentApp()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-red-950/60 transition flex items-center gap-1.5 shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            <span>Delete Application</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1043,6 +1065,7 @@
 
         function updateActionButtons() {
             const btnNewApp = document.getElementById('btnNewApp');
+            const btnDeleteApp = document.getElementById('btnDeleteApp');
             const keysActionsGroup = document.getElementById('keysActionsGroup');
             const subsActionsGroup = document.getElementById('subsActionsGroup');
             const usersActionsGroup = document.getElementById('usersActionsGroup');
@@ -1053,6 +1076,11 @@
             if (btnNewApp) {
                 if (isAuthorized) btnNewApp.classList.remove('hidden');
                 else btnNewApp.classList.add('hidden');
+            }
+
+            if (btnDeleteApp) {
+                if (hasApp) btnDeleteApp.classList.remove('hidden');
+                else btnDeleteApp.classList.add('hidden');
             }
 
             if (keysActionsGroup) {
@@ -1076,12 +1104,69 @@
             }
         }
 
-        let apiAdminKey = localStorage.getItem('kawaii_client_key') || 'CK-KAWAII-DEMO-2025';
-        let apiAdminPin = localStorage.getItem('kawaii_client_pin') || '123456';
+        let apiAdminKey = '';
+        let apiAdminPin = '';
         let pendingConnectKey = '';
 
+        function updateAuthUI() {
+            const btnConnect = document.getElementById('btnConnect');
+            const btnDisconnect = document.getElementById('btnDisconnect');
+            const keyInput = document.getElementById('clientKeyInput');
+
+            if (isAuthorized) {
+                if (btnConnect) btnConnect.classList.add('hidden');
+                if (btnDisconnect) btnDisconnect.classList.remove('hidden');
+                if (keyInput) keyInput.disabled = true;
+            } else {
+                if (btnConnect) btnConnect.classList.remove('hidden');
+                if (btnDisconnect) btnDisconnect.classList.add('hidden');
+                if (keyInput) keyInput.disabled = false;
+            }
+            updateActionButtons();
+        }
+
+        function disconnectClient() {
+            apiAdminKey = '';
+            apiAdminPin = '';
+            isAuthorized = false;
+            currentAppId = null;
+            updateAuthUI();
+            updateEngineStatus(false, 'DISCONNECTED');
+            clearAllData('Disconnected. Please enter your Client Key and click Connect to authenticate.');
+            const select = document.getElementById('appSelect');
+            if (select) select.innerHTML = '<option value="">Connect with Client Key first</option>';
+            showToast('Disconnected from Client Key', 'info');
+        }
+
+        async function deleteCurrentApp() {
+            if (!isAuthorized) return customAlert('Please connect with a valid Client Key first.', { type: 'warning' });
+            if (!currentAppId) return customAlert('Please select an application to delete.', { type: 'warning' });
+
+            const select = document.getElementById('appSelect');
+            const appName = select?.selectedOptions[0]?.dataset?.name || select?.selectedOptions[0]?.textContent || 'this application';
+
+            const ok = await customConfirm(
+                `Are you sure you want to permanently delete application "${appName}"?\n\nWARNING: All associated licenses, users, subscriptions, variables, and sessions will be deleted permanently. This action CANNOT be undone!`,
+                { title: 'Delete Application', isDanger: true, confirmText: 'Permanently Delete' }
+            );
+            if (!ok) return;
+
+            const res = await api('/api/admin/apps/delete', {
+                method: 'POST',
+                body: { app_id: currentAppId }
+            });
+
+            if (res && res.success) {
+                showToast(res.message || 'Application deleted successfully', 'success');
+                currentAppId = null;
+                await refreshData();
+            } else {
+                customAlert(res?.message || 'Failed to delete application', { type: 'error' });
+            }
+        }
+
         function getAdminKey() {
-            return apiAdminKey || document.getElementById('clientKeyInput')?.value?.trim() || '';
+            return apiAdminKey || '';
         }
 
         function getAdminPin() {
@@ -1220,10 +1305,12 @@
                     apiAdminKey = pendingConnectKey;
                     apiAdminPin = pin;
                     localStorage.setItem('kawaii_client_key', apiAdminKey);
-                    localStorage.setItem('kawaii_client_pin', apiAdminPin);
+                    localStorage.removeItem('kawaii_client_pin');
+                    isAuthorized = true;
                     closeModal('clientPinModal');
+                    updateAuthUI();
                     showToast('Connected successfully with Client Key!', 'success');
-                    refreshData();
+                    await refreshData();
                 } else {
                     shakeClientPinBoxes();
                     clearClientPinBoxes();
@@ -1323,18 +1410,27 @@
 
         async function refreshData() {
             const select = document.getElementById('appSelect');
+            if (!isAuthorized) {
+                if (select) select.innerHTML = '<option value="">Connect with Client Key first</option>';
+                updateEngineStatus(false, 'DISCONNECTED');
+                clearAllData('Please enter your Client Key above and click Connect to authenticate.');
+                updateAuthUI();
+                return;
+            }
             try {
                 const data = await api('/api/admin/apps');
                 if (!data || !data.success) {
                     isAuthorized = false;
-                    select.innerHTML = '<option value="">Invalid Client Key or PIN</option>';
+                    if (select) select.innerHTML = '<option value="">Invalid Client Key or PIN</option>';
                     updateEngineStatus(false, 'UNAUTHORIZED');
                     clearAllData('Invalid Client Key or PIN — click Connect to authenticate.');
+                    updateAuthUI();
                     return;
                 }
 
                 isAuthorized = true;
                 updateEngineStatus(true, 'ACTIVE');
+                updateAuthUI();
 
                 select.innerHTML = '';
                 if (data.apps && data.apps.length > 0) {
@@ -2409,14 +2505,20 @@
             }, 150);
         }
 
-        // Initial Load: Prefill client key input if saved
+        // Initial Load: Require Connect on entry every time
+        isAuthorized = false;
+        apiAdminKey = '';
+        apiAdminPin = '';
         const keyInputEl = document.getElementById('clientKeyInput');
-        if (keyInputEl && apiAdminKey) {
-            keyInputEl.value = apiAdminKey;
+        if (keyInputEl) {
+            // Pre-fill last used key for typing convenience, but requires pressing Connect and verifying 6-PIN
+            keyInputEl.value = localStorage.getItem('kawaii_client_key') || 'CK-KAWAII-DEMO-2025';
         }
-
-        // Initial connection check
-        refreshData();
+        updateAuthUI();
+        updateEngineStatus(false, 'DISCONNECTED');
+        clearAllData('Please enter your Client Key above and click Connect to authenticate.');
+        const appSelectEl = document.getElementById('appSelect');
+        if (appSelectEl) appSelectEl.innerHTML = '<option value="">Connect with Client Key first</option>';
     </script>
 </body>
 </html>

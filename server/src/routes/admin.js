@@ -152,6 +152,34 @@ function handleAdminRequest(req, res, url, body) {
         }
     }
 
+    // Delete App (Admin only): /api/admin/apps/delete
+    if ((pathname === '/api/admin/apps/delete' && method === 'POST') || (pathname === '/api/admin/apps' && method === 'DELETE')) {
+        if (isSeller) {
+            return sendJson(res, 403, { success: false, message: 'Sellers cannot delete applications' });
+        }
+
+        const targetAppId = body?.app_id || body?.id || url.searchParams.get('app_id') || url.searchParams.get('id');
+        if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
+
+        const app = db.prepare('SELECT * FROM apps WHERE id = ?').get(targetAppId);
+        if (!app) {
+            return sendJson(res, 404, { success: false, message: 'Application not found' });
+        }
+
+        // Delete audit logs for this app
+        db.prepare('DELETE FROM audit_logs WHERE app_id = ?').run(targetAppId);
+
+        // Delete app (cascades subscriptions, users, licenses, sessions, variables, files)
+        db.prepare('DELETE FROM apps WHERE id = ?').run(targetAppId);
+
+        logAudit(null, 'APP_DELETED', `Application '${app.name}' (${app.id}) deleted`, clientIp);
+
+        return sendJson(res, 200, {
+            success: true,
+            message: `Application '${app.name}' and all associated data deleted successfully.`
+        });
+    }
+
     // App Settings: Update Version (/api/admin/apps/settings)
     if (pathname === '/api/admin/apps/settings' && method === 'POST') {
         const targetAppId = isSeller ? sellerApp.id : (body?.app_id || url.searchParams.get('app_id'));
