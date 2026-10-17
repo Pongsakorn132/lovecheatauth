@@ -4,7 +4,7 @@ title Git Safe Synchronizer [Pull-Before-Push]
 cd /d "%~dp0"
 
 echo ========================================================
-echo   Git Safe Synchronizer (Pull-Verify-Push Pipeline)
+echo   Git Safe Synchronizer - Pull-Verify-Push Pipeline
 echo ========================================================
 
 REM 1. Verify Git Repository
@@ -36,11 +36,11 @@ if "!HAS_CHANGES!"=="1" (
     git add .
     git commit -m "!COMMIT_MSG!"
 ) else (
-    echo [*] Working tree clean. Checking remote synchronization...
+    echo [*] Working tree clean. Checking remote synchronization.
 )
 
 REM 4. Fetch upstream state to check for remote commits
-echo [*] Fetching upstream state from origin/main...
+echo [*] Fetching upstream state from origin/main.
 git fetch origin main >nul 2>&1
 
 REM 5. Compare commit differences
@@ -54,11 +54,11 @@ echo [+] Remote Status: !BEHIND_COUNT! commits behind, !AHEAD_COUNT! commits ahe
 
 REM 6. Pull with rebase if remote is ahead
 if !BEHIND_COUNT! gtr 0 (
-    echo [!] Remote has newer commits. Pulling upstream changes (git pull --rebase)...
+    echo [*] Remote has newer commits. Pulling upstream changes via rebase.
     git pull --rebase origin main
     if !errorlevel! neq 0 (
         echo [-] Conflict detected during rebase.
-        echo [*] Aborting rebase to preserve your working tree...
+        echo [*] Aborting rebase to preserve your working tree.
         git rebase --abort
         echo [-] Resolve conflicts manually, then re-run this script.
         pause
@@ -68,7 +68,7 @@ if !BEHIND_COUNT! gtr 0 (
 )
 
 REM 7. Push to origin main
-echo [*] Pushing to origin/main...
+echo [*] Pushing to origin/main.
 git push origin main
 if !errorlevel! equ 0 (
     echo ========================================================
