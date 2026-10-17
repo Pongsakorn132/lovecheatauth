@@ -100,19 +100,22 @@ std::string ReadPasswordMasked() {
     return pass;
 }
 
+std::string Trim(std::string str) {
+    while (!str.empty() && (str.back() == ' ' || str.back() == '\r' || str.back() == '\n' || str.back() == '\t')) {
+        str.pop_back();
+    }
+    while (!str.empty() && (str.front() == ' ' || str.front() == '\t')) {
+        str.erase(0, 1);
+    }
+    return str;
+}
+
 std::string LoadSavedKey() {
     std::ifstream file("license.key");
     if (!file.is_open()) return "";
     std::string key;
     std::getline(file, key);
-    // Trim whitespace
-    while (!key.empty() && (key.back() == ' ' || key.back() == '\r' || key.back() == '\n' || key.back() == '\t')) {
-        key.pop_back();
-    }
-    while (!key.empty() && (key.front() == ' ' || key.front() == '\t')) {
-        key.erase(0, 1);
-    }
-    return key;
+    return Trim(key);
 }
 
 void SaveKey(const std::string& key) {
@@ -235,6 +238,7 @@ int main() {
         std::string user, pass;
         std::cout << CLR_WHITE << " Enter Username: " << CLR_RESET;
         std::getline(std::cin, user);
+        user = Trim(user);
         std::cout << CLR_WHITE << " Enter Password: " << CLR_RESET;
         pass = ReadPasswordMasked();
 
@@ -247,10 +251,12 @@ int main() {
         std::string user, pass, key;
         std::cout << CLR_WHITE << " Desired Username: " << CLR_RESET;
         std::getline(std::cin, user);
+        user = Trim(user);
         std::cout << CLR_WHITE << " Desired Password: " << CLR_RESET;
         pass = ReadPasswordMasked();
         std::cout << CLR_WHITE << " License Key: " << CLR_RESET;
         std::getline(std::cin, key);
+        key = Trim(key);
 
         PrintStatus("WAIT", "Registering account & binding license...", CLR_CYAN);
         resp = auth.Register(user, pass, key);
@@ -296,6 +302,7 @@ int main() {
         std::cout << CLR_WHITE << prompt << CLR_RESET;
         std::string key;
         std::getline(std::cin, key);
+        key = Trim(key);
 
         if (key.empty()) {
             key = !savedKey.empty() ? savedKey : std::string(skCrypt("KAWAII-DEMO-KEY2"));

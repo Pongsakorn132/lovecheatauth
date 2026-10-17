@@ -212,7 +212,10 @@ function handleApiRequest(req, res, url, body) {
         // Process Action
         switch (action) {
             case 'register': {
-                const { username, password, key, hwid } = decryptedPayload;
+                const username = (decryptedPayload.username || '').trim();
+                const password = decryptedPayload.password || '';
+                const key = (decryptedPayload.key || '').trim();
+                const hwid = (decryptedPayload.hwid || '').trim();
                 if (!username || !password || !key) {
                     return sendEncrypted(res, session, { success: false, message: 'Username, password and key required' });
                 }
@@ -267,12 +270,14 @@ function handleApiRequest(req, res, url, body) {
                 return sendEncrypted(res, session, {
                     success: true,
                     message: 'Registration successful',
-                    user: { username, expires_at: expiry, level: license.level, hwid }
+                    user: { username, expires_at: expiry, level: license.level, hwid: hwid || '' }
                 });
             }
 
             case 'login': {
-                const { username, password, hwid } = decryptedPayload;
+                const username = (decryptedPayload.username || '').trim();
+                const password = decryptedPayload.password || '';
+                const hwid = (decryptedPayload.hwid || '').trim();
                 if (!username || !password) {
                     return sendEncrypted(res, session, { success: false, message: 'Username and password required' });
                 }
@@ -328,13 +333,14 @@ function handleApiRequest(req, res, url, body) {
                         username: user.username,
                         expires_at: user.expires_at,
                         level: user.sub_level,
-                        hwid: user.hwid
+                        hwid: user.hwid || ''
                     }
                 });
             }
 
             case 'license_only': {
-                const { key, hwid } = decryptedPayload;
+                const key = (decryptedPayload.key || '').trim();
+                const hwid = (decryptedPayload.hwid || '').trim();
                 if (!key) {
                     return sendEncrypted(res, session, { success: false, message: 'License key required' });
                 }
@@ -349,27 +355,33 @@ function handleApiRequest(req, res, url, body) {
                     if (user.expires_at < now) {
                         return sendEncrypted(res, session, { success: false, message: 'License has expired' });
                     }
-                    if (app.hwid_lock && user.hwid && user.hwid !== hwid) {
-                        sendDiscordWebhook({
-                            appId: app.id,
-                            title: 'Security Alert: HWID Mismatch',
-                            description: `License key **${key}** used from mismatched HWID`,
-                            color: 0xef4444,
-                            fields: [
-                                { name: 'App', value: app.name, inline: true },
-                                { name: 'License', value: `\`${key}\``, inline: true },
-                                { name: 'IP', value: clientIp, inline: true },
-                                { name: 'Attempted HWID', value: `\`${hwid}\`` },
-                                { name: 'Authorized HWID', value: `\`${user.hwid}\`` }
-                            ]
-                        });
-                        return sendEncrypted(res, session, { success: false, message: 'HWID mismatch on license' });
+                    if (app.hwid_lock) {
+                        if (!user.hwid && hwid) {
+                            // First login on license key: lock HWID
+                            db.prepare('UPDATE users SET hwid = ? WHERE id = ?').run(hwid, user.id);
+                            user.hwid = hwid;
+                        } else if (user.hwid && user.hwid !== hwid) {
+                            sendDiscordWebhook({
+                                appId: app.id,
+                                title: 'Security Alert: HWID Mismatch',
+                                description: `License key **${key}** used from mismatched HWID`,
+                                color: 0xef4444,
+                                fields: [
+                                    { name: 'App', value: app.name, inline: true },
+                                    { name: 'License', value: `\`${key}\``, inline: true },
+                                    { name: 'IP', value: clientIp, inline: true },
+                                    { name: 'Attempted HWID', value: `\`${hwid}\`` },
+                                    { name: 'Authorized HWID', value: `\`${user.hwid}\`` }
+                                ]
+                            });
+                            return sendEncrypted(res, session, { success: false, message: 'HWID mismatch on license' });
+                        }
                     }
                     db.prepare('UPDATE sessions SET user_id = ? WHERE session_token = ?').run(user.id, session.session_token);
                     return sendEncrypted(res, session, {
                         success: true,
                         message: 'License login successful',
-                        user: { username: user.username, expires_at: user.expires_at, level: user.sub_level, hwid: user.hwid }
+                        user: { username: user.username, expires_at: user.expires_at, level: user.sub_level, hwid: user.hwid || '' }
                     });
                 }
 
@@ -410,7 +422,7 @@ function handleApiRequest(req, res, url, body) {
                 return sendEncrypted(res, session, {
                     success: true,
                     message: 'License activated successfully',
-                    user: { username: key, expires_at: expiry, level: license.level, hwid }
+                    user: { username: key, expires_at: expiry, level: license.level, hwid: hwid || '' }
                 });
             }
 
@@ -424,7 +436,7 @@ function handleApiRequest(req, res, url, body) {
                             username: u.username,
                             expires_at: u.expires_at,
                             level: u.sub_level,
-                            hwid: u.hwid
+                            hwid: u.hwid || ''
                         };
                     }
                 }

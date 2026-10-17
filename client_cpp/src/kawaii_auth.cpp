@@ -549,6 +549,9 @@ namespace KawaiiAuth {
 
         try {
             auto outer = json::parse(httpResp.body);
+            if (!outer.contains(skCrypt("data")) || outer[skCrypt("data")].is_null()) {
+                return { false, outer.value(skCrypt("message"), skCrypt("Login failed: invalid response")) };
+            }
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
 
@@ -559,12 +562,16 @@ namespace KawaiiAuth {
             Response r;
             r.success = inner.value(skCrypt("success"), false);
             r.message = inner.value(skCrypt("message"), "");
-            if (r.success && inner.contains(skCrypt("user"))) {
+            if (r.success && inner.contains(skCrypt("user")) && !inner[skCrypt("user")].is_null()) {
                 auto u = inner[skCrypt("user")];
                 r.user.username = u.value(skCrypt("username"), "");
                 r.user.expires_at = u.value(skCrypt("expires_at"), 0ULL);
                 r.user.level = u.value(skCrypt("level"), 0);
-                r.user.hwid = u.value(skCrypt("hwid"), "");
+                if (u.contains(skCrypt("hwid")) && !u[skCrypt("hwid")].is_null()) {
+                    r.user.hwid = u.value(skCrypt("hwid"), "");
+                } else {
+                    r.user.hwid = "";
+                }
             }
             m_last_response = r;
             return r;
@@ -605,6 +612,9 @@ namespace KawaiiAuth {
 
         try {
             auto outer = json::parse(httpResp.body);
+            if (!outer.contains(skCrypt("data")) || outer[skCrypt("data")].is_null()) {
+                return { false, outer.value(skCrypt("message"), skCrypt("Registration failed: invalid response")) };
+            }
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
 
@@ -615,12 +625,16 @@ namespace KawaiiAuth {
             Response r;
             r.success = inner.value(skCrypt("success"), false);
             r.message = inner.value(skCrypt("message"), "");
-            if (r.success && inner.contains(skCrypt("user"))) {
+            if (r.success && inner.contains(skCrypt("user")) && !inner[skCrypt("user")].is_null()) {
                 auto u = inner[skCrypt("user")];
                 r.user.username = u.value(skCrypt("username"), "");
                 r.user.expires_at = u.value(skCrypt("expires_at"), 0ULL);
                 r.user.level = u.value(skCrypt("level"), 0);
-                r.user.hwid = u.value(skCrypt("hwid"), "");
+                if (u.contains(skCrypt("hwid")) && !u[skCrypt("hwid")].is_null()) {
+                    r.user.hwid = u.value(skCrypt("hwid"), "");
+                } else {
+                    r.user.hwid = "";
+                }
             }
             m_last_response = r;
             return r;
@@ -659,6 +673,9 @@ namespace KawaiiAuth {
 
         try {
             auto outer = json::parse(httpResp.body);
+            if (!outer.contains(skCrypt("data")) || outer[skCrypt("data")].is_null()) {
+                return { false, outer.value(skCrypt("message"), skCrypt("License validation rejected by server")) };
+            }
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
 
@@ -669,12 +686,16 @@ namespace KawaiiAuth {
             Response r;
             r.success = inner.value(skCrypt("success"), false);
             r.message = inner.value(skCrypt("message"), "");
-            if (r.success && inner.contains(skCrypt("user"))) {
+            if (r.success && inner.contains(skCrypt("user")) && !inner[skCrypt("user")].is_null()) {
                 auto u = inner[skCrypt("user")];
                 r.user.username = u.value(skCrypt("username"), "");
                 r.user.expires_at = u.value(skCrypt("expires_at"), 0ULL);
                 r.user.level = u.value(skCrypt("level"), 0);
-                r.user.hwid = u.value(skCrypt("hwid"), "");
+                if (u.contains(skCrypt("hwid")) && !u[skCrypt("hwid")].is_null()) {
+                    r.user.hwid = u.value(skCrypt("hwid"), "");
+                } else {
+                    r.user.hwid = "";
+                }
             }
             m_last_response = r;
 
@@ -764,6 +785,11 @@ namespace KawaiiAuth {
 
         try {
             auto outer = json::parse(httpResp.body);
+            if (!outer.contains(skCrypt("data")) || outer[skCrypt("data")].is_null()) {
+                status.success = false;
+                status.message = outer.value(skCrypt("message"), skCrypt("Session check failed: invalid response"));
+                return status;
+            }
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
 
@@ -785,7 +811,11 @@ namespace KawaiiAuth {
                 status.user.username = u.value(skCrypt("username"), "");
                 status.user.expires_at = u.value(skCrypt("expires_at"), 0ULL);
                 status.user.level = u.value(skCrypt("level"), 0);
-                status.user.hwid = u.value(skCrypt("hwid"), "");
+                if (u.contains(skCrypt("hwid")) && !u[skCrypt("hwid")].is_null()) {
+                    status.user.hwid = u.value(skCrypt("hwid"), "");
+                } else {
+                    status.user.hwid = "";
+                }
             }
             return status;
         } catch (...) {
