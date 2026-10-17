@@ -98,11 +98,13 @@ namespace KawaiiAuth {
         std::string m_session_iv_hex;
         std::string m_hwid;
         Response m_last_response;
+        uint64_t m_request_seq = 0;
 
         HINTERNET m_hInternet = nullptr;
         HINTERNET m_hConnect = nullptr;
 
         // Internal Helpers
+        std::string GenerateNonce(size_t byte_count = 16);
         std::string ComputeHWID();
         std::string HashSHA256(const std::string& input);
         std::string EncryptAES256WithKey(const std::string& plaintext, const std::string& keyHex, const std::string& ivHex);

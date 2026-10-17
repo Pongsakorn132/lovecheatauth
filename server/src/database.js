@@ -74,10 +74,18 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id TEXT,
     session_key TEXT NOT NULL,
     session_iv TEXT NOT NULL,
+    last_seq INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL,
     expires_at INTEGER NOT NULL,
     FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS request_nonces (
+    nonce TEXT PRIMARY KEY,
+    session_token TEXT,
+    created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_nonces_created ON request_nonces(created_at);
 
 CREATE TABLE IF NOT EXISTS variables (
     id TEXT PRIMARY KEY,
@@ -137,6 +145,17 @@ CREATE TABLE IF NOT EXISTS client_auth_sessions (
     created_at INTEGER NOT NULL
 );
 `);
+
+// Migration: add last_seq to sessions if missing
+try {
+    const sessionInfo = db.prepare("PRAGMA table_info(sessions)").all();
+    const hasLastSeq = sessionInfo.some(col => col.name === 'last_seq');
+    if (!hasLastSeq) {
+        db.exec("ALTER TABLE sessions ADD COLUMN last_seq INTEGER NOT NULL DEFAULT 0;");
+    }
+} catch (e) {
+    console.error('[DB Migration Error - sessions.last_seq]', e);
+}
 
 // Migration: add seller_key to apps if missing
 try {

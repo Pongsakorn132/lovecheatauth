@@ -14,9 +14,25 @@ function handleApiRequest(req, res, url, body) {
 
     // 1. Handshake: /api/v1/init
     if (pathname === '/api/v1/init' && req.method === 'POST') {
-        const { app_id, version, client_hash } = body;
+        const { app_id, version, client_hash, timestamp: initTimestamp, nonce: initNonce } = body;
         if (!app_id) {
             return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+        }
+
+        // Anti-Replay for Handshake
+        if (initTimestamp) {
+            const parsedTs = Number(initTimestamp);
+            if (isNaN(parsedTs) || Math.abs(now - parsedTs) > 90) {
+                return sendJson(res, 400, { success: false, message: 'Replay protection: handshake timestamp expired or out of sync' });
+            }
+        }
+        if (initNonce) {
+            const nonceStr = String(initNonce).trim();
+            const existingNonce = db.prepare('SELECT nonce FROM request_nonces WHERE nonce = ?').get(nonceStr);
+            if (existingNonce) {
+                return sendJson(res, 400, { success: false, message: 'Replay attack prevented: duplicate handshake nonce' });
+            }
+            db.prepare('INSERT INTO request_nonces (nonce, session_token, created_at) VALUES (?, ?, ?)').run(nonceStr, 'INIT', now);
         }
 
         const app = db.prepare('SELECT * FROM apps WHERE id = ? OR name = ?').get(app_id, app_id);
@@ -85,9 +101,52 @@ function handleApiRequest(req, res, url, body) {
             return sendJson(res, 400, { success: false, message: 'Decryption failed or invalid payload encoding' });
         }
 
-        // Validate replay attack (timestamp within +/- 120s)
-        if (decryptedPayload.timestamp && Math.abs(now - Number(decryptedPayload.timestamp)) > 120) {
-            return sendEncrypted(res, session, { success: false, message: 'Replay attack prevented: invalid timestamp' });
+        // Anti-Replay Security Gate
+        // 1. Strict Timestamp Freshness Check (+/- 90s)
+        const reqTimestamp = Number(decryptedPayload.timestamp);
+        if (!reqTimestamp || isNaN(reqTimestamp)) {
+            return sendEncrypted(res, session, { success: false, message: 'Replay protection: missing or invalid timestamp' });
+        }
+        if (Math.abs(now - reqTimestamp) > 90) {
+            return sendEncrypted(res, session, { success: false, message: 'Replay attack prevented: timestamp expired or clock out of sync' });
+        }
+
+        // 2. Monotonic Sequence Number Check (seq)
+        const reqSeq = decryptedPayload.seq !== undefined && decryptedPayload.seq !== null ? Number(decryptedPayload.seq) : null;
+        if (reqSeq !== null) {
+            if (!Number.isInteger(reqSeq) || reqSeq <= (session.last_seq || 0)) {
+                return sendEncrypted(res, session, {
+                    success: false,
+                    message: `Replay attack prevented: invalid or replayed sequence number (expected > ${session.last_seq || 0}, got ${decryptedPayload.seq})`
+                });
+            }
+        }
+
+        // 3. Cryptographic Nonce Uniqueness Check
+        const reqNonce = decryptedPayload.nonce ? String(decryptedPayload.nonce).trim() : null;
+        if (!reqNonce || reqNonce.length < 8) {
+            return sendEncrypted(res, session, { success: false, message: 'Replay protection: missing or invalid request nonce' });
+        }
+
+        const existingNonce = db.prepare('SELECT nonce FROM request_nonces WHERE nonce = ?').get(reqNonce);
+        if (existingNonce) {
+            return sendEncrypted(res, session, { success: false, message: 'Replay attack detected: duplicate request nonce' });
+        }
+
+        // Store nonce and advance sequence
+        db.prepare('INSERT INTO request_nonces (nonce, session_token, created_at) VALUES (?, ?, ?)').run(reqNonce, session.session_token, now);
+        if (reqSeq !== null) {
+            db.prepare('UPDATE sessions SET last_seq = ? WHERE session_token = ?').run(reqSeq, session.session_token);
+            session.last_seq = reqSeq;
+        }
+
+        // Bind for response echoing
+        session._lastReqNonce = reqNonce;
+        session._lastReqSeq = reqSeq;
+
+        // Periodic cleanup of expired nonces (> 300s)
+        if (Math.random() < 0.05) {
+            db.prepare('DELETE FROM request_nonces WHERE created_at < ?').run(now - 300);
         }
 
         const app = db.prepare('SELECT * FROM apps WHERE id = ?').get(session.app_id);
@@ -345,6 +404,12 @@ function sendJson(res, status, obj) {
 }
 
 function sendEncrypted(res, session, obj) {
+    if (session && session._lastReqNonce) {
+        obj.req_nonce = session._lastReqNonce;
+    }
+    if (session && session._lastReqSeq !== undefined && session._lastReqSeq !== null) {
+        obj.req_seq = session._lastReqSeq;
+    }
     const enc = cryptoUtils.encryptPayload(obj, session.session_key, session.session_iv);
     sendJson(res, 200, {
         success: obj.success,

@@ -79,6 +79,20 @@ namespace KawaiiAuth {
         if (m_hInternet) InternetCloseHandle(m_hInternet);
     }
 
+    std::string Client::GenerateNonce(size_t byte_count) {
+        std::vector<uint8_t> buffer(byte_count);
+        if (BCryptGenRandom(nullptr, buffer.data(), static_cast<ULONG>(buffer.size()), BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0) {
+            for (size_t i = 0; i < byte_count; ++i) {
+                buffer[i] = static_cast<uint8_t>(rand() ^ (time(nullptr) & 0xFF));
+            }
+        }
+        std::ostringstream oss;
+        for (uint8_t b : buffer) {
+            oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(b);
+        }
+        return oss.str();
+    }
+
     std::string Client::HashSHA256(const std::string& input) {
         BCRYPT_ALG_HANDLE hAlg = nullptr;
         BCRYPT_HASH_HANDLE hHash = nullptr;
@@ -164,12 +178,12 @@ namespace KawaiiAuth {
             return false;
         }
 
-        // Verify timestamp freshness (drift within +/- 300s)
+        // Verify timestamp freshness (drift within +/- 120s)
         try {
             uint64_t ts = std::stoull(timestamp);
             uint64_t current_time = static_cast<uint64_t>(time(nullptr));
             int64_t diff = static_cast<int64_t>(current_time) - static_cast<int64_t>(ts);
-            if (std::abs(diff) > 300) {
+            if (std::abs(diff) > 120) {
                 return false;
             }
         } catch (...) {
@@ -404,12 +418,17 @@ namespace KawaiiAuth {
             return false;
         }
 
+        m_request_seq = 0;
         std::string textHash = enforce_integrity ? KawaiiSecurity::ComputeTextSectionHash() : "";
+        std::string nonce = GenerateNonce(16);
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
 
         json initPayload = {
             { skCrypt("app_id"), m_app_id },
             { skCrypt("version"), m_version },
-            { skCrypt("client_hash"), textHash }
+            { skCrypt("client_hash"), textHash },
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce }
         };
 
         HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/init"), initPayload.dump());
@@ -462,12 +481,18 @@ namespace KawaiiAuth {
     Response Client::Login(const std::string& username, const std::string& password) {
         if (m_session_token.empty()) return { false, skCrypt("Session uninitialized") };
 
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("login") },
             { skCrypt("username"), username },
             { skCrypt("password"), password },
             { skCrypt("hwid"), m_hwid },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
@@ -486,6 +511,10 @@ namespace KawaiiAuth {
             auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
+
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                return { false, skCrypt("Replay attack detected: response nonce mismatch") };
+            }
 
             Response r;
             r.success = inner.value(skCrypt("success"), false);
@@ -507,13 +536,19 @@ namespace KawaiiAuth {
     Response Client::Register(const std::string& username, const std::string& password, const std::string& license_key) {
         if (m_session_token.empty()) return { false, skCrypt("Session uninitialized") };
 
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("register") },
             { skCrypt("username"), username },
             { skCrypt("password"), password },
             { skCrypt("key"), license_key },
             { skCrypt("hwid"), m_hwid },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
@@ -532,6 +567,10 @@ namespace KawaiiAuth {
             auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
+
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                return { false, skCrypt("Replay attack detected: response nonce mismatch") };
+            }
 
             Response r;
             r.success = inner.value(skCrypt("success"), false);
@@ -553,11 +592,17 @@ namespace KawaiiAuth {
     Response Client::LicenseOnly(const std::string& license_key) {
         if (m_session_token.empty()) return { false, skCrypt("Session uninitialized") };
 
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("license_only") },
             { skCrypt("key"), license_key },
             { skCrypt("hwid"), m_hwid },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
@@ -576,6 +621,10 @@ namespace KawaiiAuth {
             auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
+
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                return { false, skCrypt("Replay attack detected: response nonce mismatch") };
+            }
 
             Response r;
             r.success = inner.value(skCrypt("success"), false);
@@ -608,9 +657,16 @@ namespace KawaiiAuth {
 
     bool Client::Ping() {
         if (m_session_token.empty()) return false;
+
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("ping") },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
@@ -626,6 +682,10 @@ namespace KawaiiAuth {
             auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
+
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                return false;
+            }
             return inner.value(skCrypt("success"), false);
         } catch (...) {
             return false;
@@ -640,9 +700,15 @@ namespace KawaiiAuth {
             return status;
         }
 
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("check_session") },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
@@ -660,6 +726,12 @@ namespace KawaiiAuth {
             auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
+
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                status.success = false;
+                status.message = skCrypt("Replay attack detected: response nonce mismatch");
+                return status;
+            }
 
             status.success = inner.value(skCrypt("success"), false);
             status.authed = inner.value(skCrypt("authed"), false);
@@ -689,10 +761,17 @@ namespace KawaiiAuth {
 
     std::string Client::FetchVariable(const std::string& var_key) {
         if (m_session_token.empty()) return "";
+
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("fetch_var") },
             { skCrypt("var_key"), var_key },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
@@ -708,6 +787,9 @@ namespace KawaiiAuth {
             auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                return "";
+            }
             if (inner.value(skCrypt("success"), false)) {
                 return inner.value(skCrypt("var_value"), "");
             }
@@ -717,10 +799,17 @@ namespace KawaiiAuth {
 
     std::vector<uint8_t> Client::DownloadFile(const std::string& file_name) {
         if (m_session_token.empty()) return {};
+
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("download_file") },
             { skCrypt("file_name"), file_name },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
@@ -736,6 +825,9 @@ namespace KawaiiAuth {
             auto outer = json::parse(httpResp.body);
             std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
             auto inner = json::parse(dec);
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                return {};
+            }
             if (inner.value(skCrypt("success"), false)) {
                 std::string b64 = inner.value(skCrypt("file_data"), "");
                 return Base64Decode(b64);
@@ -746,10 +838,17 @@ namespace KawaiiAuth {
 
     bool Client::SendLog(const std::string& log_message) {
         if (m_session_token.empty()) return false;
+
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
         json payload = {
             { skCrypt("action"), skCrypt("log") },
             { skCrypt("log_message"), log_message },
-            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
         };
 
         std::string enc = EncryptAES256(payload.dump());
