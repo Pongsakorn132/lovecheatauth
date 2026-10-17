@@ -620,6 +620,103 @@ namespace KawaiiAuth {
         }
     }
 
+    SessionStatus Client::CheckSession() {
+        SessionStatus status;
+        if (m_session_token.empty()) {
+            status.success = false;
+            status.message = skCrypt("Session uninitialized");
+            return status;
+        }
+
+        json payload = {
+            { skCrypt("action"), skCrypt("check_session") },
+            { skCrypt("timestamp"), (uint64_t)time(nullptr) }
+        };
+
+        std::string enc = EncryptAES256(payload.dump());
+        json reqBody = { { skCrypt("data"), enc } };
+        std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
+
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            status.success = false;
+            status.message = skCrypt("Connection failed or signature mismatch");
+            return status;
+        }
+
+        try {
+            auto outer = json::parse(httpResp.body);
+            std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
+            auto inner = json::parse(dec);
+
+            status.success = inner.value(skCrypt("success"), false);
+            status.authed = inner.value(skCrypt("authed"), false);
+            status.message = inner.value(skCrypt("message"), "");
+            status.session_token = inner.value(skCrypt("session_token"), m_session_token);
+            status.session_expires_at = inner.value(skCrypt("session_expires_at"), 0ULL);
+            status.session_time_left = inner.value(skCrypt("session_time_left"), 0ULL);
+
+            if (inner.contains(skCrypt("user")) && !inner[skCrypt("user")].is_null()) {
+                auto u = inner[skCrypt("user")];
+                status.user.username = u.value(skCrypt("username"), "");
+                status.user.expires_at = u.value(skCrypt("expires_at"), 0ULL);
+                status.user.level = u.value(skCrypt("level"), 0);
+                status.user.hwid = u.value(skCrypt("hwid"), "");
+            }
+            return status;
+        } catch (...) {
+            status.success = false;
+            status.message = skCrypt("Response parsing failed");
+            return status;
+        }
+    }
+
+    SessionStatus Client::CheckAuthSession(const std::string& session_token) {
+        SessionStatus status;
+        std::string token = session_token.empty() ? m_session_token : session_token;
+        if (token.empty()) {
+            status.success = false;
+            status.need_connect = true;
+            status.message = skCrypt("No session token provided");
+            return status;
+        }
+
+        json reqBody = {
+            { skCrypt("session_token"), token }
+        };
+        std::string header = std::string(skCrypt("X-Client-Session: ")) + token;
+
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/auth/session"), reqBody.dump(), header);
+        if (httpResp.body.empty()) {
+            status.success = false;
+            status.message = skCrypt("Failed to connect to /api/auth/session");
+            return status;
+        }
+
+        try {
+            auto j = json::parse(httpResp.body);
+            status.success = j.value(skCrypt("success"), false);
+            status.authed = j.value(skCrypt("authed"), false);
+            status.pin_required = j.value(skCrypt("pin_required"), false);
+            status.need_connect = j.value(skCrypt("need_connect"), false);
+            status.client_key = j.value(skCrypt("client_key"), "");
+            status.name = j.value(skCrypt("name"), "");
+            status.message = j.value(skCrypt("message"), "");
+            status.session_token = j.value(skCrypt("session_token"), token);
+            status.session_expires_at = j.value(skCrypt("session_expires_at"), 0ULL);
+            status.session_time_left = j.value(skCrypt("session_time_left"), 0ULL);
+            return status;
+        } catch (...) {
+            status.success = false;
+            status.message = skCrypt("Failed to parse auth session response");
+            return status;
+        }
+    }
+
+    bool Client::IsAuthed() {
+        return CheckSession().authed;
+    }
+
     std::string Client::FetchVariable(const std::string& var_key) {
         if (m_session_token.empty()) return "";
         json payload = {

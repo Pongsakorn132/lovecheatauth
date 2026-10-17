@@ -62,7 +62,8 @@ int main() {
     std::cout << "[1] Login (Username & Password)" << std::endl;
     std::cout << "[2] Register (Username, Password & Key)" << std::endl;
     std::cout << "[3] License Key Only (Direct 1-Step Auth)" << std::endl;
-    std::cout << "\nChoice [1-3]: ";
+    std::cout << "[4] Check Session Status (API Check Session)" << std::endl;
+    std::cout << "\nChoice [1-4]: ";
 
     int choice = 3;
     if (!(std::cin >> choice)) {
@@ -82,6 +83,34 @@ int main() {
         std::cout << "Password: "; std::cin >> pass;
         std::cout << "License Key: "; std::cin >> key;
         resp = auth.Register(user, pass, key);
+    } else if (choice == 4) {
+        std::cout << "\n[*] Checking session status via /api/v1/action..." << std::endl;
+        KawaiiAuth::SessionStatus st = auth.CheckSession();
+        std::cout << "[+] Session Success: " << (st.success ? "YES" : "NO") << std::endl;
+        std::cout << "[+] Is Authed: " << (st.authed ? "YES (Authenticated)" : "NO (Unauthenticated)") << std::endl;
+        std::cout << "[+] Message: " << st.message << std::endl;
+        std::cout << "[+] Time Remaining: " << st.session_time_left << " seconds" << std::endl;
+
+        std::cout << "\n[*] Also check /api/auth/session token? (y/n): ";
+        char c;
+        if (std::cin >> c && (c == 'y' || c == 'Y')) {
+            std::string t;
+            std::cout << "Enter session token (or press Enter for current): ";
+            std::cin.ignore();
+            std::getline(std::cin, t);
+            auto authSt = auth.CheckAuthSession(t);
+            std::cout << "[+] Auth Session Success: " << (authSt.success ? "YES" : "NO") << std::endl;
+            std::cout << "[+] Authed: " << (authSt.authed ? "YES" : "NO") << std::endl;
+            std::cout << "[+] PIN Required: " << (authSt.pin_required ? "YES" : "NO") << std::endl;
+            std::cout << "[+] Need Connect: " << (authSt.need_connect ? "YES" : "NO") << std::endl;
+            std::cout << "[+] Time Left: " << authSt.session_time_left << " seconds" << std::endl;
+            std::cout << "[+] Message: " << authSt.message << std::endl;
+        }
+
+        std::cout << "\nPress Enter to terminate...";
+        std::cin.ignore();
+        std::cin.get();
+        return 0;
     } else {
         std::string key;
         std::cout << "License Key (default 'KAWAII-DEMO-KEY2'): ";
@@ -99,6 +128,12 @@ int main() {
         
         std::time_t expTime = static_cast<std::time_t>(resp.user.expires_at);
         std::cout << "[+] Expires At: " << std::asctime(std::localtime(&expTime));
+
+        // Check Session API
+        std::cout << skCrypt("[*] Checking session authentication status via API...") << std::endl;
+        KawaiiAuth::SessionStatus sess = auth.CheckSession();
+        std::cout << "[+] Session Authed: " << (sess.authed ? "AUTHENTICATED (OK)" : "UNAUTHENTICATED") << std::endl;
+        std::cout << "[+] Session Time Left: " << sess.session_time_left << " seconds" << std::endl;
 
         // Fetch Protected Variable
         std::cout << skCrypt("[*] Fetching protected server variable...") << std::endl;

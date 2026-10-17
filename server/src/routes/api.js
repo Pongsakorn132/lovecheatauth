@@ -247,6 +247,32 @@ function handleApiRequest(req, res, url, body) {
                 });
             }
 
+            case 'check_session': {
+                const authed = Boolean(session.user_id);
+                let userObj = null;
+                if (authed) {
+                    const u = db.prepare('SELECT username, expires_at, sub_level, hwid, banned FROM users WHERE id = ?').get(session.user_id);
+                    if (u && !u.banned && u.expires_at >= now) {
+                        userObj = {
+                            username: u.username,
+                            expires_at: u.expires_at,
+                            level: u.sub_level,
+                            hwid: u.hwid
+                        };
+                    }
+                }
+                const timeLeft = Math.max(0, session.expires_at - now);
+                return sendEncrypted(res, session, {
+                    success: true,
+                    authed: Boolean(userObj),
+                    session_token: session.session_token,
+                    session_expires_at: session.expires_at,
+                    session_time_left: timeLeft,
+                    user: userObj,
+                    message: userObj ? 'Session is authenticated' : 'Session active but not authenticated'
+                });
+            }
+
             case 'ping': {
                 if (!session.user_id) {
                     return sendEncrypted(res, session, { success: false, message: 'Unauthorized session' });

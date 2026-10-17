@@ -39,6 +39,22 @@ namespace KawaiiAuth {
         std::string algorithm;
     };
 
+    struct SessionStatus {
+        bool success = false;
+        bool authed = false;
+        bool pin_required = false;
+        bool need_connect = false;
+        std::string client_key;
+        std::string name;
+        std::string message;
+        std::string session_token;
+        uint64_t session_expires_at = 0;
+        uint64_t session_time_left = 0;
+        UserData user;
+
+        SessionStatus() = default;
+    };
+
     class Client {
     public:
         Client(
@@ -57,6 +73,9 @@ namespace KawaiiAuth {
         Response Login(const std::string& username, const std::string& password);
         Response LicenseOnly(const std::string& license_key);
         bool Ping();
+        SessionStatus CheckSession();
+        SessionStatus CheckAuthSession(const std::string& session_token = "");
+        bool IsAuthed();
 
         // Assets and Telemetry
         std::string FetchVariable(const std::string& var_key);
