@@ -408,6 +408,29 @@
         </div>
     </div>
 
+    <!-- Global Custom Dialog Modal (Replaces browser alert/confirm) -->
+    <div id="customDialogModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-[100] transition-opacity duration-200" onclick="if(event.target === this) closeCustomDialog(false)">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm space-y-4 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0" id="customDialogCard" onclick="event.stopPropagation()">
+            <div class="flex items-start gap-3.5">
+                <div id="customDialogIconContainer" class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0 mt-0.5">
+                    <!-- Icon dynamically injected -->
+                </div>
+                <div class="space-y-1 overflow-hidden flex-1">
+                    <h4 id="customDialogTitle" class="text-base font-bold text-white tracking-wide">Notice</h4>
+                    <p id="customDialogMessage" class="text-xs text-gray-300 leading-relaxed break-words font-mono whitespace-pre-line"></p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2" id="customDialogActions">
+                <button id="customDialogCancelBtn" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium border border-gray-700 transition">Cancel</button>
+                <button id="customDialogConfirmBtn" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-pink-950/50 transition">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[110] flex flex-col gap-2 pointer-events-none max-w-sm w-full px-4 sm:px-0">
+    </div>
+
     <script>
         let currentAppId = null;
         let isAuthorized = false;
@@ -422,9 +445,170 @@
         const usersPageSize = 10;
         let usersSearchQuery = '';
 
+        let dialogResolver = null;
+
+        function closeCustomDialog(result = false) {
+            const modal = document.getElementById('customDialogModal');
+            const card = document.getElementById('customDialogCard');
+            if (card) {
+                card.classList.remove('scale-100', 'opacity-100');
+                card.classList.add('scale-95', 'opacity-0');
+            }
+            setTimeout(() => {
+                if (modal) modal.classList.add('hidden');
+                if (dialogResolver) {
+                    const resolve = dialogResolver;
+                    dialogResolver = null;
+                    resolve(result);
+                }
+            }, 150);
+        }
+
+        function showCustomDialog({ title = 'Notice', message = '', type = 'info', isConfirm = false, confirmText = 'OK', cancelText = 'Cancel', isDanger = false }) {
+            return new Promise((resolve) => {
+                dialogResolver = resolve;
+                const modal = document.getElementById('customDialogModal');
+                const card = document.getElementById('customDialogCard');
+                const titleEl = document.getElementById('customDialogTitle');
+                const msgEl = document.getElementById('customDialogMessage');
+                const iconContainer = document.getElementById('customDialogIconContainer');
+                const cancelBtn = document.getElementById('customDialogCancelBtn');
+                const confirmBtn = document.getElementById('customDialogConfirmBtn');
+
+                if (titleEl) titleEl.textContent = title;
+                if (msgEl) msgEl.textContent = message;
+
+                let iconSvg = '';
+                let iconClass = '';
+                if (type === 'danger' || isDanger) {
+                    iconClass = 'p-2.5 rounded-xl bg-red-950/90 border border-red-700/80 text-red-400 shrink-0';
+                    iconSvg = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+                } else if (type === 'warning') {
+                    iconClass = 'p-2.5 rounded-xl bg-amber-950/90 border border-amber-700/80 text-amber-400 shrink-0';
+                    iconSvg = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+                } else if (type === 'success') {
+                    iconClass = 'p-2.5 rounded-xl bg-emerald-950/90 border border-emerald-700/80 text-emerald-400 shrink-0';
+                    iconSvg = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                } else {
+                    iconClass = 'p-2.5 rounded-xl bg-pink-950/90 border border-pink-700/80 text-pink-400 shrink-0';
+                    iconSvg = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+                }
+                if (iconContainer) {
+                    iconContainer.className = iconClass;
+                    iconContainer.innerHTML = iconSvg;
+                }
+
+                if (cancelBtn) {
+                    if (isConfirm) {
+                        cancelBtn.classList.remove('hidden');
+                        cancelBtn.textContent = cancelText;
+                        cancelBtn.onclick = () => closeCustomDialog(false);
+                    } else {
+                        cancelBtn.classList.add('hidden');
+                    }
+                }
+
+                if (confirmBtn) {
+                    confirmBtn.textContent = confirmText;
+                    if (isDanger || type === 'danger') {
+                        confirmBtn.className = 'px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-red-950/60 transition';
+                    } else {
+                        confirmBtn.className = 'px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-pink-950/60 transition';
+                    }
+                    confirmBtn.onclick = () => closeCustomDialog(true);
+                }
+
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    requestAnimationFrame(() => {
+                        if (card) {
+                            card.classList.remove('scale-95', 'opacity-0');
+                            card.classList.add('scale-100', 'opacity-100');
+                        }
+                    });
+                }
+            });
+        }
+
+        function customAlert(message, opts = {}) {
+            const defaults = {
+                title: opts.type === 'error' || opts.type === 'danger' ? 'Error' : (opts.type === 'warning' ? 'Notice' : (opts.type === 'success' ? 'Success' : 'Notice')),
+                type: 'info',
+                isConfirm: false,
+                confirmText: 'OK'
+            };
+            return showCustomDialog({ ...defaults, ...opts, message });
+        }
+
+        function customConfirm(message, opts = {}) {
+            const defaults = {
+                title: 'Confirm Action',
+                type: opts.isDanger ? 'danger' : 'warning',
+                isConfirm: true,
+                confirmText: opts.isDanger ? 'Delete' : 'Confirm',
+                cancelText: 'Cancel'
+            };
+            return showCustomDialog({ ...defaults, ...opts, message });
+        }
+
+        // Global Toast Notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            
+            let borderBadge = 'border-pink-500/50 text-pink-300';
+            let dotBg = 'bg-pink-400';
+            if (type === 'success') {
+                borderBadge = 'border-emerald-500/50 text-emerald-300';
+                dotBg = 'bg-emerald-400';
+            } else if (type === 'error' || type === 'danger') {
+                borderBadge = 'border-red-500/50 text-red-300';
+                dotBg = 'bg-red-400';
+            } else if (type === 'warning') {
+                borderBadge = 'border-amber-500/50 text-amber-300';
+                dotBg = 'bg-amber-400';
+            }
+
+            toast.className = `glass-panel pointer-events-auto p-3.5 rounded-xl border ${borderBadge} shadow-xl shadow-black/50 flex items-center gap-3 transition-all duration-300 transform translate-y-3 opacity-0 text-xs font-mono`;
+            toast.innerHTML = `
+                <span class="w-2 h-2 rounded-full ${dotBg} shrink-0 animate-pulse"></span>
+                <span class="text-gray-200 flex-1">${escapeHtml(message)}</span>
+            `;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-3', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => {
+                    if (toast.parentNode) toast.parentNode.removeChild(toast);
+                }, 300);
+            }, 3500);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            const modal = document.getElementById('customDialogModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                if (e.key === 'Escape') {
+                    closeCustomDialog(false);
+                } else if (e.key === 'Enter') {
+                    closeCustomDialog(true);
+                }
+            }
+        });
+
+        // Override default window.alert as fallback
+        window.alert = function(msg) {
+            customAlert(String(msg), { type: 'info' });
+        };
+
         async function copyToClipboard(text, btn) {
             try {
                 await navigator.clipboard.writeText(text);
+                showToast('Copied to clipboard!', 'success');
                 const oldText = btn.innerHTML;
                 btn.innerHTML = '<span class="text-emerald-400 font-medium">Copied!</span>';
                 setTimeout(() => { btn.innerHTML = oldText; }, 1500);
@@ -435,6 +619,7 @@
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
+                showToast('Copied to clipboard!', 'success');
                 const oldText = btn.innerHTML;
                 btn.innerHTML = '<span class="text-emerald-400 font-medium">Copied!</span>';
                 setTimeout(() => { btn.innerHTML = oldText; }, 1500);
@@ -872,7 +1057,7 @@
 
         // Extend Timer Functions
         function openExtendModal(userId = null, username = null) {
-            if (!currentAppId) return alert('Please select an application first');
+            if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
             const targetSelect = document.getElementById('extendTarget');
             const userSelect = document.getElementById('extendUserId');
             const userDiv = document.getElementById('extendUserSelectDiv');
@@ -913,13 +1098,13 @@
         }
 
         async function submitExtendTimer() {
-            if (!currentAppId) return alert('Please select an application first');
+            if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
             const target = document.getElementById('extendTarget').value;
             const duration = document.getElementById('extendDuration').value;
             const unit = document.getElementById('extendUnit').value;
             const userId = document.getElementById('extendUserId').value;
 
-            if (!duration || Number(duration) <= 0) return alert('Please enter a valid duration number');
+            if (!duration || Number(duration) <= 0) return customAlert('Please enter a valid duration number', { type: 'warning' });
 
             const payload = {
                 app_id: currentAppId,
@@ -928,7 +1113,7 @@
                 unit: unit
             };
             if (target === 'single') {
-                if (!userId) return alert('Please select a user');
+                if (!userId) return customAlert('Please select a user', { type: 'warning' });
                 payload.user_id = userId;
             }
 
@@ -940,9 +1125,9 @@
             if (res && res.success) {
                 closeModal('extendModal');
                 loadUsers();
-                alert(res.message);
+                showToast(res.message, 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to extend user subscription');
+                customAlert(res && res.message ? res.message : 'Failed to extend user subscription', { type: 'error' });
             }
         }
 
@@ -952,22 +1137,35 @@
         }
 
         async function deleteSingleUser(userId, username) {
-            if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+            const ok = await customConfirm(`Are you sure you want to delete user "${username}"?`, {
+                title: 'Delete User',
+                isDanger: true,
+                confirmText: 'Delete'
+            });
+            if (!ok) return;
+
             const res = await api('/api/admin/users/delete', {
                 method: 'POST',
                 body: { app_id: currentAppId, target: 'single', user_id: userId }
             });
             if (res && res.success) {
                 loadUsers();
+                showToast('User deleted successfully', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete user');
+                customAlert(res && res.message ? res.message : 'Failed to delete user', { type: 'error' });
             }
         }
 
         async function deleteSelectedUsers() {
             const checked = Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.value);
-            if (checked.length === 0) return alert('Please select at least one user to delete');
-            if (!confirm(`Are you sure you want to delete ${checked.length} selected user(s)?`)) return;
+            if (checked.length === 0) return customAlert('Please select at least one user to delete', { type: 'warning' });
+
+            const ok = await customConfirm(`Are you sure you want to delete ${checked.length} selected user(s)?`, {
+                title: 'Delete Selected Users',
+                isDanger: true,
+                confirmText: `Delete ${checked.length} User(s)`
+            });
+            if (!ok) return;
 
             const res = await api('/api/admin/users/delete', {
                 method: 'POST',
@@ -975,34 +1173,49 @@
             });
             if (res && res.success) {
                 loadUsers();
+                showToast(res.message || 'Selected users deleted successfully', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete selected users');
+                customAlert(res && res.message ? res.message : 'Failed to delete selected users', { type: 'error' });
             }
         }
 
         async function deleteExpiredUsers() {
-            if (!confirm('Are you sure you want to delete all expired users in this application?')) return;
+            const ok = await customConfirm('Are you sure you want to delete all expired users in this application?', {
+                title: 'Delete Expired Users',
+                isDanger: true,
+                confirmText: 'Delete Expired'
+            });
+            if (!ok) return;
+
             const res = await api('/api/admin/users/delete', {
                 method: 'POST',
                 body: { app_id: currentAppId, target: 'expired' }
             });
             if (res && res.success) {
                 loadUsers();
+                showToast(res.message || 'Expired users deleted successfully', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete expired users');
+                customAlert(res && res.message ? res.message : 'Failed to delete expired users', { type: 'error' });
             }
         }
 
         async function deleteAllUsers() {
-            if (!confirm('DANGER: Are you sure you want to delete ALL users in this application? This action cannot be undone!')) return;
+            const ok = await customConfirm('DANGER: Are you sure you want to delete ALL users in this application? This action cannot be undone!', {
+                title: 'DANGER: Delete All Users',
+                isDanger: true,
+                confirmText: 'Delete Everything'
+            });
+            if (!ok) return;
+
             const res = await api('/api/admin/users/delete', {
                 method: 'POST',
                 body: { app_id: currentAppId, target: 'all' }
             });
             if (res && res.success) {
                 loadUsers();
+                showToast(res.message || 'All users deleted successfully', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete users');
+                customAlert(res && res.message ? res.message : 'Failed to delete users', { type: 'error' });
             }
         }
 
@@ -1012,22 +1225,35 @@
         }
 
         async function deleteSingleKey(key) {
-            if (!confirm(`Are you sure you want to delete license key "${key}"?`)) return;
+            const ok = await customConfirm(`Are you sure you want to delete license key "${key}"?`, {
+                title: 'Delete License Key',
+                isDanger: true,
+                confirmText: 'Delete Key'
+            });
+            if (!ok) return;
+
             const res = await api('/api/admin/licenses/delete', {
                 method: 'POST',
                 body: { app_id: currentAppId, target: 'single', key: key }
             });
             if (res && res.success) {
                 loadKeys();
+                showToast('License key deleted', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete license key');
+                customAlert(res && res.message ? res.message : 'Failed to delete license key', { type: 'error' });
             }
         }
 
         async function deleteSelectedKeys() {
             const checked = Array.from(document.querySelectorAll('.key-checkbox:checked')).map(cb => cb.value);
-            if (checked.length === 0) return alert('Please select at least one key to delete');
-            if (!confirm(`Are you sure you want to delete ${checked.length} selected key(s)?`)) return;
+            if (checked.length === 0) return customAlert('Please select at least one key to delete', { type: 'warning' });
+
+            const ok = await customConfirm(`Are you sure you want to delete ${checked.length} selected key(s)?`, {
+                title: 'Delete Selected Keys',
+                isDanger: true,
+                confirmText: `Delete ${checked.length} Key(s)`
+            });
+            if (!ok) return;
 
             const res = await api('/api/admin/licenses/delete', {
                 method: 'POST',
@@ -1035,34 +1261,49 @@
             });
             if (res && res.success) {
                 loadKeys();
+                showToast(res.message || 'Selected keys deleted', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete selected keys');
+                customAlert(res && res.message ? res.message : 'Failed to delete selected keys', { type: 'error' });
             }
         }
 
         async function deleteUsedKeys() {
-            if (!confirm('Are you sure you want to delete all activated/used keys in this application?')) return;
+            const ok = await customConfirm('Are you sure you want to delete all activated/used keys in this application?', {
+                title: 'Delete Used Keys',
+                isDanger: true,
+                confirmText: 'Delete Used Keys'
+            });
+            if (!ok) return;
+
             const res = await api('/api/admin/licenses/delete', {
                 method: 'POST',
                 body: { app_id: currentAppId, target: 'used' }
             });
             if (res && res.success) {
                 loadKeys();
+                showToast(res.message || 'Used keys deleted', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete used keys');
+                customAlert(res && res.message ? res.message : 'Failed to delete used keys', { type: 'error' });
             }
         }
 
         async function deleteAllKeys() {
-            if (!confirm('DANGER: Are you sure you want to delete ALL license keys in this application? This action cannot be undone!')) return;
+            const ok = await customConfirm('DANGER: Are you sure you want to delete ALL license keys in this application? This action cannot be undone!', {
+                title: 'DANGER: Delete All Keys',
+                isDanger: true,
+                confirmText: 'Delete Everything'
+            });
+            if (!ok) return;
+
             const res = await api('/api/admin/licenses/delete', {
                 method: 'POST',
                 body: { app_id: currentAppId, target: 'all' }
             });
             if (res && res.success) {
                 loadKeys();
+                showToast(res.message || 'All keys deleted', 'success');
             } else {
-                alert(res && res.message ? res.message : 'Failed to delete keys');
+                customAlert(res && res.message ? res.message : 'Failed to delete keys', { type: 'error' });
             }
         }
 
@@ -1141,10 +1382,10 @@
         }
 
         async function submitNewApp() {
-            const name = document.getElementById('newAppName').value;
-            const version = document.getElementById('newAppVersion').value;
+            const name = document.getElementById('newAppName').value.trim();
+            const version = document.getElementById('newAppVersion').value.trim();
             const hwid_lock = document.getElementById('newAppHwidLock').checked;
-            if (!name) return alert('Name is required');
+            if (!name) return customAlert('App name is required', { type: 'warning' });
 
             const res = await api('/api/admin/apps', {
                 method: 'POST',
@@ -1154,14 +1395,15 @@
             if (res.success) {
                 closeModal('newAppModal');
                 currentAppId = res.app.id;
+                showToast('Application created successfully', 'success');
                 refreshData();
             } else {
-                alert(res.message);
+                customAlert(res.message || 'Failed to create application', { type: 'error' });
             }
         }
 
         async function submitGenKeys() {
-            if (!currentAppId) return alert('Please select or create an application first');
+            if (!currentAppId) return customAlert('Please select or create an application first', { type: 'warning' });
             const amount = document.getElementById('genAmount').value;
             const duration_days = document.getElementById('genDays').value;
             const prefix = document.getElementById('genPrefix').value;
@@ -1185,18 +1427,19 @@
             if (res.success) {
                 closeModal('genKeyModal');
                 loadKeys();
+                showToast(res.message || `Generated ${amount} license keys`, 'success');
             } else {
-                alert(res.message);
+                customAlert(res.message || 'Failed to generate keys', { type: 'error' });
             }
         }
 
         async function submitNewVar() {
-            if (!currentAppId) return alert('Please select an application first');
+            if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
             const var_key = document.getElementById('newVarKey').value.trim();
             const var_value = document.getElementById('newVarValue').value;
             const authed_only = document.getElementById('newVarAuthedOnly').checked;
 
-            if (!var_key) return alert('Variable key is required');
+            if (!var_key) return customAlert('Variable key is required', { type: 'warning' });
 
             const res = await api('/api/admin/variables', {
                 method: 'POST',
@@ -1209,21 +1452,29 @@
                 document.getElementById('newVarValue').value = '';
                 document.getElementById('newVarAuthedOnly').checked = true;
                 loadVars();
+                showToast('Variable saved successfully', 'success');
             } else {
-                alert(res.message || 'Failed to save variable');
+                customAlert(res.message || 'Failed to save variable', { type: 'error' });
             }
         }
 
         async function deleteVar(varId) {
-            if (!confirm('Are you sure you want to delete this variable?')) return;
+            const ok = await customConfirm('Are you sure you want to delete this variable?', {
+                title: 'Delete Variable',
+                isDanger: true,
+                confirmText: 'Delete'
+            });
+            if (!ok) return;
+
             const res = await api('/api/admin/variables', {
                 method: 'DELETE',
                 body: { id: varId }
             });
             if (res.success) {
                 loadVars();
+                showToast('Variable deleted successfully', 'success');
             } else {
-                alert(res.message || 'Failed to delete variable');
+                customAlert(res.message || 'Failed to delete variable', { type: 'error' });
             }
         }
 
@@ -1248,11 +1499,11 @@
 
         function openModal(id) {
             if (id === 'newAppModal' && !isAuthorized) {
-                alert('Please connect with a valid Admin Key first.');
+                customAlert('Please connect with a valid Admin Key first.', { type: 'warning' });
                 return;
             }
             if ((id === 'genKeyModal' || id === 'newVarModal') && (!isAuthorized || !currentAppId)) {
-                alert('Please connect with a valid Admin Key and select/create an application first.');
+                customAlert('Please connect with a valid Admin Key and select/create an application first.', { type: 'warning' });
                 return;
             }
             document.getElementById(id).classList.remove('hidden');
