@@ -7,30 +7,45 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #e2e8f0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 0%, #0d1e3d 0%, #081122 55%, #050a14 100%) fixed;
+            color: #e2e8f0;
+        }
         code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glass-panel {
+            background: rgba(13, 24, 46, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.14);
+            box-shadow: 0 4px 24px -2px rgba(2, 6, 23, 0.6), 0 0 20px -4px rgba(37, 99, 235, 0.08);
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #070d18; }
+        ::-webkit-scrollbar-thumb { background: #1e3a68; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0284c7; }
         .round-checkbox {
             appearance: none;
             -webkit-appearance: none;
             width: 1.25rem;
             height: 1.25rem;
-            border: 2px solid #4b5563;
+            border: 2px solid #334155;
             border-radius: 9999px;
             outline: none;
             cursor: pointer;
             display: inline-grid;
             place-content: center;
-            background-color: #1f2937;
+            background-color: #0f172a;
             transition: all 0.15s ease-in-out;
             vertical-align: middle;
         }
         .round-checkbox:hover {
-            border-color: #ec4899;
+            border-color: #38bdf8;
         }
         .round-checkbox:checked {
-            background-color: #db2777;
-            border-color: #db2777;
+            background-color: #0284c7;
+            border-color: #38bdf8;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
         }
         .round-checkbox:checked::before {
             content: "";
@@ -45,8 +60,8 @@
         }
         .client-pin-box:focus {
             transform: translateY(-2px) scale(1.05);
-            border-color: #ec4899;
-            box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
         }
         .shake-animation {
             animation: shake 0.4s ease-in-out;
@@ -60,25 +75,25 @@
 </head>
 <body class="min-h-screen flex flex-col">
     <!-- Navbar -->
-    <header class="border-b border-gray-800 bg-gray-900/60 sticky top-0 z-50 backdrop-blur-md">
+    <header class="border-b border-sky-900/30 bg-slate-950/70 sticky top-0 z-50 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="w-3 h-3 rounded-full bg-pink-500 animate-pulse"></div>
+                <div class="w-3 h-3 rounded-full bg-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.7)] animate-pulse"></div>
                 <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                    <span class="text-pink-400">Kawaii</span>Auth
-                    <span class="text-xs px-2 py-0.5 rounded bg-pink-950 text-pink-300 border border-pink-800 font-mono">v1.0-STABLE</span>
+                    <span class="bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent font-extrabold">Kawaii</span>Auth
+                    <span class="text-xs px-2.5 py-0.5 rounded-full bg-sky-950/80 text-sky-300 border border-sky-800/80 font-mono shadow-sm">v1.0-STABLE</span>
                 </h1>
             </div>
             <div class="flex items-center space-x-3">
-                <a href="/backend" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 border border-purple-500/30 text-purple-300 text-xs transition flex items-center gap-1 font-mono">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                <a href="/backend" class="px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-sky-500/30 text-sky-300 hover:text-white text-xs transition flex items-center gap-1.5 font-mono shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-400 shadow-[0_0_6px_rgba(56,189,248,0.8)]"></span>
                     <span>Backend</span>
                 </a>
-                <div class="flex items-center gap-2 text-xs text-gray-400 font-mono">
-                    <span class="text-gray-300">Client Key:</span>
-                    <input type="password" id="clientKeyInput" placeholder="Enter Client Key..." onkeydown="if(event.key==='Enter') initiateClientConnect()" class="bg-gray-800 border border-gray-700 px-2.5 py-1 rounded text-white text-xs w-48 focus:outline-none focus:border-pink-500 font-mono">
-                    <button onclick="initiateClientConnect()" id="btnConnect" class="px-3.5 py-1 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-semibold rounded text-xs transition shadow-sm">Connect</button>
-                    <button onclick="disconnectClient()" id="btnDisconnect" class="px-3 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-400 hover:text-white rounded text-xs transition hidden">Disconnect</button>
+                <div class="flex items-center gap-2 text-xs text-slate-400 font-mono">
+                    <span class="text-slate-300">Client Key:</span>
+                    <input type="password" id="clientKeyInput" placeholder="Enter Client Key..." onkeydown="if(event.key==='Enter') initiateClientConnect()" class="bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-lg text-white text-xs w-48 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 font-mono transition placeholder-slate-500">
+                    <button onclick="initiateClientConnect()" id="btnConnect" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white font-semibold rounded-lg text-xs transition shadow-lg shadow-blue-900/30 border border-sky-400/20">Connect</button>
+                    <button onclick="disconnectClient()" id="btnDisconnect" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition shadow-sm hidden">Disconnect</button>
                 </div>
             </div>
         </div>
@@ -90,51 +105,51 @@
         <!-- App Selection Bar -->
         <div class="glass-panel p-4 sm:p-5 rounded-xl flex items-center justify-between gap-4 overflow-x-auto">
             <div class="flex items-center gap-2.5 shrink-0">
-                <span class="text-xs sm:text-sm font-medium text-gray-300 whitespace-nowrap">Active Application:</span>
-                <select id="appSelect" onchange="onAppChanged()" class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-mono text-pink-300 focus:outline-none focus:border-pink-500 min-w-[150px] max-w-[220px]">
+                <span class="text-xs sm:text-sm font-semibold text-slate-200 whitespace-nowrap">Active Application:</span>
+                <select id="appSelect" onchange="onAppChanged()" class="bg-slate-900/90 border border-slate-700/80 rounded-lg px-3 py-1.5 text-xs sm:text-sm font-mono text-sky-300 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 min-w-[150px] max-w-[220px]">
                     <option value="">Waiting for Client Key connection...</option>
                 </select>
-                <button id="btnNewApp" onclick="openModal('newAppModal')" class="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-xs font-medium rounded-lg text-white transition flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+                <button id="btnNewApp" onclick="openModal('newAppModal')" class="px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-medium rounded-lg text-white transition flex items-center gap-1.5 shrink-0 whitespace-nowrap shadow-sm">
                     <span>+ New App</span>
                 </button>
-                <button id="btnDeleteApp" onclick="deleteCurrentApp()" class="px-2.5 py-1.5 bg-red-950/60 hover:bg-red-900 border border-red-800/80 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5 shrink-0 whitespace-nowrap hidden">
+                <button id="btnDeleteApp" onclick="deleteCurrentApp()" class="px-3 py-1.5 bg-red-950/60 hover:bg-red-900/80 border border-red-800/80 text-red-300 text-xs font-medium rounded-lg transition flex items-center gap-1.5 shrink-0 whitespace-nowrap shadow-sm hidden">
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     <span>Delete App</span>
                 </button>
             </div>
-            <div id="appInfoBar" class="text-xs font-mono text-gray-400 flex items-center gap-3 shrink-0 whitespace-nowrap"></div>
+            <div id="appInfoBar" class="text-xs font-mono text-slate-400 flex items-center gap-3 shrink-0 whitespace-nowrap"></div>
         </div>
 
         <!-- Metric Cards -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
-            <div class="glass-panel p-5 rounded-xl border-l-4 border-l-pink-500">
-                <div class="text-xs text-gray-400 font-mono uppercase">Total Users</div>
-                <div id="statUsers" class="text-3xl font-bold mt-2 text-white font-mono">0</div>
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-blue-500 hover:translate-y-[-2px] transition duration-200">
+                <div class="text-xs text-slate-400 font-mono uppercase tracking-wider font-semibold">Total Users</div>
+                <div id="statUsers" class="text-3xl font-bold mt-2 text-white font-mono tracking-tight">0</div>
             </div>
-            <div class="glass-panel p-5 rounded-xl border-l-4 border-l-purple-500">
-                <div class="text-xs text-gray-400 font-mono uppercase">Unused Keys</div>
-                <div id="statUnusedKeys" class="text-3xl font-bold mt-2 text-white font-mono">0</div>
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-sky-400 hover:translate-y-[-2px] transition duration-200">
+                <div class="text-xs text-slate-400 font-mono uppercase tracking-wider font-semibold">Unused Keys</div>
+                <div id="statUnusedKeys" class="text-3xl font-bold mt-2 text-white font-mono tracking-tight">0</div>
             </div>
-            <div class="glass-panel p-5 rounded-xl border-l-4 border-l-cyan-500">
-                <div class="text-xs text-gray-400 font-mono uppercase">Total Licenses</div>
-                <div id="statTotalKeys" class="text-3xl font-bold mt-2 text-white font-mono">0</div>
+            <div class="glass-panel p-5 rounded-2xl border-l-4 border-l-indigo-400 hover:translate-y-[-2px] transition duration-200">
+                <div class="text-xs text-slate-400 font-mono uppercase tracking-wider font-semibold">Total Licenses</div>
+                <div id="statTotalKeys" class="text-3xl font-bold mt-2 text-white font-mono tracking-tight">0</div>
             </div>
-            <div id="engineStatusCard" class="glass-panel p-5 rounded-xl border-l-4 border-l-gray-600 transition-colors">
-                <div class="text-xs text-gray-400 font-mono uppercase">Engine Status</div>
-                <div id="engineStatusText" class="text-lg font-bold mt-2 text-gray-400 font-mono flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-gray-500 animate-pulse"></span> CONNECTING...
+            <div id="engineStatusCard" class="glass-panel p-5 rounded-2xl border-l-4 border-l-slate-700 hover:translate-y-[-2px] transition duration-200">
+                <div class="text-xs text-slate-400 font-mono uppercase tracking-wider font-semibold">Engine Status</div>
+                <div id="engineStatusText" class="text-lg font-bold mt-2 text-slate-400 font-mono flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-500 animate-pulse"></span> CONNECTING...
                 </div>
             </div>
         </div>
 
         <!-- Tabs Navigation -->
-        <div class="flex border-b border-gray-800 space-x-6 text-sm font-medium">
-            <button onclick="switchTab('keysTab')" id="tabBtn-keysTab" class="pb-3 border-b-2 border-pink-500 text-pink-400">Licenses & Keys</button>
-            <button onclick="switchTab('subsTab')" id="tabBtn-subsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">Subscriptions</button>
-            <button onclick="switchTab('usersTab')" id="tabBtn-usersTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">Registered Users</button>
-            <button onclick="switchTab('varsTab')" id="tabBtn-varsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">Server Variables</button>
-            <button onclick="switchTab('logsTab')" id="tabBtn-logsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">Audit Logs</button>
-            <button onclick="switchTab('settingsTab')" id="tabBtn-settingsTab" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white">App Settings</button>
+        <div class="flex border-b border-slate-800 space-x-6 text-sm font-medium">
+            <button onclick="switchTab('keysTab')" id="tabBtn-keysTab" class="pb-3 border-b-2 border-sky-400 text-sky-300 font-bold tracking-wide">Licenses & Keys</button>
+            <button onclick="switchTab('subsTab')" id="tabBtn-subsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Subscriptions</button>
+            <button onclick="switchTab('usersTab')" id="tabBtn-usersTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Registered Users</button>
+            <button onclick="switchTab('varsTab')" id="tabBtn-varsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Server Variables</button>
+            <button onclick="switchTab('logsTab')" id="tabBtn-logsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">Audit Logs</button>
+            <button onclick="switchTab('settingsTab')" id="tabBtn-settingsTab" class="pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition">App Settings</button>
         </div>
 
         <!-- TAB 1: Licenses -->
@@ -143,28 +158,28 @@
                 <div class="flex items-center gap-3 flex-wrap">
                     <h3 class="text-lg font-semibold text-white">License Keys</h3>
                     <div class="relative">
-                        <input type="text" id="keysSearchInput" oninput="onKeysSearch(this.value)" placeholder="Search keys, plan, status..." class="bg-gray-800 border border-gray-700 pl-8 pr-3 py-1.5 rounded-lg text-white text-xs w-60 focus:outline-none focus:border-pink-500 font-mono">
-                        <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="keysSearchInput" oninput="onKeysSearch(this.value)" placeholder="Search keys, plan, status..." class="bg-slate-900/90 border border-slate-700 pl-8 pr-3 py-1.5 rounded-lg text-white text-xs w-60 focus:outline-none focus:border-sky-400 font-mono placeholder-slate-500">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                 </div>
                 <div id="keysActionsGroup" class="flex flex-wrap items-center gap-2">
                     <button onclick="deleteSelectedKeys()" class="px-3 py-1.5 bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg text-xs font-medium transition">
                         Delete Selected
                     </button>
-                    <button onclick="deleteUsedKeys()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-xs font-medium transition">
+                    <button onclick="deleteUsedKeys()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
                         Delete Used
                     </button>
-                    <button onclick="deleteAllKeys()" class="px-3 py-1.5 bg-gray-800 hover:bg-red-900/60 border border-gray-700 hover:border-red-800 text-gray-300 hover:text-red-300 rounded-lg text-xs font-medium transition">
+                    <button onclick="deleteAllKeys()" class="px-3 py-1.5 bg-slate-800 hover:bg-red-900/60 border border-slate-700 hover:border-red-800 text-slate-300 hover:text-red-300 rounded-lg text-xs font-medium transition">
                         Delete All
                     </button>
-                    <button id="btnGenKey" onclick="openModal('genKeyModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-pink-900/30">
+                    <button id="btnGenKey" onclick="openModal('genKeyModal')" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-blue-900/40 border border-sky-400/20">
                         + Generate Keys
                     </button>
                 </div>
             </div>
             <div class="glass-panel rounded-xl overflow-hidden">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-900/80 text-xs font-mono text-gray-400 uppercase border-b border-gray-800">
+                    <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
                             <th class="px-3 py-3 w-10 text-center"><input type="checkbox" id="checkAllKeys" onchange="toggleSelectAllKeys(this.checked)" class="round-checkbox"></th>
                             <th class="px-4 py-3">License Key</th>
@@ -175,19 +190,19 @@
                             <th class="px-4 py-3 text-right">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="keysTableBody" class="divide-y divide-gray-800/50 font-mono text-xs text-gray-300">
-                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">Select an app or generate keys</td></tr>
+                    <tbody id="keysTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
+                        <tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">Select an app or generate keys</td></tr>
                     </tbody>
                 </table>
                 <!-- Keys Pagination -->
-                <div id="keysPaginationBar" class="p-3 bg-gray-900/60 border-t border-gray-800 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400 font-mono">
+                <div id="keysPaginationBar" class="p-3 bg-slate-950/70 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 font-mono">
                     <span id="keysPageInfo">Page 1 of 1 (0 keys)</span>
                     <div class="flex items-center gap-1">
-                        <button id="btnKeysFirst" onclick="goToKeysPage(1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="First Page">&laquo;</button>
-                        <button id="btnKeysPrev" onclick="goToKeysPage(keysCurrentPage - 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Previous Page">&lsaquo;</button>
-                        <span id="keysPageIndicator" class="px-2.5 py-1 bg-gray-900 border border-gray-700 rounded text-pink-400 font-bold">1</span>
-                        <button id="btnKeysNext" onclick="goToKeysPage(keysCurrentPage + 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Next Page">&rsaquo;</button>
-                        <button id="btnKeysLast" onclick="goToKeysPage('last')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Last Page">&raquo;</button>
+                        <button id="btnKeysFirst" onclick="goToKeysPage(1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="First Page">&laquo;</button>
+                        <button id="btnKeysPrev" onclick="goToKeysPage(keysCurrentPage - 1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="Previous Page">&lsaquo;</button>
+                        <span id="keysPageIndicator" class="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded text-sky-400 font-bold">1</span>
+                        <button id="btnKeysNext" onclick="goToKeysPage(keysCurrentPage + 1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="Next Page">&rsaquo;</button>
+                        <button id="btnKeysLast" onclick="goToKeysPage('last')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="Last Page">&raquo;</button>
                     </div>
                 </div>
             </div>
@@ -198,10 +213,10 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                     <h3 class="text-lg font-semibold text-white">Subscriptions</h3>
-                    <p class="text-xs text-gray-400">จัดการแพ็กเกจใบอนุญาต (Subscription Plans) สำหรับใช้งานร่วมกับคีย์และผู้ใช้</p>
+                    <p class="text-xs text-slate-400">จัดการแพ็กเกจใบอนุญาต (Subscription Plans) สำหรับใช้งานร่วมกับคีย์และผู้ใช้</p>
                 </div>
                 <div id="subsActionsGroup">
-                    <button id="btnNewSub" onclick="openModal('newSubModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-pink-900/30 flex items-center gap-1.5">
+                    <button id="btnNewSub" onclick="openModal('newSubModal')" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-blue-900/40 border border-sky-400/20 flex items-center gap-1.5">
                         <span>+ Create Subscription</span>
                     </button>
                 </div>
@@ -230,28 +245,28 @@
                 <div class="flex items-center gap-3 flex-wrap">
                     <h3 class="text-lg font-semibold text-white">User Accounts & HWID Records</h3>
                     <div class="relative">
-                        <input type="text" id="usersSearchInput" oninput="onUsersSearch(this.value)" placeholder="Search username, HWID, IP..." class="bg-gray-800 border border-gray-700 pl-8 pr-3 py-1.5 rounded-lg text-white text-xs w-60 focus:outline-none focus:border-pink-500 font-mono">
-                        <svg class="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <input type="text" id="usersSearchInput" oninput="onUsersSearch(this.value)" placeholder="Search username, HWID, IP..." class="bg-slate-900/90 border border-slate-700 pl-8 pr-3 py-1.5 rounded-lg text-white text-xs w-60 focus:outline-none focus:border-sky-400 font-mono placeholder-slate-500">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                     </div>
                 </div>
                 <div id="usersActionsGroup" class="flex flex-wrap items-center gap-2">
-                    <button onclick="openExtendModal()" class="px-3 py-1.5 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-pink-900/30">
+                    <button onclick="openExtendModal()" class="px-3 py-1.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-lg text-xs font-semibold transition shadow-lg shadow-blue-900/40 border border-sky-400/20">
                         + Extend Timer
                     </button>
                     <button onclick="deleteSelectedUsers()" class="px-3 py-1.5 bg-red-950/70 hover:bg-red-900 border border-red-800 text-red-300 rounded-lg text-xs font-medium transition">
                         Delete Selected
                     </button>
-                    <button onclick="deleteExpiredUsers()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 rounded-lg text-xs font-medium transition">
+                    <button onclick="deleteExpiredUsers()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-lg text-xs font-medium transition">
                         Delete Expired
                     </button>
-                    <button onclick="deleteAllUsers()" class="px-3 py-1.5 bg-gray-800 hover:bg-red-900/60 border border-gray-700 hover:border-red-800 text-gray-300 hover:text-red-300 rounded-lg text-xs font-medium transition">
+                    <button onclick="deleteAllUsers()" class="px-3 py-1.5 bg-slate-800 hover:bg-red-900/60 border border-slate-700 hover:border-red-800 text-slate-300 hover:text-red-300 rounded-lg text-xs font-medium transition">
                         Delete All
                     </button>
                 </div>
             </div>
             <div class="glass-panel rounded-xl overflow-hidden">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-900/80 text-xs font-mono text-gray-400 uppercase border-b border-gray-800">
+                    <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
                             <th class="px-3 py-3 w-10 text-center"><input type="checkbox" id="checkAllUsers" onchange="toggleSelectAllUsers(this.checked)" class="round-checkbox"></th>
                             <th class="px-4 py-3">Username</th>
@@ -262,19 +277,19 @@
                             <th class="px-4 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="usersTableBody" class="divide-y divide-gray-800/50 font-mono text-xs text-gray-300">
-                        <tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">No users found</td></tr>
+                    <tbody id="usersTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
+                        <tr><td colspan="7" class="px-4 py-6 text-center text-slate-500">No users found</td></tr>
                     </tbody>
                 </table>
                 <!-- Users Pagination -->
-                <div id="usersPaginationBar" class="p-3 bg-gray-900/60 border-t border-gray-800 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-400 font-mono">
+                <div id="usersPaginationBar" class="p-3 bg-slate-950/70 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 font-mono">
                     <span id="usersPageInfo">Page 1 of 1 (0 users)</span>
                     <div class="flex items-center gap-1">
-                        <button id="btnUsersFirst" onclick="goToUsersPage(1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="First Page">&laquo;</button>
-                        <button id="btnUsersPrev" onclick="goToUsersPage(usersCurrentPage - 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Previous Page">&lsaquo;</button>
-                        <span id="usersPageIndicator" class="px-2.5 py-1 bg-gray-900 border border-gray-700 rounded text-pink-400 font-bold">1</span>
-                        <button id="btnUsersNext" onclick="goToUsersPage(usersCurrentPage + 1)" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Next Page">&rsaquo;</button>
-                        <button id="btnUsersLast" onclick="goToUsersPage('last')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-gray-700 transition" title="Last Page">&raquo;</button>
+                        <button id="btnUsersFirst" onclick="goToUsersPage(1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="First Page">&laquo;</button>
+                        <button id="btnUsersPrev" onclick="goToUsersPage(usersCurrentPage - 1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="Previous Page">&lsaquo;</button>
+                        <span id="usersPageIndicator" class="px-2.5 py-1 bg-slate-900 border border-slate-700 rounded text-sky-400 font-bold">1</span>
+                        <button id="btnUsersNext" onclick="goToUsersPage(usersCurrentPage + 1)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="Next Page">&rsaquo;</button>
+                        <button id="btnUsersLast" onclick="goToUsersPage('last')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 disabled:pointer-events-none text-white rounded border border-slate-700 transition" title="Last Page">&raquo;</button>
                     </div>
                 </div>
             </div>
@@ -284,13 +299,13 @@
         <section id="varsTab" class="space-y-4 hidden">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-white">Application Variables (Encrypted Payload Fetch)</h3>
-                <button id="btnAddVar" onclick="openModal('newVarModal')" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-medium transition">
+                <button id="btnAddVar" onclick="openModal('newVarModal')" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-lg text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">
                     + Add Variable
                 </button>
             </div>
             <div class="glass-panel rounded-xl overflow-hidden">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-900/80 text-xs font-mono text-gray-400 uppercase border-b border-gray-800">
+                    <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
                             <th class="px-4 py-3">Key</th>
                             <th class="px-4 py-3">Value</th>
@@ -298,8 +313,8 @@
                             <th class="px-4 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="varsTableBody" class="divide-y divide-gray-800/50 font-mono text-xs text-gray-300">
-                        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No variables configured</td></tr>
+                    <tbody id="varsTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
+                        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No variables configured</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -312,7 +327,7 @@
             </div>
             <div class="glass-panel rounded-xl overflow-hidden">
                 <table class="w-full text-left text-sm">
-                    <thead class="bg-gray-900/80 text-xs font-mono text-gray-400 uppercase border-b border-gray-800">
+                    <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
                             <th class="px-4 py-3">Timestamp</th>
                             <th class="px-4 py-3">Event</th>
@@ -320,8 +335,8 @@
                             <th class="px-4 py-3">IP Address</th>
                         </tr>
                     </thead>
-                    <tbody id="logsTableBody" class="divide-y divide-gray-800/50 font-mono text-xs text-gray-300">
-                        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No logs recorded</td></tr>
+                    <tbody id="logsTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
+                        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No logs recorded</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -339,59 +354,59 @@
             <!-- Settings Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- 1. App Version -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-800 space-y-4">
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
                     <div class="flex items-center gap-3">
-                        <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                        <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-800/80 text-blue-400 shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                         </div>
                         <div>
                             <h4 class="text-sm font-bold text-white">Application Version</h4>
-                            <p class="text-xs text-gray-400">แก้ไขเวอร์ชันของแอปพลิเคชันที่เลือก (เช่น 1.0, 1.2, 2.0)</p>
+                            <p class="text-xs text-slate-400">แก้ไขเวอร์ชันของแอปพลิเคชันที่เลือก (เช่น 1.0, 1.2, 2.0)</p>
                         </div>
                     </div>
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-300 mb-1.5">Current App Version</label>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Current App Version</label>
                             <div class="flex gap-2">
-                                <input type="text" id="settingAppVersion" placeholder="e.g. 1.0" class="flex-1 bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
-                                <button onclick="submitSaveVersion()" class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/50 transition">
+                                <input type="text" id="settingAppVersion" placeholder="e.g. 1.0" class="flex-1 bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
+                                <button onclick="submitSaveVersion()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-950/50 transition">
                                     Save Version
                                 </button>
                             </div>
                         </div>
-                        <p class="text-[11px] text-gray-400">
+                        <p class="text-[11px] text-slate-400">
                             💡 เมื่อแก้ไขเวอร์ชัน ไคลเอนต์ที่มีเวอร์ชันไม่ตรงกันจะไม่สามารถเริ่มต้นระบบ (Init) ได้
                         </p>
                     </div>
                 </div>
 
                 <!-- 2. Refresh Secret -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-800 space-y-4">
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
                     <div class="flex items-center gap-3">
-                        <div class="p-2.5 rounded-xl bg-purple-950/80 border border-purple-800/80 text-purple-400 shrink-0">
+                        <div class="p-2.5 rounded-xl bg-indigo-950/80 border border-indigo-800/80 text-indigo-400 shrink-0">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
                         </div>
                         <div>
                             <h4 class="text-sm font-bold text-white">Application Secret</h4>
-                            <p class="text-xs text-gray-400">คีย์ลับสำหรับเข้ารหัสความปลอดภัย AES-256 ระหว่าง Client และ Server</p>
+                            <p class="text-xs text-slate-400">คีย์ลับสำหรับเข้ารหัสความปลอดภัย AES-256 ระหว่าง Client และ Server</p>
                         </div>
                     </div>
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-300 mb-1.5">Secret Key (AES-256)</label>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Secret Key (AES-256)</label>
                             <div class="flex items-center gap-2">
                                 <div class="relative flex-1">
-                                    <input type="password" id="settingAppSecret" readonly class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-pink-300 text-xs font-mono pr-20 select-all focus:outline-none">
+                                    <input type="password" id="settingAppSecret" readonly class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sky-300 text-xs font-mono pr-20 select-all focus:outline-none">
                                     <div class="absolute right-2 top-2.5 flex items-center gap-1.5">
-                                        <button onclick="toggleFieldVisibility('settingAppSecret')" class="p-1 hover:text-white text-gray-400 text-xs transition" title="Show / Hide Secret">
+                                        <button onclick="toggleFieldVisibility('settingAppSecret')" class="p-1 hover:text-white text-slate-400 text-xs transition" title="Show / Hide Secret">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                         </button>
-                                        <button onclick="copyFieldText('settingAppSecret')" class="p-1 hover:text-white text-gray-400 text-xs transition" title="Copy Secret">
+                                        <button onclick="copyFieldText('settingAppSecret')" class="p-1 hover:text-white text-slate-400 text-xs transition" title="Copy Secret">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                         </button>
                                     </div>
                                 </div>
-                                <button onclick="submitRefreshSecret()" class="px-4 py-2.5 bg-purple-950/80 hover:bg-purple-900 border border-purple-700/80 text-purple-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0 shadow-lg shadow-purple-950/40">
+                                <button onclick="submitRefreshSecret()" class="px-4 py-2.5 bg-indigo-950/80 hover:bg-indigo-900 border border-indigo-700/80 text-indigo-200 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0 shadow-lg shadow-indigo-950/40">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                                     Refresh Secret
                                 </button>
@@ -404,7 +419,7 @@
                 </div>
 
                 <!-- 3. Seller API Key -->
-                <div class="glass-panel p-6 rounded-2xl border border-gray-800 space-y-5 lg:col-span-2">
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5 lg:col-span-2">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
                             <div class="p-2.5 rounded-xl bg-cyan-950/80 border border-cyan-800/80 text-cyan-400 shrink-0">
@@ -412,7 +427,7 @@
                             </div>
                             <div>
                                 <h4 class="text-sm font-bold text-white">Seller API Key</h4>
-                                <p class="text-xs text-gray-400">API Key สำหรับตัวแทนจำหน่าย บอท Discord หรือระบบเว็บไซต์ร้านค้าภายนอก สามารถจัดการคีย์และยูสเซอร์ได้เสมือน Admin ทุกฟังก์ชันเฉพาะแอพนี้</p>
+                                <p class="text-xs text-slate-400">API Key สำหรับตัวแทนจำหน่าย บอท Discord หรือระบบเว็บไซต์ร้านค้าภายนอก สามารถจัดการคีย์และยูสเซอร์ได้เสมือน Admin ทุกฟังก์ชันเฉพาะแอพนี้</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
@@ -422,15 +437,15 @@
 
                     <div class="space-y-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-300 mb-1.5">Seller API Key (Header: <code class="text-pink-400 font-mono">X-Seller-Key</code>)</label>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Seller API Key (Header: <code class="text-sky-400 font-mono">X-Seller-Key</code>)</label>
                             <div class="flex items-center gap-2">
                                 <div class="relative flex-1">
-                                    <input type="password" id="settingSellerKey" readonly class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-cyan-300 text-xs font-mono pr-20 select-all focus:outline-none">
+                                    <input type="password" id="settingSellerKey" readonly class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-cyan-300 text-xs font-mono pr-20 select-all focus:outline-none">
                                     <div class="absolute right-2 top-2.5 flex items-center gap-1.5">
-                                        <button onclick="toggleFieldVisibility('settingSellerKey')" class="p-1 hover:text-white text-gray-400 text-xs transition" title="Show / Hide Seller Key">
+                                        <button onclick="toggleFieldVisibility('settingSellerKey')" class="p-1 hover:text-white text-slate-400 text-xs transition" title="Show / Hide Seller Key">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                         </button>
-                                        <button onclick="copyFieldText('settingSellerKey')" class="p-1 hover:text-white text-gray-400 text-xs transition" title="Copy Seller Key">
+                                        <button onclick="copyFieldText('settingSellerKey')" class="p-1 hover:text-white text-slate-400 text-xs transition" title="Copy Seller Key">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
                                         </button>
                                     </div>
@@ -444,46 +459,46 @@
                     </div>
 
                     <!-- Interactive Seller API Quick Reference Guide -->
-                    <div class="mt-4 p-5 rounded-xl bg-gray-900/70 border border-gray-800 space-y-4">
+                    <div class="mt-4 p-5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-4">
                         <div class="flex items-center justify-between">
-                            <span class="text-xs font-bold text-gray-200 flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-200 flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
                                 Seller API Endpoints &amp; Integration Guide:
                             </span>
-                            <span class="text-[11px] text-gray-400 font-mono">Header: X-Seller-Key: &lt;YOUR_SELLER_KEY&gt;</span>
+                            <span class="text-[11px] text-slate-400 font-mono">Header: X-Seller-Key: &lt;YOUR_SELLER_KEY&gt;</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs font-mono">
-                            <div class="p-3 rounded-xl bg-gray-950/80 border border-gray-800/80 space-y-1.5">
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1.5">
                                 <div class="text-emerald-400 font-bold flex items-center justify-between">
                                     <span>POST /api/seller/licenses/generate</span>
                                     <span class="text-[10px] bg-emerald-950 text-emerald-300 px-1.5 py-0.5 rounded">Generate Keys</span>
                                 </div>
-                                <div class="text-gray-400 text-[11px] font-sans">สร้างคีย์ใบอนุญาต:</div>
-                                <pre class="text-[10px] text-gray-300 bg-gray-900 p-2 rounded overflow-x-auto">{"amount": 5, "duration_days": 30, "mask": "VIP-****-****"}</pre>
+                                <div class="text-slate-400 text-[11px] font-sans">สร้างคีย์ใบอนุญาต:</div>
+                                <pre class="text-[10px] text-slate-300 bg-slate-900 p-2 rounded overflow-x-auto">{"amount": 5, "duration_days": 30, "mask": "VIP-****-****"}</pre>
                             </div>
-                            <div class="p-3 rounded-xl bg-gray-950/80 border border-gray-800/80 space-y-1.5">
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1.5">
                                 <div class="text-blue-400 font-bold flex items-center justify-between">
                                     <span>GET /api/seller/licenses</span>
                                     <span class="text-[10px] bg-blue-950 text-blue-300 px-1.5 py-0.5 rounded">List Keys</span>
                                 </div>
-                                <div class="text-gray-400 text-[11px] font-sans">ดึงรายการคีย์ทั้งหมดที่มีในระบบของแอพนี้</div>
-                                <pre class="text-[10px] text-gray-300 bg-gray-900 p-2 rounded overflow-x-auto">Returns: {"success": true, "licenses": [...]}</pre>
+                                <div class="text-slate-400 text-[11px] font-sans">ดึงรายการคีย์ทั้งหมดที่มีในระบบของแอพนี้</div>
+                                <pre class="text-[10px] text-slate-300 bg-slate-900 p-2 rounded overflow-x-auto">Returns: {"success": true, "licenses": [...]}</pre>
                             </div>
-                            <div class="p-3 rounded-xl bg-gray-950/80 border border-gray-800/80 space-y-1.5">
-                                <div class="text-pink-400 font-bold flex items-center justify-between">
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1.5">
+                                <div class="text-sky-400 font-bold flex items-center justify-between">
                                     <span>POST /api/seller/users/extend</span>
-                                    <span class="text-[10px] bg-pink-950 text-pink-300 px-1.5 py-0.5 rounded">Extend Timer</span>
+                                    <span class="text-[10px] bg-sky-950 text-sky-300 px-1.5 py-0.5 rounded">Extend Timer</span>
                                 </div>
-                                <div class="text-gray-400 text-[11px] font-sans">ต่อเวลาผู้ใช้ (target: single, active, all):</div>
-                                <pre class="text-[10px] text-gray-300 bg-gray-900 p-2 rounded overflow-x-auto">{"target": "single", "user_id": "...", "duration": 1, "unit": "day"}</pre>
+                                <div class="text-slate-400 text-[11px] font-sans">ต่อเวลาผู้ใช้ (target: single, active, all):</div>
+                                <pre class="text-[10px] text-slate-300 bg-slate-900 p-2 rounded overflow-x-auto">{"target": "single", "user_id": "...", "duration": 1, "unit": "day"}</pre>
                             </div>
-                            <div class="p-3 rounded-xl bg-gray-950/80 border border-gray-800/80 space-y-1.5">
+                            <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800/80 space-y-1.5">
                                 <div class="text-red-400 font-bold flex items-center justify-between">
                                     <span>POST /api/seller/users/delete</span>
                                     <span class="text-[10px] bg-red-950 text-red-300 px-1.5 py-0.5 rounded">Delete Users</span>
                                 </div>
-                                <div class="text-gray-400 text-[11px] font-sans">ลบผู้ใช้ (target: single, selected, expired, all):</div>
-                                <pre class="text-[10px] text-gray-300 bg-gray-900 p-2 rounded overflow-x-auto">{"target": "expired"}</pre>
+                                <div class="text-slate-400 text-[11px] font-sans">ลบผู้ใช้ (target: single, selected, expired, all):</div>
+                                <pre class="text-[10px] text-slate-300 bg-slate-900 p-2 rounded overflow-x-auto">{"target": "expired"}</pre>
                             </div>
                         </div>
                     </div>
@@ -512,28 +527,28 @@
 
     <!-- Modal: Client 2-Factor 6-PIN Verification -->
     <div id="clientPinModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('clientPinModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-[460px] space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-[460px] space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <!-- Header -->
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white tracking-wide">Enter 6-Digit PIN</h3>
-                        <p class="text-xs text-gray-400">Two-Factor Security Verification</p>
+                        <p class="text-xs text-slate-400">Two-Factor Security Verification</p>
                     </div>
                 </div>
-                <button onclick="closeModal('clientPinModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                <button onclick="closeModal('clientPinModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <!-- Body -->
             <div class="space-y-3.5 text-center">
-                <div class="p-2.5 rounded-xl bg-gray-900/70 border border-gray-800 text-left flex items-center justify-between">
+                <div class="p-2.5 rounded-xl bg-slate-900/70 border border-slate-800 text-left flex items-center justify-between">
                     <div>
-                        <span class="text-[10px] uppercase font-mono text-gray-400 block">Client Key</span>
-                        <span id="pinTargetKeyDisplay" class="font-mono text-pink-300 font-bold text-xs tracking-widest block mt-0.5 select-none">••••••••••••••••••••</span>
+                        <span class="text-[10px] uppercase font-mono text-slate-400 block">Client Key</span>
+                        <span id="pinTargetKeyDisplay" class="font-mono text-sky-300 font-bold text-xs tracking-widest block mt-0.5 select-none">••••••••••••••••••••</span>
                     </div>
                     <span id="pinKeyNameDisplay" class="text-[11px] text-cyan-400 font-medium"></span>
                 </div>
@@ -545,82 +560,82 @@
 
                 <!-- 6 PIN Input Boxes -->
                 <div id="clientPinBoxes" class="flex justify-center gap-2 py-2">
-                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="0">
-                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="1">
-                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="2">
-                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="3">
-                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="4">
-                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-gray-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500 transition" data-idx="5">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition" data-idx="0">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition" data-idx="1">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition" data-idx="2">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition" data-idx="3">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition" data-idx="4">
+                    <input type="password" maxlength="1" inputmode="numeric" class="client-pin-box w-11 h-13 text-center font-mono text-xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition" data-idx="5">
                 </div>
-                <p class="text-[11px] text-gray-400">กรอกรหัส PIN 6 หลักที่ผูกกับ Client Key เพื่อเข้าใช้งาน</p>
+                <p class="text-[11px] text-slate-400">กรอกรหัส PIN 6 หลักที่ผูกกับ Client Key เพื่อเข้าใช้งาน</p>
             </div>
             <!-- Footer -->
             <div class="flex justify-end gap-2.5 pt-2">
-                <button onclick="closeModal('clientPinModal')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button onclick="submitClientPinVerification()" class="px-5 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Verify PIN</button>
+                <button onclick="closeModal('clientPinModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitClientPinVerification()" class="px-5 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Verify PIN</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: New App -->
     <div id="newAppModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newAppModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <!-- Header -->
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white tracking-wide">Create New Application</h3>
-                        <p class="text-xs text-gray-400">เพิ่มโปรเจกต์ใหม่เข้าสู่ระบบควบคุม KawaiiAuth</p>
+                        <p class="text-xs text-slate-400">เพิ่มโปรเจกต์ใหม่เข้าสู่ระบบควบคุม KawaiiAuth</p>
                     </div>
                 </div>
-                <button onclick="closeModal('newAppModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                <button onclick="closeModal('newAppModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <!-- Body -->
             <div class="space-y-3.5 text-sm">
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Application Name (ชื่อแอปพลิเคชัน)</label>
-                    <input type="text" id="newAppName" placeholder="e.g. ValorantVIP, ApexLoader" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition placeholder-gray-500">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Application Name (ชื่อแอปพลิเคชัน)</label>
+                    <input type="text" id="newAppName" placeholder="e.g. ValorantVIP, ApexLoader" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition placeholder-slate-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Version (เวอร์ชัน)</label>
-                    <input type="text" id="newAppVersion" value="1.0" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition font-mono">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Version (เวอร์ชัน)</label>
+                    <input type="text" id="newAppVersion" value="1.0" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition font-mono">
                 </div>
-                <div class="bg-gray-900/60 p-3 rounded-xl border border-gray-700/60 flex items-center justify-between">
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
                     <div>
-                        <label for="newAppHwidLock" class="text-xs font-semibold text-gray-200 cursor-pointer">Enforce HWID Lock</label>
-                        <p class="text-[11px] text-gray-400">ล็อคสิทธิ์กับ Hardware ID เครื่องแรกที่เข้าใช้งาน</p>
+                        <label for="newAppHwidLock" class="text-xs font-semibold text-slate-200 cursor-pointer">Enforce HWID Lock</label>
+                        <p class="text-[11px] text-slate-400">ล็อคสิทธิ์กับ Hardware ID เครื่องแรกที่เข้าใช้งาน</p>
                     </div>
                     <input type="checkbox" id="newAppHwidLock" checked class="round-checkbox">
                 </div>
             </div>
             <!-- Footer -->
             <div class="flex justify-end gap-2.5 pt-2">
-                <button onclick="closeModal('newAppModal')" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button onclick="submitNewApp()" class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Create Application</button>
+                <button onclick="closeModal('newAppModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitNewApp()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Create Application</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Generate Keys -->
     <div id="genKeyModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('genKeyModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <!-- Header -->
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white tracking-wide">Batch License Generator</h3>
-                        <p class="text-xs text-gray-400">สร้างคีย์ใบอนุญาตพร้อมกำหนดรูปแบบตามต้องการ</p>
+                        <p class="text-xs text-slate-400">สร้างคีย์ใบอนุญาตพร้อมกำหนดรูปแบบตามต้องการ</p>
                     </div>
                 </div>
-                <button onclick="closeModal('genKeyModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                <button onclick="closeModal('genKeyModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
@@ -628,94 +643,94 @@
             <div class="space-y-3.5 text-sm">
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-gray-300 mb-1.5">Quantity (จำนวนคีย์)</label>
-                        <input type="number" id="genAmount" value="5" min="1" max="100" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition font-mono">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Quantity (จำนวนคีย์)</label>
+                        <input type="number" id="genAmount" value="5" min="1" max="100" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition font-mono">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-300 mb-1.5">Duration (จำนวนวัน)</label>
-                        <input type="number" id="genDays" value="30" min="1" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition font-mono">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Duration (จำนวนวัน)</label>
+                        <input type="number" id="genDays" value="30" min="1" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition font-mono">
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Subscription Plan (แพ็กเกจ SUB)</label>
-                    <select id="genSubName" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Subscription Plan (แพ็กเกจ SUB)</label>
+                    <select id="genSubName" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
                         <option value="default" selected>default</option>
                     </select>
-                    <p class="text-[11px] text-gray-400 mt-1.5">เลือกประเภท Subscription สำหรับคีย์ชุดนี้ (ค่าเริ่มต้นคือ default)</p>
+                    <p class="text-[11px] text-slate-400 mt-1.5">เลือกประเภท Subscription สำหรับคีย์ชุดนี้ (ค่าเริ่มต้นคือ default)</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Key Prefix / Format Mask (รูปแบบคีย์)</label>
-                    <input type="text" id="genPrefix" value="****-****-****-****" placeholder="เช่น ****-****-****-**** หรือ VIP-****-****" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition font-mono">
-                    <p class="text-[11px] text-gray-400 mt-1.5">
-                        ใช้ <span class="text-pink-400 font-mono font-bold">*</span> แทนการสุ่มตัวอักษรและตัวเลข เช่น <code class="text-gray-300">****-****</code> หรือ <code class="text-gray-300">VIP-****</code> (เว้นว่างได้)
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Key Prefix / Format Mask (รูปแบบคีย์)</label>
+                    <input type="text" id="genPrefix" value="****-****-****-****" placeholder="เช่น ****-****-****-**** หรือ VIP-****-****" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition font-mono">
+                    <p class="text-[11px] text-slate-400 mt-1.5">
+                        ใช้ <span class="text-sky-400 font-mono font-bold">*</span> แทนการสุ่มตัวอักษรและตัวเลข เช่น <code class="text-slate-300">****-****</code> หรือ <code class="text-slate-300">VIP-****</code> (เว้นว่างได้)
                     </p>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Character Case (รูปแบบตัวอักษร)</label>
-                    <div class="flex items-center gap-6 bg-gray-900/60 p-3 rounded-xl border border-gray-700/60">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Character Case (รูปแบบตัวอักษร)</label>
+                    <div class="flex items-center gap-6 bg-slate-900/60 p-3 rounded-xl border border-slate-700/60">
                         <label class="flex items-center gap-2 cursor-pointer select-none">
                             <input type="checkbox" id="genCaseUpper" class="round-checkbox">
-                            <span class="text-xs text-gray-300 font-medium">Upper (ตัวพิมพ์ใหญ่ A-Z)</span>
+                            <span class="text-xs text-slate-300 font-medium">Upper (ตัวพิมพ์ใหญ่ A-Z)</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer select-none">
                             <input type="checkbox" id="genCaseLower" class="round-checkbox">
-                            <span class="text-xs text-gray-300 font-medium">Lower (ตัวพิมพ์เล็ก a-z)</span>
+                            <span class="text-xs text-slate-300 font-medium">Lower (ตัวพิมพ์เล็ก a-z)</span>
                         </label>
                     </div>
-                    <p class="text-[11px] text-gray-400 mt-1.5">
+                    <p class="text-[11px] text-slate-400 mt-1.5">
                         หากไม่ติ๊กจะสุ่มผสมทั้งพิมพ์ใหญ่และพิมพ์เล็ก
                     </p>
                 </div>
             </div>
             <!-- Footer -->
             <div class="flex justify-end gap-2.5 pt-2">
-                <button onclick="closeModal('genKeyModal')" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button onclick="submitGenKeys()" class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Generate Keys</button>
+                <button onclick="closeModal('genKeyModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitGenKeys()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Generate Keys</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Extend User Timer -->
     <div id="extendModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('extendModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <!-- Header -->
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white tracking-wide">Extend User Timer</h3>
-                        <p class="text-xs text-gray-400">เพิ่มเวลาการใช้งานให้กับผู้ใช้</p>
+                        <p class="text-xs text-slate-400">เพิ่มเวลาการใช้งานให้กับผู้ใช้</p>
                     </div>
                 </div>
-                <button onclick="closeModal('extendModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                <button onclick="closeModal('extendModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <!-- Body -->
             <div class="space-y-3.5 text-sm">
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Target (เป้าหมาย)</label>
-                    <select id="extendTarget" onchange="onExtendTargetChange()" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Target (เป้าหมาย)</label>
+                    <select id="extendTarget" onchange="onExtendTargetChange()" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition">
                         <option value="active" selected>ทั้งหมดที่ Active (ยังไม่หมดอายุ)</option>
                         <option value="all">ทั้งหมด (All Users รวมผู้ใช้ที่หมดอายุ)</option>
                         <option value="single">ต่อ 1 User (เลือกเจาะจงรายคน)</option>
                     </select>
                 </div>
                 <div id="extendUserSelectDiv" class="hidden">
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Select User (เลือกผู้ใช้)</label>
-                    <select id="extendUserId" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition font-mono">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Select User (เลือกผู้ใช้)</label>
+                    <select id="extendUserId" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition font-mono">
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Add Duration (ระยะเวลาที่จะเพิ่ม)</label>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Add Duration (ระยะเวลาที่จะเพิ่ม)</label>
                     <div class="grid grid-cols-5 gap-2">
                         <div class="col-span-3">
-                            <input type="number" id="extendDuration" value="1" min="1" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition font-mono" placeholder="จำนวน">
+                            <input type="number" id="extendDuration" value="1" min="1" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition font-mono" placeholder="จำนวน">
                         </div>
                         <div class="col-span-2">
-                            <select id="extendUnit" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition">
+                            <select id="extendUnit" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition">
                                 <option value="hour">ชั่วโมง</option>
                                 <option value="day" selected>วัน</option>
                                 <option value="week">สัปดาห์</option>
@@ -728,136 +743,136 @@
             </div>
             <!-- Footer -->
             <div class="flex justify-end gap-2.5 pt-2">
-                <button onclick="closeModal('extendModal')" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button onclick="submitExtendTimer()" class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Extend Time</button>
+                <button onclick="closeModal('extendModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitExtendTimer()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Extend Time</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: New Variable -->
     <div id="newVarModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newVarModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <!-- Header -->
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white tracking-wide">Create Application Variable</h3>
-                        <p class="text-xs text-gray-400">กำหนดตัวแปรเข้ารหัส (Encrypted Remote Payloads)</p>
+                        <p class="text-xs text-slate-400">กำหนดตัวแปรเข้ารหัส (Encrypted Remote Payloads)</p>
                     </div>
                 </div>
-                <button onclick="closeModal('newVarModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                <button onclick="closeModal('newVarModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <!-- Body -->
             <div class="space-y-3.5 text-sm">
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Variable Key (ชื่อตัวแปร)</label>
-                    <input type="text" id="newVarKey" placeholder="e.g. payload_offset or game_version" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition placeholder-gray-500 font-mono">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Variable Key (ชื่อตัวแปร)</label>
+                    <input type="text" id="newVarKey" placeholder="e.g. payload_offset or game_version" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition placeholder-slate-500 font-mono">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Variable Value (Plaintext / JSON / Offset)</label>
-                    <textarea id="newVarValue" rows="3" placeholder="e.g. 0x1A4F0 หรือ JSON string" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 focus:ring-1 focus:ring-pink-500/30 transition font-mono placeholder-gray-500"></textarea>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Variable Value (Plaintext / JSON / Offset)</label>
+                    <textarea id="newVarValue" rows="3" placeholder="e.g. 0x1A4F0 หรือ JSON string" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition font-mono placeholder-slate-500"></textarea>
                 </div>
-                <div class="bg-gray-900/60 p-3 rounded-xl border border-gray-700/60 flex items-center justify-between">
+                <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
                     <div>
-                        <label for="newVarAuthedOnly" class="text-xs font-semibold text-gray-200 cursor-pointer">Require Authentication</label>
-                        <p class="text-[11px] text-gray-400">อนุญาตเฉพาะไคลเอนต์ที่มี Session ที่ Authed แล้วเท่านั้น</p>
+                        <label for="newVarAuthedOnly" class="text-xs font-semibold text-slate-200 cursor-pointer">Require Authentication</label>
+                        <p class="text-[11px] text-slate-400">อนุญาตเฉพาะไคลเอนต์ที่มี Session ที่ Authed แล้วเท่านั้น</p>
                     </div>
                     <input type="checkbox" id="newVarAuthedOnly" checked class="round-checkbox">
                 </div>
             </div>
             <!-- Footer -->
             <div class="flex justify-end gap-2.5 pt-2">
-                <button onclick="closeModal('newVarModal')" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button onclick="submitNewVar()" class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Save Variable</button>
+                <button onclick="closeModal('newVarModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitNewVar()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Save Variable</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: New Subscription -->
     <div id="newSubModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newSubModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white tracking-wide">Create Subscription</h3>
-                        <p class="text-xs text-gray-400">สร้างแพ็กเกจ Sub ใหม่สำหรับแอปพลิเคชัน</p>
+                        <p class="text-xs text-slate-400">สร้างแพ็กเกจ Sub ใหม่สำหรับแอปพลิเคชัน</p>
                     </div>
                 </div>
-                <button onclick="closeModal('newSubModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                <button onclick="closeModal('newSubModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <div class="space-y-3.5 text-sm">
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Subscription Name (ชื่อ SUB)</label>
-                    <input type="text" id="newSubName" placeholder="e.g. VIP, Lifetime, Premium" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Subscription Name (ชื่อ SUB)</label>
+                    <input type="text" id="newSubName" placeholder="e.g. VIP, Lifetime, Premium" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Access Level (ระดับสิทธิ์)</label>
-                    <input type="number" id="newSubLevel" value="1" min="1" max="100" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Access Level (ระดับสิทธิ์)</label>
+                    <input type="number" id="newSubLevel" value="1" min="1" max="100" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
                 </div>
             </div>
             <div class="flex justify-end gap-2.5 pt-2">
-                <button onclick="closeModal('newSubModal')" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button onclick="submitNewSub()" class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Create Subscription</button>
+                <button onclick="closeModal('newSubModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitNewSub()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Create Subscription</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: Edit Subscription -->
     <div id="editSubModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('editSubModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <input type="hidden" id="editSubId">
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0">
+                    <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                     </div>
                     <div>
                         <h3 class="text-base font-bold text-white tracking-wide">Edit Subscription</h3>
-                        <p class="text-xs text-gray-400">แก้ไขชื่อแพ็กเกจ Sub (จะอัปเดตคีย์ที่เกี่ยวข้องให้โดยอัตโนมัติ)</p>
+                        <p class="text-xs text-slate-400">แก้ไขชื่อแพ็กเกจ Sub (จะอัปเดตคีย์ที่เกี่ยวข้องให้โดยอัตโนมัติ)</p>
                     </div>
                 </div>
-                <button onclick="closeModal('editSubModal')" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800/80 transition" title="Close">
+                <button onclick="closeModal('editSubModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             <div class="space-y-3.5 text-sm">
                 <div>
-                    <label class="block text-xs font-medium text-gray-300 mb-1.5">Subscription Name (ชื่อ SUB ใหม่)</label>
-                    <input type="text" id="editSubName" placeholder="e.g. VIP, Standard" class="w-full bg-gray-900/90 border border-gray-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 font-mono">
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Subscription Name (ชื่อ SUB ใหม่)</label>
+                    <input type="text" id="editSubName" placeholder="e.g. VIP, Standard" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
                 </div>
             </div>
             <div class="flex justify-end gap-2.5 pt-2">
-                <button onclick="closeModal('editSubModal')" class="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button onclick="submitEditSub()" class="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-pink-950/60 transition transform hover:-translate-y-0.5 active:translate-y-0">Save Changes</button>
+                <button onclick="closeModal('editSubModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button onclick="submitEditSub()" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Save Changes</button>
             </div>
         </div>
     </div>
 
     <!-- Global Custom Dialog Modal (Replaces browser alert/confirm) -->
     <div id="customDialogModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-[100] transition-opacity duration-200" onclick="if(event.target === this) closeCustomDialog(false)">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm space-y-4 border border-pink-500/30 shadow-2xl shadow-pink-950/50 transform transition-all duration-200 scale-95 opacity-0" id="customDialogCard" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-sm space-y-4 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0" id="customDialogCard" onclick="event.stopPropagation()">
             <div class="flex items-start gap-3.5">
-                <div id="customDialogIconContainer" class="p-2.5 rounded-xl bg-pink-950/80 border border-pink-800/80 text-pink-400 shrink-0 mt-0.5">
+                <div id="customDialogIconContainer" class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0 mt-0.5">
                     <!-- Icon dynamically injected -->
                 </div>
                 <div class="space-y-1 overflow-hidden flex-1">
                     <h4 id="customDialogTitle" class="text-base font-bold text-white tracking-wide">Notice</h4>
-                    <p id="customDialogMessage" class="text-xs text-gray-300 leading-relaxed break-words font-mono whitespace-pre-line"></p>
+                    <p id="customDialogMessage" class="text-xs text-slate-300 leading-relaxed break-words font-mono whitespace-pre-line"></p>
                 </div>
             </div>
             <div class="flex justify-end gap-2 pt-2" id="customDialogActions">
-                <button id="customDialogCancelBtn" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium border border-gray-700 transition">Cancel</button>
-                <button id="customDialogConfirmBtn" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-pink-950/50 transition">OK</button>
+                <button id="customDialogCancelBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button id="customDialogConfirmBtn" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-blue-950/50 transition">OK</button>
             </div>
         </div>
     </div>
@@ -925,7 +940,7 @@
                     iconClass = 'p-2.5 rounded-xl bg-emerald-950/90 border border-emerald-700/80 text-emerald-400 shrink-0';
                     iconSvg = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
                 } else {
-                    iconClass = 'p-2.5 rounded-xl bg-pink-950/90 border border-pink-700/80 text-pink-400 shrink-0';
+                    iconClass = 'p-2.5 rounded-xl bg-blue-950/90 border border-blue-700/80 text-sky-400 shrink-0';
                     iconSvg = '<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
                 }
                 if (iconContainer) {
@@ -948,7 +963,7 @@
                     if (isDanger || type === 'danger') {
                         confirmBtn.className = 'px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-red-950/60 transition';
                     } else {
-                        confirmBtn.className = 'px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-pink-950/60 transition';
+                        confirmBtn.className = 'px-4 py-2 bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-500 hover:to-sky-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-blue-950/50 transition';
                     }
                     confirmBtn.onclick = () => closeCustomDialog(true);
                 }
@@ -992,8 +1007,8 @@
             if (!container) return;
             const toast = document.createElement('div');
             
-            let borderBadge = 'border-pink-500/50 text-pink-300';
-            let dotBg = 'bg-pink-400';
+            let borderBadge = 'border-sky-500/50 text-sky-300';
+            let dotBg = 'bg-sky-400';
             if (type === 'success') {
                 borderBadge = 'border-emerald-500/50 text-emerald-300';
                 dotBg = 'bg-emerald-400';
@@ -1555,12 +1570,12 @@
 
             document.getElementById('appInfoBar').innerHTML = `
                 <div class="flex items-center gap-1.5 whitespace-nowrap">
-                    <span>ID: <code class="text-pink-300 font-mono select-all">${escapeHtml(currentAppId)}</code></span>
-                    <button onclick="copyToClipboard('${escapeHtml(currentAppId)}', this)" class="px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 text-xs transition">Copy ID</button>
+                    <span>ID: <code class="text-sky-300 font-mono select-all">${escapeHtml(currentAppId)}</code></span>
+                    <button onclick="copyToClipboard('${escapeHtml(currentAppId)}', this)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs transition">Copy ID</button>
                 </div>
                 <div class="flex items-center gap-1.5 whitespace-nowrap">
-                    <span>Secret: <code class="text-gray-400 font-mono tracking-widest select-none">********</code></span>
-                    <button id="btnInfoCopySecret" onclick="copyToClipboard('${escapeHtml(secret)}', this)" class="px-2 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 text-xs transition">Copy Secret</button>
+                    <span>Secret: <code class="text-slate-400 font-mono tracking-widest select-none">********</code></span>
+                    <button id="btnInfoCopySecret" onclick="copyToClipboard('${escapeHtml(secret)}', this)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs transition">Copy Secret</button>
                 </div>
             `;
 
@@ -1653,7 +1668,7 @@
 
                 tr.innerHTML = `
                     <td class="px-3 py-3 text-center"><input type="checkbox" class="key-checkbox round-checkbox" value="${escapeHtml(k.key)}"></td>
-                    <td class="px-4 py-3 font-bold text-pink-300 font-mono select-all">${escapeHtml(k.key)}</td>
+                    <td class="px-4 py-3 font-bold text-sky-300 font-mono select-all">${escapeHtml(k.key)}</td>
                     <td class="px-4 py-3">${escapeHtml(k.sub_name)}</td>
                     <td class="px-4 py-3">${days} days</td>
                     <td class="px-4 py-3">${statusBadge}</td>
@@ -1725,12 +1740,12 @@
                 const tr = document.createElement('tr');
                 const isDefault = s.name.toLowerCase() === 'default';
                 const defaultBadge = isDefault
-                    ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-pink-950/80 text-pink-300 border border-pink-800">default</span>'
+                    ? '<span class="ml-2 px-1.5 py-0.5 rounded text-[10px] bg-sky-950/80 text-sky-300 border border-sky-800">default</span>'
                     : '';
                 const dateStr = s.created_at ? new Date(s.created_at * 1000).toLocaleString() : 'N/A';
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-pink-300 font-mono flex items-center">
+                    <td class="px-4 py-3 font-bold text-sky-300 font-mono flex items-center">
                         ${escapeHtml(s.name)}
                         ${defaultBadge}
                     </td>
@@ -1938,8 +1953,8 @@
                     <td class="px-4 py-3 text-xs">${expireStr}</td>
                     <td class="px-4 py-3">${bannedBadge}</td>
                     <td class="px-4 py-3 text-right space-x-1.5">
-                        <button onclick="openExtendModal('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-pink-950/70 hover:bg-pink-900 border border-pink-800 text-xs rounded text-pink-300 transition">+ Extend</button>
-                        <button onclick="resetHwid('${u.id}')" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 text-xs rounded text-gray-300 transition">Reset HWID</button>
+                        <button onclick="openExtendModal('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-sky-950/70 hover:bg-sky-900 border border-sky-800 text-xs rounded text-sky-300 transition">+ Extend</button>
+                        <button onclick="resetHwid('${u.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded text-slate-300 transition">Reset HWID</button>
                         <button onclick="toggleBan('${u.id}', ${u.banned ? 0 : 1})" class="px-2 py-1 ${u.banned ? 'bg-emerald-800 hover:bg-emerald-700' : 'bg-red-800 hover:bg-red-700'} text-xs rounded text-white transition">${u.banned ? 'Unban' : 'Ban'}</button>
                         <button onclick="deleteSingleUser('${u.id}', '${escapeHtml(u.username)}')" class="px-2 py-1 bg-red-950/70 hover:bg-red-900 border border-red-800/70 text-xs rounded text-red-400 transition">Delete</button>
                     </td>
@@ -2247,8 +2262,8 @@
                     : '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-800">Public</span>';
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-pink-300 font-mono">${escapeHtml(v.var_key)}</td>
-                    <td class="px-4 py-3 font-mono text-gray-300 break-all max-w-xs">${escapeHtml(v.var_value)}</td>
+                    <td class="px-4 py-3 font-bold text-sky-300 font-mono">${escapeHtml(v.var_key)}</td>
+                    <td class="px-4 py-3 font-mono text-slate-300 break-all max-w-xs">${escapeHtml(v.var_value)}</td>
                     <td class="px-4 py-3">${authedBadge}</td>
                     <td class="px-4 py-3 text-right">
                         <button onclick="deleteVar('${v.id}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
@@ -2260,7 +2275,7 @@
 
         async function loadLogs() {
             if (!currentAppId) {
-                document.getElementById('logsTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No application selected</td></tr>';
+                document.getElementById('logsTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
                 return;
             }
             const res = await api(`/api/admin/logs?app_id=${currentAppId}`);
@@ -2272,16 +2287,16 @@
             }
             const logs = res.logs || [];
             if (logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">No audit logs</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No audit logs</td></tr>';
                 return;
             }
             logs.forEach(l => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td class="px-4 py-3 text-gray-400">${new Date(l.created_at * 1000).toLocaleTimeString()}</td>
-                    <td class="px-4 py-3 font-bold text-pink-400">${escapeHtml(l.event)}</td>
-                    <td class="px-4 py-3 text-gray-300">${escapeHtml(l.details)}</td>
-                    <td class="px-4 py-3 text-gray-400">${escapeHtml(l.ip || 'N/A')}</td>
+                    <td class="px-4 py-3 text-slate-400">${new Date(l.created_at * 1000).toLocaleTimeString()}</td>
+                    <td class="px-4 py-3 font-bold text-sky-400">${escapeHtml(l.event)}</td>
+                    <td class="px-4 py-3 text-slate-300">${escapeHtml(l.details)}</td>
+                    <td class="px-4 py-3 text-slate-400">${escapeHtml(l.ip || 'N/A')}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -2412,12 +2427,12 @@
                 const el = document.getElementById(t);
                 const btn = document.getElementById(`tabBtn-${t}`);
                 if (el) el.classList.add('hidden');
-                if (btn) btn.className = 'pb-3 border-b-2 border-transparent text-gray-400 hover:text-white';
+                if (btn) btn.className = 'pb-3 border-b-2 border-transparent text-slate-400 hover:text-white transition';
             });
             const targetEl = document.getElementById(tabId);
             const targetBtn = document.getElementById(`tabBtn-${tabId}`);
             if (targetEl) targetEl.classList.remove('hidden');
-            if (targetBtn) targetBtn.className = 'pb-3 border-b-2 border-pink-500 text-pink-400 font-semibold';
+            if (targetBtn) targetBtn.className = 'pb-3 border-b-2 border-sky-400 text-sky-300 font-bold tracking-wide';
             if (tabId === 'settingsTab') {
                 loadAppSettings();
             } else if (tabId === 'subsTab') {

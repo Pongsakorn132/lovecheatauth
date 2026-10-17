@@ -16,8 +16,8 @@
                             900: '#0b0f19',
                             800: '#121829',
                             700: '#1b233a',
-                            pink: '#ec4899',
-                            purple: '#a855f7',
+                            blue: '#2563eb',
+                            sky: '#0284c7',
                             cyan: '#06b6d4',
                             emerald: '#10b981'
                         }
@@ -30,33 +30,48 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #070a13;
+            background: radial-gradient(circle at 50% 0%, #0d1e3d 0%, #081122 55%, #050a14 100%) fixed;
             color: #e2e8f0;
         }
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
         .glass-panel {
-            background: rgba(18, 24, 41, 0.75);
+            background: rgba(13, 24, 46, 0.75);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(168, 85, 247, 0.15);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(56, 189, 248, 0.14);
+            box-shadow: 0 4px 24px -2px rgba(2, 6, 23, 0.6), 0 0 20px -4px rgba(37, 99, 235, 0.08);
         }
         .glass-card {
-            background: rgba(15, 21, 37, 0.85);
+            background: rgba(13, 24, 46, 0.85);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(236, 72, 153, 0.2);
-            box-shadow: 0 10px 40px -10px rgba(168, 85, 247, 0.2);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 10px 40px -10px rgba(14, 165, 233, 0.2);
         }
         .pin-box {
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .pin-box:focus {
             transform: translateY(-2px) scale(1.05);
-            border-color: #ec4899;
-            box-shadow: 0 0 15px rgba(236, 72, 153, 0.4);
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #081122;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e3a6a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0284c7;
         }
         .shake-animation {
             animation: shake 0.4s ease-in-out;
@@ -68,7 +83,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
+<body class="min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
 
     <!-- Toast Notification Container -->
     <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
@@ -78,44 +93,44 @@
     <!-- ======================================================== -->
     <div id="loginView" class="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
         <!-- Background Glows -->
-        <div class="absolute -top-40 -left-40 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
         <div class="w-full max-w-md relative z-10">
             <!-- Step 1: Username & Password -->
             <div id="loginStepCredentials" class="glass-card p-8 rounded-2xl space-y-6">
                 <div class="text-center space-y-2">
-                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center shadow-lg shadow-pink-500/30">
+                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 to-sky-500 flex items-center justify-center shadow-lg shadow-sky-500/30">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>
                     </div>
                     <h2 class="text-2xl font-bold tracking-tight text-white flex items-center justify-center gap-2">
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Master</span> Backend
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-300 to-cyan-300">Master</span> Backend
                     </h2>
-                    <p class="text-xs text-gray-400">Step 1 of 2: Master Credentials</p>
+                    <p class="text-xs text-slate-400">Step 1 of 2: Master Credentials</p>
                 </div>
 
                 <form id="credForm" onsubmit="handleCredSubmit(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Username</label>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Username</label>
                         <input type="text" id="masterUser" required autocomplete="username" placeholder="admin"
-                            class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 transition">
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 transition">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">Password</label>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Password</label>
                         <input type="password" id="masterPass" required autocomplete="current-password" placeholder="••••••••"
-                            class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-pink-500 transition">
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 transition">
                     </div>
                     <button type="submit" id="btnNextStep"
-                        class="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold rounded-lg shadow-lg shadow-pink-500/25 transition text-sm flex items-center justify-center gap-2">
+                        class="w-full py-3 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white font-semibold rounded-lg shadow-lg shadow-sky-500/25 transition text-sm flex items-center justify-center gap-2 border border-sky-400/20">
                         <span>Continue to 6-PIN Verification</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                     </button>
                 </form>
 
                 <div class="text-center pt-2">
-                    <a href="/dashboard" class="text-xs text-purple-400 hover:text-purple-300 transition flex items-center justify-center gap-1">
+                    <a href="/dashboard" class="text-xs text-sky-400 hover:text-sky-300 transition flex items-center justify-center gap-1 font-medium">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
                         <span>Back to Client Dashboard</span>
                     </a>
@@ -125,28 +140,28 @@
             <!-- Step 2: 6-PIN Verification -->
             <div id="loginStepPin" class="glass-card p-8 rounded-2xl space-y-6 hidden">
                 <div class="text-center space-y-2">
-                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-pink-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-cyan-500/30">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                         </svg>
                     </div>
                     <h2 class="text-2xl font-bold tracking-tight text-white">Enter 6-Digit PIN</h2>
-                    <p class="text-xs text-gray-400">Step 2 of 2: Security Verification for Master Portal</p>
+                    <p class="text-xs text-slate-400">Step 2 of 2: Security Verification for Master Portal</p>
                 </div>
 
                 <!-- 6 Individual PIN Input Boxes -->
                 <div id="masterPinBoxes" class="flex justify-center gap-2.5 py-2">
-                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-cyber-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none" data-idx="0">
-                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-cyber-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none" data-idx="1">
-                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-cyber-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none" data-idx="2">
-                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-cyber-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none" data-idx="3">
-                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-cyber-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none" data-idx="4">
-                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-cyber-900 border border-gray-700 rounded-xl text-pink-400 focus:outline-none" data-idx="5">
+                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none" data-idx="0">
+                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none" data-idx="1">
+                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none" data-idx="2">
+                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none" data-idx="3">
+                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none" data-idx="4">
+                    <input type="password" maxlength="1" inputmode="numeric" class="pin-box master-pin-digit w-12 h-14 text-center font-mono text-2xl font-bold bg-slate-900 border border-slate-700 rounded-xl text-sky-400 focus:outline-none" data-idx="5">
                 </div>
 
                 <div class="space-y-3 pt-2">
                     <button type="button" onclick="submitMasterPin()" id="btnVerifyPin"
-                        class="w-full py-3 bg-gradient-to-r from-pink-600 to-cyan-600 hover:from-pink-500 hover:to-cyan-500 text-white font-semibold rounded-lg shadow-lg shadow-cyan-500/25 transition text-sm flex items-center justify-center gap-2">
+                        class="w-full py-3 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white font-semibold rounded-lg shadow-lg shadow-sky-500/25 transition text-sm flex items-center justify-center gap-2 border border-sky-400/20">
                         <span>Unlock Master Backend</span>
                     </button>
                     <button type="button" onclick="backToStep1()"
@@ -163,24 +178,24 @@
     <!-- ======================================================== -->
     <div id="masterDashboardView" class="min-h-screen flex flex-col hidden">
         <!-- Top Nav -->
-        <header class="glass-panel border-b border-purple-500/20 sticky top-0 z-40">
+        <header class="glass-panel border-b border-sky-500/20 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                 <div class="flex items-center space-x-3">
-                    <div class="w-3 h-3 rounded-full bg-purple-500 animate-pulse"></div>
+                    <div class="w-3 h-3 rounded-full bg-sky-400 animate-pulse"></div>
                     <div class="flex items-center gap-2">
                         <span class="text-xl font-bold tracking-tight text-white">
-                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Kawaii</span>Auth
+                            <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-300 to-cyan-300">Kawaii</span>Auth
                         </span>
-                        <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-mono">BACKEND ROOT</span>
+                        <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono">BACKEND ROOT</span>
                     </div>
                 </div>
 
                 <div class="flex items-center space-x-4">
-                    <a href="/dashboard" class="text-xs text-gray-400 hover:text-white px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 border border-gray-700 transition flex items-center gap-1.5">
-                        <svg class="w-3.5 h-3.5 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    <a href="/dashboard" class="text-xs text-slate-300 hover:text-white px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                         <span>Client Dashboard</span>
                     </a>
-                    <div class="flex items-center gap-2 text-xs font-mono text-gray-300">
+                    <div class="flex items-center gap-2 text-xs font-mono text-slate-300">
                         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
                         <span id="navUsername">admin</span>
                     </div>
@@ -196,21 +211,21 @@
         <main class="max-w-7xl mx-auto px-6 py-8 flex-1 w-full space-y-8">
             <!-- Stats Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div class="glass-panel p-5 rounded-xl border-l-4 border-l-purple-500">
-                    <p class="text-xs uppercase font-semibold text-gray-400">Total Client Keys</p>
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-l-blue-500">
+                    <p class="text-xs uppercase font-semibold text-slate-400">Total Client Keys</p>
                     <h3 id="statTotal" class="text-3xl font-extrabold text-white mt-1 font-mono">0</h3>
                 </div>
                 <div class="glass-panel p-5 rounded-xl border-l-4 border-l-emerald-500">
-                    <p class="text-xs uppercase font-semibold text-gray-400">Active Keys</p>
+                    <p class="text-xs uppercase font-semibold text-slate-400">Active Keys</p>
                     <h3 id="statActive" class="text-3xl font-extrabold text-emerald-400 mt-1 font-mono">0</h3>
                 </div>
                 <div class="glass-panel p-5 rounded-xl border-l-4 border-l-red-500">
-                    <p class="text-xs uppercase font-semibold text-gray-400">Expired Keys</p>
+                    <p class="text-xs uppercase font-semibold text-slate-400">Expired Keys</p>
                     <h3 id="statExpired" class="text-3xl font-extrabold text-red-400 mt-1 font-mono">0</h3>
                 </div>
-                <div class="glass-panel p-5 rounded-xl border-l-4 border-l-cyan-500">
-                    <p class="text-xs uppercase font-semibold text-gray-400">Lifetime Keys</p>
-                    <h3 id="statLifetime" class="text-3xl font-extrabold text-cyan-400 mt-1 font-mono">0</h3>
+                <div class="glass-panel p-5 rounded-xl border-l-4 border-l-sky-500">
+                    <p class="text-xs uppercase font-semibold text-slate-400">Lifetime Keys</p>
+                    <h3 id="statLifetime" class="text-3xl font-extrabold text-sky-400 mt-1 font-mono">0</h3>
                 </div>
             </div>
 
@@ -220,12 +235,12 @@
                     <div>
                         <h2 class="text-lg font-bold text-white flex items-center gap-2">
                             <span>Client Keys Management</span>
-                            <span class="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-400 font-mono" id="keyCountBadge">0 keys</span>
+                            <span class="text-xs px-2 py-0.5 rounded bg-slate-900 text-slate-300 font-mono border border-slate-700" id="keyCountBadge">0 keys</span>
                         </h2>
-                        <p class="text-xs text-gray-400 mt-0.5">Generate, configure expiration, extend timer, and delete developer Client Keys.</p>
+                        <p class="text-xs text-slate-400 mt-0.5">Generate, configure expiration, extend timer, and delete developer Client Keys.</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button onclick="openModal('createKeyModal')" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-semibold text-xs rounded-lg shadow-lg shadow-pink-500/20 transition flex items-center gap-1.5">
+                        <button onclick="openModal('createKeyModal')" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white font-semibold text-xs rounded-lg shadow-lg shadow-sky-500/20 transition flex items-center gap-1.5 border border-sky-400/20">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             <span>+ Create Client Key</span>
                         </button>
@@ -233,14 +248,14 @@
                 </div>
 
                 <!-- Filters & Search -->
-                <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-800">
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800">
                     <div class="flex items-center gap-3 flex-1 min-w-[280px]">
                         <div class="relative flex-1 max-w-md">
                             <input type="text" id="searchInput" oninput="onSearchChanged()" placeholder="Search by Key or Name..."
-                                class="w-full bg-cyber-900 border border-gray-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-purple-500 transition">
-                            <svg class="w-4 h-4 text-gray-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-400 transition">
+                            <svg class="w-4 h-4 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         </div>
-                        <select id="statusFilter" onchange="onFilterChanged()" class="bg-cyber-900 border border-gray-700 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500">
+                        <select id="statusFilter" onchange="onFilterChanged()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-sky-400">
                             <option value="all">All Statuses</option>
                             <option value="active">Active Only</option>
                             <option value="expired">Expired Only</option>
@@ -250,7 +265,7 @@
 
                     <!-- Batch Actions -->
                     <div class="flex items-center gap-2">
-                        <button onclick="deleteExpiredKeys()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-xs rounded-lg transition">
+                        <button onclick="deleteExpiredKeys()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg transition">
                             Delete Expired
                         </button>
                         <button id="btnDeleteSelected" onclick="deleteSelectedKeys()" disabled class="px-3 py-1.5 bg-red-950/40 border border-red-800/40 text-red-400 text-xs rounded-lg transition opacity-50 cursor-not-allowed">
@@ -260,12 +275,12 @@
                 </div>
 
                 <!-- Table -->
-                <div class="overflow-x-auto rounded-lg border border-gray-800/80">
-                    <table class="w-full text-left text-xs text-gray-300">
-                        <thead class="bg-gray-900/90 text-gray-400 font-mono uppercase text-[11px] border-b border-gray-800">
+                <div class="overflow-x-auto rounded-lg border border-slate-800/80">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-950/90 text-slate-400 font-mono uppercase text-[11px] border-b border-slate-800">
                             <tr>
                                 <th class="px-4 py-3 w-10">
-                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="rounded bg-gray-800 border-gray-700 text-pink-600 focus:ring-0">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()" class="rounded bg-slate-900 border-slate-700 text-sky-600 focus:ring-0">
                                 </th>
                                 <th class="px-4 py-3">Client Key</th>
                                 <th class="px-4 py-3">6-PIN</th>
@@ -276,21 +291,21 @@
                                 <th class="px-4 py-3 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="keysTableBody" class="divide-y divide-gray-800/50">
-                            <tr><td colspan="8" class="px-4 py-8 text-center text-gray-500">Loading Client Keys...</td></tr>
+                        <tbody id="keysTableBody" class="divide-y divide-slate-800/50">
+                            <tr><td colspan="8" class="px-4 py-8 text-center text-slate-500">Loading Client Keys...</td></tr>
                         </tbody>
                     </table>
                 </div>
 
                 <!-- Pagination Bar -->
-                <div class="flex items-center justify-between text-xs text-gray-400 pt-2 font-mono">
+                <div class="flex items-center justify-between text-xs text-slate-400 pt-2 font-mono">
                     <span id="pageInfo">Showing 0 to 0 of 0 keys</span>
                     <div class="flex items-center space-x-1">
-                        <button id="btnFirst" onclick="changePage('first')" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">&laquo;</button>
-                        <button id="btnPrev" onclick="changePage('prev')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">Prev</button>
-                        <span id="pageIndicator" class="px-3 py-1 bg-purple-950 text-purple-300 border border-purple-800 rounded font-semibold">1</span>
-                        <button id="btnNext" onclick="changePage('next')" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">Next</button>
-                        <button id="btnLast" onclick="changePage('last')" class="px-2 py-1 bg-gray-800 hover:bg-gray-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">&raquo;</button>
+                        <button id="btnFirst" onclick="changePage('first')" class="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">&laquo;</button>
+                        <button id="btnPrev" onclick="changePage('prev')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">Prev</button>
+                        <span id="pageIndicator" class="px-3 py-1 bg-sky-950 text-sky-300 border border-sky-800 rounded font-semibold">1</span>
+                        <button id="btnNext" onclick="changePage('next')" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">Next</button>
+                        <button id="btnLast" onclick="changePage('last')" class="px-2 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded transition disabled:opacity-30 disabled:cursor-not-allowed">&raquo;</button>
                     </div>
                 </div>
             </div>
@@ -298,66 +313,67 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- ======================================================== -->
     <!-- MODAL 1: CREATE CLIENT KEY                               -->
     <!-- ======================================================== -->
     <div id="createKeyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
-        <div class="glass-card w-full max-w-lg p-6 rounded-2xl border border-purple-500/30 space-y-5">
-            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div class="glass-card w-full max-w-lg p-6 rounded-2xl border border-sky-500/30 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
                     <span>Generate New Client Key</span>
                 </h3>
-                <button onclick="closeModal('createKeyModal')" class="text-gray-400 hover:text-white">&times;</button>
+                <button onclick="closeModal('createKeyModal')" class="text-slate-400 hover:text-white">&times;</button>
             </div>
 
             <div class="space-y-4 text-xs">
                 <div>
-                    <label class="block font-semibold text-gray-300 mb-1">Client Name / Label (Optional)</label>
+                    <label class="block font-semibold text-slate-300 mb-1">Client Name / Label (Optional)</label>
                     <input type="text" id="newKeyName" placeholder="e.g. VIP Developer Alpha"
-                        class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-pink-500">
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-sky-400">
                 </div>
 
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="font-semibold text-gray-300">Client Key</label>
-                        <button type="button" onclick="randomizeNewKey()" class="text-pink-400 hover:text-pink-300 text-[11px] font-mono">Regenerate Pattern</button>
+                        <label class="font-semibold text-slate-300">Client Key</label>
+                        <button type="button" onclick="randomizeNewKey()" class="text-sky-400 hover:text-sky-300 text-[11px] font-mono">Regenerate Pattern</button>
                     </div>
                     <input type="text" id="newKeyValue" placeholder="CK-XXXX-XXXX-XXXX"
-                        class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-2 text-pink-300 font-mono text-xs focus:outline-none focus:border-pink-500">
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sky-300 font-mono text-xs focus:outline-none focus:border-sky-400">
                 </div>
 
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="font-semibold text-gray-300">6-Digit PIN</label>
+                        <label class="font-semibold text-slate-300">6-Digit PIN</label>
                         <button type="button" onclick="randomizeNewPin()" class="text-cyan-400 hover:text-cyan-300 text-[11px] font-mono">Random 6-PIN</button>
                     </div>
                     <input type="text" id="newKeyPin" maxlength="6" placeholder="123456"
-                        class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-2 text-cyan-300 font-mono text-sm tracking-widest focus:outline-none focus:border-cyan-500">
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-cyan-300 font-mono text-sm tracking-widest focus:outline-none focus:border-cyan-400">
                 </div>
 
                 <!-- Expiry / Duration Selector -->
-                <div class="p-3.5 rounded-xl bg-gray-900/80 border border-gray-800 space-y-3">
-                    <label class="block font-semibold text-gray-300">Key Duration / Expiration</label>
+                <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
+                    <label class="block font-semibold text-slate-300">Key Duration / Expiration</label>
                     <div class="grid grid-cols-2 gap-2">
-                        <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-700 hover:border-pink-500 cursor-pointer transition">
-                            <input type="radio" name="expiryType" value="duration" checked onchange="toggleExpiryMode()" class="text-pink-600 focus:ring-0">
-                            <span class="text-gray-200">Set Duration</span>
+                        <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-700 hover:border-sky-500 cursor-pointer transition">
+                            <input type="radio" name="expiryType" value="duration" checked onchange="toggleExpiryMode()" class="text-sky-600 focus:ring-0">
+                            <span class="text-slate-200">Set Duration</span>
                         </label>
-                        <label class="flex items-center gap-2 p-2 rounded-lg border border-gray-700 hover:border-pink-500 cursor-pointer transition">
-                            <input type="radio" name="expiryType" value="lifetime" onchange="toggleExpiryMode()" class="text-pink-600 focus:ring-0">
+                        <label class="flex items-center gap-2 p-2 rounded-lg border border-slate-700 hover:border-sky-500 cursor-pointer transition">
+                            <input type="radio" name="expiryType" value="lifetime" onchange="toggleExpiryMode()" class="text-sky-600 focus:ring-0">
                             <span class="text-cyan-400 font-semibold">Lifetime (Never)</span>
                         </label>
                     </div>
 
                     <div id="durationInputs" class="grid grid-cols-2 gap-2 pt-1">
                         <div>
-                            <label class="block text-[11px] text-gray-400 mb-1">Amount</label>
+                            <label class="block text-[11px] text-slate-400 mb-1">Amount</label>
                             <input type="number" id="newKeyAmount" min="1" value="30"
-                                class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-pink-500 font-mono">
+                                class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-sky-400 font-mono">
                         </div>
                         <div>
-                            <label class="block text-[11px] text-gray-400 mb-1">Unit</label>
-                            <select id="newKeyUnit" class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-pink-500">
+                            <label class="block text-[11px] text-slate-400 mb-1">Unit</label>
+                            <select id="newKeyUnit" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-sky-400">
                                 <option value="hours">Hours</option>
                                 <option value="days" selected>Days</option>
                                 <option value="weeks">Weeks</option>
@@ -369,9 +385,9 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
-                <button onclick="closeModal('createKeyModal')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Cancel</button>
-                <button onclick="submitCreateKey()" class="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-pink-500/25 transition">Create Key</button>
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeModal('createKeyModal')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg transition">Cancel</button>
+                <button onclick="submitCreateKey()" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white text-xs font-semibold rounded-lg shadow-lg shadow-sky-500/25 transition border border-sky-400/20">Create Key</button>
             </div>
         </div>
     </div>
@@ -380,32 +396,32 @@
     <!-- MODAL 2: EXTEND CLIENT KEY TIMER                         -->
     <!-- ======================================================== -->
     <div id="extendKeyModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
-        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-purple-500/30 space-y-5">
-            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div class="glass-card w-full max-w-md p-6 rounded-2xl border border-sky-500/30 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="text-base font-bold text-white flex items-center gap-2">
                     <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
                     <span>Extend Client Key Duration</span>
                 </h3>
-                <button onclick="closeModal('extendKeyModal')" class="text-gray-400 hover:text-white">&times;</button>
+                <button onclick="closeModal('extendKeyModal')" class="text-slate-400 hover:text-white">&times;</button>
             </div>
 
             <input type="hidden" id="extendTargetId">
             <div class="space-y-4 text-xs">
-                <div class="p-3 rounded-lg bg-gray-900/90 border border-gray-800">
-                    <span class="text-gray-400 block text-[11px]">Selected Key:</span>
-                    <span id="extendKeyDisplay" class="font-mono text-pink-300 font-bold text-xs"></span>
-                    <div id="extendCurrentExpiry" class="text-gray-400 text-[11px] mt-1 font-mono"></div>
+                <div class="p-3 rounded-lg bg-slate-900/90 border border-slate-800">
+                    <span class="text-slate-400 block text-[11px]">Selected Key:</span>
+                    <span id="extendKeyDisplay" class="font-mono text-sky-300 font-bold text-xs"></span>
+                    <div id="extendCurrentExpiry" class="text-slate-400 text-[11px] mt-1 font-mono"></div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-semibold text-gray-300 mb-1">Add Amount</label>
+                        <label class="block font-semibold text-slate-300 mb-1">Add Amount</label>
                         <input type="number" id="extendAmount" min="1" value="30"
-                            class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-cyan-500 font-mono">
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-sky-400 font-mono">
                     </div>
                     <div>
-                        <label class="block font-semibold text-gray-300 mb-1">Time Unit</label>
-                        <select id="extendUnit" class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-cyan-500">
+                        <label class="block font-semibold text-slate-300 mb-1">Time Unit</label>
+                        <select id="extendUnit" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-sky-400">
                             <option value="hours">Hours</option>
                             <option value="days" selected>Days</option>
                             <option value="weeks">Weeks</option>
@@ -417,9 +433,9 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
-                <button onclick="closeModal('extendKeyModal')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Cancel</button>
-                <button onclick="submitExtendKey()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-cyan-500/25 transition">Apply Extension</button>
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeModal('extendKeyModal')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg transition">Cancel</button>
+                <button onclick="submitExtendKey()" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white text-xs font-semibold rounded-lg shadow-lg shadow-sky-500/25 transition border border-sky-400/20">Apply Extension</button>
             </div>
         </div>
     </div>
@@ -428,34 +444,34 @@
     <!-- MODAL 3: EDIT 6-PIN                                      -->
     <!-- ======================================================== -->
     <div id="editPinModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm hidden">
-        <div class="glass-card w-full max-w-sm p-6 rounded-2xl border border-purple-500/30 space-y-5">
-            <div class="flex items-center justify-between border-b border-gray-800 pb-3">
+        <div class="glass-card w-full max-w-sm p-6 rounded-2xl border border-sky-500/30 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
                     <span>Update 6-Digit PIN</span>
                 </h3>
-                <button onclick="closeModal('editPinModal')" class="text-gray-400 hover:text-white">&times;</button>
+                <button onclick="closeModal('editPinModal')" class="text-slate-400 hover:text-white">&times;</button>
             </div>
 
             <input type="hidden" id="editPinTargetId">
             <div class="space-y-3 text-xs">
                 <div>
-                    <span class="text-gray-400 block text-[11px] mb-1">Target Client Key:</span>
-                    <span id="editPinKeyDisplay" class="font-mono text-pink-300 font-bold"></span>
+                    <span class="text-slate-400 block text-[11px] mb-1">Target Client Key:</span>
+                    <span id="editPinKeyDisplay" class="font-mono text-sky-300 font-bold"></span>
                 </div>
                 <div>
                     <div class="flex items-center justify-between mb-1">
-                        <label class="font-semibold text-gray-300">New 6-Digit PIN</label>
+                        <label class="font-semibold text-slate-300">New 6-Digit PIN</label>
                         <button type="button" onclick="randomizeEditPin()" class="text-cyan-400 hover:text-cyan-300 text-[11px] font-mono">Generate</button>
                     </div>
                     <input type="text" id="editPinValue" maxlength="6" placeholder="123456"
-                        class="w-full bg-cyber-900 border border-gray-700 rounded-lg px-3 py-2 text-cyan-300 font-mono text-center text-lg tracking-widest focus:outline-none focus:border-cyan-500">
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-cyan-300 font-mono text-center text-lg tracking-widest focus:outline-none focus:border-cyan-400">
                 </div>
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-800">
-                <button onclick="closeModal('editPinModal')" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Cancel</button>
-                <button onclick="submitUpdatePin()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-semibold rounded-lg transition">Save PIN</button>
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onclick="closeModal('editPinModal')" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg transition">Cancel</button>
+                <button onclick="submitUpdatePin()" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white text-xs font-semibold rounded-lg transition border border-sky-400/20">Save PIN</button>
             </div>
         </div>
     </div>
@@ -464,12 +480,12 @@
     <!-- CUSTOM ALERT & CONFIRM DIALOGS (Cyberpunk Modals)        -->
     <!-- ======================================================== -->
     <div id="customDialogModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden">
-        <div class="glass-card max-w-sm w-full p-6 rounded-2xl border border-purple-500/40 text-center space-y-4">
-            <div id="dialogIconBox" class="w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-pink-500/20 text-pink-400">
+        <div class="glass-card max-w-sm w-full p-6 rounded-2xl border border-sky-500/40 text-center space-y-4">
+            <div id="dialogIconBox" class="w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-sky-500/20 text-sky-400">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <h4 id="dialogTitle" class="text-lg font-bold text-white">Notice</h4>
-            <p id="dialogMessage" class="text-xs text-gray-300 whitespace-pre-line"></p>
+            <p id="dialogMessage" class="text-xs text-slate-300 whitespace-pre-line"></p>
             <div id="dialogButtons" class="flex justify-center gap-2 pt-2"></div>
         </div>
     </div>
@@ -505,10 +521,10 @@
                 } else if (type === 'success') {
                     iEl.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-emerald-500/20 text-emerald-400';
                 } else {
-                    iEl.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-pink-500/20 text-pink-400';
+                    iEl.className = 'w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-sky-500/20 text-sky-400';
                 }
 
-                bEl.innerHTML = `<button onclick="closeCustomDialog();" class="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white text-xs font-semibold rounded-lg shadow-lg transition">OK</button>`;
+                bEl.innerHTML = `<button onclick="closeCustomDialog();" class="px-5 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white text-xs font-semibold rounded-lg shadow-lg transition border border-sky-400/20">OK</button>`;
                 window._customDialogResolve = resolve;
                 modal.classList.remove('hidden');
             });
@@ -527,14 +543,14 @@
 
                 iEl.className = isDanger 
                     ? 'w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-red-500/20 text-red-400' 
-                    : 'w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-purple-500/20 text-purple-400';
+                    : 'w-12 h-12 mx-auto rounded-full flex items-center justify-center bg-sky-500/20 text-sky-400';
 
                 const btnClass = isDanger 
                     ? 'px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-semibold rounded-lg transition shadow-lg shadow-red-500/25' 
-                    : 'px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 text-white text-xs font-semibold rounded-lg transition';
+                    : 'px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 text-white text-xs font-semibold rounded-lg transition border border-sky-400/20';
 
                 bEl.innerHTML = `
-                    <button onclick="closeCustomDialog(false);" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-lg transition">Cancel</button>
+                    <button onclick="closeCustomDialog(false);" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs rounded-lg transition">Cancel</button>
                     <button onclick="closeCustomDialog(true);" class="${btnClass}">${escapeHtml(confirmText)}</button>
                 `;
                 window._customDialogResolve = resolve;
@@ -556,11 +572,11 @@
             const toast = document.createElement('div');
             const bgClass = type === 'success' ? 'border-emerald-500/40 bg-emerald-950/90 text-emerald-200' 
                 : type === 'error' ? 'border-red-500/40 bg-red-950/90 text-red-200'
-                : 'border-pink-500/40 bg-gray-900/90 text-pink-200';
+                : 'border-sky-500/40 bg-slate-900/90 text-sky-200';
 
             toast.className = `px-4 py-3 rounded-xl border backdrop-blur-md shadow-2xl text-xs font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 ${bgClass}`;
             toast.innerHTML = `
-                <span class="w-2 h-2 rounded-full ${type === 'success' ? 'bg-emerald-400' : type === 'error' ? 'bg-red-400' : 'bg-pink-400'}"></span>
+                <span class="w-2 h-2 rounded-full ${type === 'success' ? 'bg-emerald-400' : type === 'error' ? 'bg-red-400' : 'bg-sky-400'}"></span>
                 <span>${escapeHtml(message)}</span>
             `;
 
@@ -850,9 +866,9 @@
 
                     tr.innerHTML = `
                         <td class="px-4 py-3">
-                            <input type="checkbox" onchange="toggleSelectKey('${escapeHtml(k.id)}')" ${isChecked ? 'checked' : ''} class="rounded bg-gray-800 border-gray-700 text-pink-600 focus:ring-0">
+                            <input type="checkbox" onchange="toggleSelectKey('${escapeHtml(k.id)}')" ${isChecked ? 'checked' : ''} class="rounded bg-slate-900 border-slate-700 text-sky-600 focus:ring-0">
                         </td>
-                        <td class="px-4 py-3 font-mono font-bold text-pink-300">
+                        <td class="px-4 py-3 font-mono font-bold text-sky-300">
                             <div class="flex items-center gap-1.5">
                                 <span>${escapeHtml(k.key)}</span>
                                 <button onclick="copyToClipboard('${escapeHtml(k.key)}', 'Client Key copied')" title="Copy Key" class="text-gray-500 hover:text-white p-1 rounded transition">

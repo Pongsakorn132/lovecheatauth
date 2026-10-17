@@ -5,6 +5,7 @@
 *.ilk
 *.exp
 *.lib
+*.key
 build/
 bin/
 .vs/
