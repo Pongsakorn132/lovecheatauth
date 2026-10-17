@@ -116,19 +116,42 @@ function handleAdminRequest(req, res, url, body) {
     // App Variables: /api/admin/variables
     if (pathname === '/api/admin/variables' && method === 'GET') {
         const appId = url.searchParams.get('app_id');
-        const vars = db.prepare('SELECT * FROM variables WHERE app_id = ?').all(appId);
+        if (!appId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
+        const vars = db.prepare('SELECT * FROM variables WHERE app_id = ? ORDER BY var_key ASC').all(appId);
         return sendJson(res, 200, { success: true, variables: vars });
     }
 
     if (pathname === '/api/admin/variables' && method === 'POST') {
-        const { app_id, var_key, var_value, authed_only } = body;
+        const { app_id, var_key, var_value, authed_only } = body || {};
+        if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
+        if (!var_key || typeof var_key !== 'string' || !var_key.trim()) {
+            return sendJson(res, 400, { success: false, message: 'Variable key is required' });
+        }
+        if (var_value === undefined || var_value === null) {
+            return sendJson(res, 400, { success: false, message: 'Variable value is required' });
+        }
+
         const id = crypto.randomUUID();
         db.prepare(`
             INSERT INTO variables (id, app_id, var_key, var_value, authed_only)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(app_id, var_key) DO UPDATE SET var_value = excluded.var_value, authed_only = excluded.authed_only
-        `).run(id, app_id, var_key, var_value, authed_only ? 1 : 0);
+        `).run(id, app_id, var_key.trim(), String(var_value), authed_only ? 1 : 0);
         return sendJson(res, 200, { success: true, message: 'Variable saved' });
+    }
+
+    if (pathname === '/api/admin/variables' && method === 'DELETE') {
+        const { id, app_id, var_key } = body || {};
+        const queryId = url.searchParams.get('id') || id;
+        if (queryId) {
+            db.prepare('DELETE FROM variables WHERE id = ?').run(queryId);
+            return sendJson(res, 200, { success: true, message: 'Variable deleted' });
+        } else if (app_id && var_key) {
+            db.prepare('DELETE FROM variables WHERE app_id = ? AND var_key = ?').run(app_id, var_key);
+            return sendJson(res, 200, { success: true, message: 'Variable deleted' });
+        } else {
+            return sendJson(res, 400, { success: false, message: 'Missing variable id or app_id/var_key' });
+        }
     }
 
     // Logs: /api/admin/logs
