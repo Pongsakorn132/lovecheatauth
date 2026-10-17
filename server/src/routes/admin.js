@@ -866,9 +866,9 @@ async function handleAdminRequest(req, res, url, body) {
 
         // 2. Blacklist HWID if present
         if (ban_hwid && user.hwid) {
-            const ex = db.prepare('SELECT id FROM blacklists WHERE app_id = ? AND type = "HWID" AND value = ?').get(targetAppId, user.hwid);
+            const ex = db.prepare("SELECT id FROM blacklists WHERE app_id = ? AND type = 'HWID' AND value = ?").get(targetAppId, user.hwid);
             if (!ex) {
-                db.prepare('INSERT INTO blacklists (id, app_id, type, value, reason, created_at) VALUES (?, ?, "HWID", ?, ?, ?)')
+                db.prepare("INSERT INTO blacklists (id, app_id, type, value, reason, created_at) VALUES (?, ?, 'HWID', ?, ?, ?)")
                     .run(crypto.randomUUID(), targetAppId, user.hwid, safeReason, now);
             }
             hwidBlacklisted = true;
@@ -876,9 +876,9 @@ async function handleAdminRequest(req, res, url, body) {
 
         // 3. Blacklist IP if present
         if (ban_ip && user.ip_address && user.ip_address !== '127.0.0.1' && user.ip_address !== '::1') {
-            const ex = db.prepare('SELECT id FROM blacklists WHERE app_id = ? AND type = "IP" AND value = ?').get(targetAppId, user.ip_address);
+            const ex = db.prepare("SELECT id FROM blacklists WHERE app_id = ? AND type = 'IP' AND value = ?").get(targetAppId, user.ip_address);
             if (!ex) {
-                db.prepare('INSERT INTO blacklists (id, app_id, type, value, reason, created_at) VALUES (?, ?, "IP", ?, ?, ?)')
+                db.prepare("INSERT INTO blacklists (id, app_id, type, value, reason, created_at) VALUES (?, ?, 'IP', ?, ?, ?)")
                     .run(crypto.randomUUID(), targetAppId, user.ip_address, safeReason, now);
             }
             ipBlacklisted = true;

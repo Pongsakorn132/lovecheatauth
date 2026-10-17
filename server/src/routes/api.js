@@ -41,7 +41,7 @@ function handleApiRequest(req, res, url, body) {
         }
 
         // Blacklist Gate (IP and HWID check)
-        const ipBan = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "IP" AND value = ?').get(app.id, clientIp);
+        const ipBan = db.prepare("SELECT reason FROM blacklists WHERE app_id = ? AND type = 'IP' AND value = ?").get(app.id, clientIp);
         if (ipBan) {
             return sendJson(res, 403, {
                 success: false,
@@ -51,7 +51,7 @@ function handleApiRequest(req, res, url, body) {
         }
 
         if (hwid) {
-            const hwidBan = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "HWID" AND value = ?').get(app.id, hwid);
+            const hwidBan = db.prepare("SELECT reason FROM blacklists WHERE app_id = ? AND type = 'HWID' AND value = ?").get(app.id, hwid);
             if (hwidBan) {
                 return sendJson(res, 403, {
                     success: false,
@@ -185,7 +185,7 @@ function handleApiRequest(req, res, url, body) {
         }
 
         // Blacklist Gate for Action
-        const ipBanAction = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "IP" AND value = ?').get(session.app_id, clientIp);
+        const ipBanAction = db.prepare("SELECT reason FROM blacklists WHERE app_id = ? AND type = 'IP' AND value = ?").get(session.app_id, clientIp);
         if (ipBanAction) {
             return sendEncrypted(res, session, {
                 success: false,
@@ -196,7 +196,7 @@ function handleApiRequest(req, res, url, body) {
 
         const currentHwid = decryptedPayload.hwid || (session.user_id ? db.prepare('SELECT hwid FROM users WHERE id = ?').get(session.user_id)?.hwid : null);
         if (currentHwid) {
-            const hwidBanAction = db.prepare('SELECT reason FROM blacklists WHERE app_id = ? AND type = "HWID" AND value = ?').get(session.app_id, currentHwid);
+            const hwidBanAction = db.prepare("SELECT reason FROM blacklists WHERE app_id = ? AND type = 'HWID' AND value = ?").get(session.app_id, currentHwid);
             if (hwidBanAction) {
                 return sendEncrypted(res, session, {
                     success: false,
