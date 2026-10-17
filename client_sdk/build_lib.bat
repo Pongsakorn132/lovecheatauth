@@ -14,26 +14,27 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-set BUILD_DIR=%~dp0build
-set DIST_DIR=%~dp0dist
+pushd "%~dp0"
 
-if not exist "%BUILD_DIR%" mkdir "%BUILD_DIR%"
-if not exist "%DIST_DIR%\include" mkdir "%DIST_DIR%\include"
-if not exist "%DIST_DIR%\lib" mkdir "%DIST_DIR%\lib"
+if not exist "build" mkdir "build"
+if not exist "dist\include" mkdir "dist\include"
+if not exist "dist\lib" mkdir "dist\lib"
 
 echo [*] Configuring CMake project...
-cmake -B "%BUILD_DIR%" -S "%~dp0" -A x64
+cmake -B build -S . -A x64
 if %errorlevel% neq 0 (
     echo [ERROR] CMake configuration failed!
+    popd
     pause
     exit /b %errorlevel%
 )
 
 echo.
 echo [*] Building KawaiiAuth.lib (Release x64)...
-cmake --build "%BUILD_DIR%" --config Release --target KawaiiAuth
+cmake --build build --config Release --target KawaiiAuth
 if %errorlevel% neq 0 (
     echo [ERROR] Build failed!
+    popd
     pause
     exit /b %errorlevel%
 )
@@ -42,8 +43,8 @@ echo.
 echo ================================================================
 echo [SUCCESS] KawaiiAuth.lib has been built successfully!
 echo ================================================================
-echo Header : %DIST_DIR%\include\KawaiiAuth.h
-echo Library: %DIST_DIR%\lib\KawaiiAuth.lib
+echo Header : %~dp0dist\include\KawaiiAuth.h
+echo Library: %~dp0dist\lib\KawaiiAuth.lib
 echo.
 echo You can now copy KawaiiAuth.h and KawaiiAuth.lib into your own
 echo project and simply use:
@@ -51,4 +52,5 @@ echo.
 echo   #include "KawaiiAuth.h"
 echo.
 echo ================================================================
+popd
 pause
