@@ -533,14 +533,7 @@
                 <div class="p-2.5 rounded-xl bg-gray-900/70 border border-gray-800 text-left flex items-center justify-between">
                     <div>
                         <span class="text-[10px] uppercase font-mono text-gray-400 block">Client Key</span>
-                        <div class="flex items-center gap-1.5 mt-0.5">
-                            <span id="pinTargetKeyDisplay" class="font-mono text-pink-300 font-bold text-xs truncate max-w-[200px] block"></span>
-                            <button type="button" onclick="togglePinKeyMask()" class="text-gray-400 hover:text-pink-300 p-0.5 rounded transition" title="Show / Hide Client Key">
-                                <svg id="pinKeyEyeIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>
-                                </svg>
-                            </button>
-                        </div>
+                        <span id="pinTargetKeyDisplay" class="font-mono text-pink-300 font-bold text-xs tracking-widest block mt-0.5 select-none">••••••••••••••••••••</span>
                     </div>
                     <span id="pinKeyNameDisplay" class="text-[11px] text-cyan-400 font-medium"></span>
                 </div>
@@ -1237,46 +1230,11 @@
             }
         }
 
-        let isPinKeyMasked = true;
-
-        function maskClientKey(key) {
-            if (!key) return '';
-            const str = String(key).trim();
-            if (str.startsWith('CK-')) {
-                const parts = str.split('-');
-                if (parts.length >= 3) {
-                    const masked = parts.map((p, i) => (i === 0 || i === parts.length - 1) ? p : '••••');
-                    return masked.join('-');
-                }
-                return `CK-••••••••-${str.slice(-4)}`;
-            }
-            if (str.length > 8) {
-                return str.slice(0, 3) + '••••••••' + str.slice(-4);
-            }
-            return '••••••••';
-        }
-
         function updatePinKeyDisplay() {
             const keyDisp = document.getElementById('pinTargetKeyDisplay');
-            const eyeIcon = document.getElementById('pinKeyEyeIcon');
-            if (!keyDisp) return;
-
-            if (isPinKeyMasked) {
-                keyDisp.textContent = maskClientKey(pendingConnectKey);
-                if (eyeIcon) {
-                    eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>`;
-                }
-            } else {
-                keyDisp.textContent = pendingConnectKey || '';
-                if (eyeIcon) {
-                    eyeIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
-                }
+            if (keyDisp) {
+                keyDisp.textContent = '••••••••••••••••••••';
             }
-        }
-
-        function togglePinKeyMask() {
-            isPinKeyMasked = !isPinKeyMasked;
-            updatePinKeyDisplay();
         }
 
         // Two-Factor Authentication for Client Key
@@ -1302,7 +1260,6 @@
                     }
                     const nameDisp = document.getElementById('pinKeyNameDisplay');
                     if (nameDisp) nameDisp.textContent = res.name || 'Verified Key';
-                    isPinKeyMasked = true;
                     updatePinKeyDisplay();
 
                     const sessionNotice = document.getElementById('pinSessionNotice');
@@ -2668,7 +2625,6 @@
 
                         const nameDisp = document.getElementById('pinKeyNameDisplay');
                         if (nameDisp) nameDisp.textContent = res.name || 'Remembered Session';
-                        isPinKeyMasked = true;
                         updatePinKeyDisplay();
 
                         const sessionNotice = document.getElementById('pinSessionNotice');
