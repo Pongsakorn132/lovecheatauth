@@ -1179,23 +1179,7 @@
             </div>
 
             <div class="space-y-4 text-sm">
-                <!-- 1. File ID Input (for C++) -->
-                <div class="space-y-1.5">
-                    <div class="flex items-center justify-between">
-                        <label class="block text-xs font-semibold text-slate-200">
-                            File ID <span class="text-sky-400 font-mono">(สำหรับ C++ เช่น core_module หรือ n_txt)</span>
-                        </label>
-                        <button type="button" onclick="generateNewFileId()" class="text-[11px] text-sky-400 hover:text-sky-300 font-mono flex items-center gap-1 transition">
-                            🎲 สุ่ม File ID
-                        </button>
-                    </div>
-                    <input type="text" id="newFileId" placeholder="e.g. core_module หรือ n_txt" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-sky-400 placeholder:text-slate-600">
-                    <p class="text-[10px] text-slate-400 font-mono">
-                        💡 ในโค้ด C++ เรียกใช้: <code class="text-sky-300">KawaiiAuth::DownloadFile("FileID")</code>
-                    </p>
-                </div>
-
-                <!-- 2. Direct Download URL Input -->
+                <!-- 1. Direct Download URL Input -->
                 <div class="space-y-2">
                     <label class="block text-xs font-semibold text-slate-200">
                         Direct Download URL <span class="text-sky-400 font-mono">(Cloudflare R2 / CDN / Direct Link)</span>
@@ -3220,13 +3204,6 @@
             return 'file_' + Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        function generateNewFileId() {
-            const id = generateRandomFileId();
-            const input = document.getElementById('newFileId');
-            if (input) input.value = id;
-            showToast('Generated random File ID: ' + id, 'info');
-        }
-
         function extractFileNameFromUrl(url) {
             const raw = (url || '').trim();
             if (!raw) return '';
@@ -3247,13 +3224,9 @@
             const name = extractFileNameFromUrl(url);
             const textEl = document.getElementById('detectedFileNameText');
             const hiddenEl = document.getElementById('newFileName');
-            const idInput = document.getElementById('newFileId');
             if (name) {
                 if (textEl) textEl.textContent = name;
                 if (hiddenEl) hiddenEl.value = name;
-                if (idInput && !idInput.value.trim()) {
-                    idInput.value = name;
-                }
             } else {
                 if (textEl) textEl.textContent = 'ยังไม่ได้ระบุลิงก์';
                 if (hiddenEl) hiddenEl.value = '';
@@ -3269,9 +3242,6 @@
         }
 
         function resetNewFileModal() {
-            const idInput = document.getElementById('newFileId');
-            if (idInput) idInput.value = '';
-
             const urlInput = document.getElementById('newFileDownloadUrl');
             if (urlInput) urlInput.value = '';
 
@@ -3341,8 +3311,6 @@
         async function submitNewFile() {
             if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
 
-            const idInput = document.getElementById('newFileId');
-            const file_id = (idInput ? idInput.value : '').trim();
             const urlInput = document.getElementById('newFileDownloadUrl');
             const download_url = (urlInput ? urlInput.value : '').trim();
             if (!download_url) {
@@ -3352,7 +3320,8 @@
             let fileName = extractFileNameFromUrl(download_url);
             if (!fileName) fileName = 'payload.bin';
 
-            const finalFileId = file_id || fileName;
+            // Auto-generate a random File ID every time a file is deposited
+            const generatedFileId = generateRandomFileId();
             const authed_only = document.getElementById('newFileAuthedOnly') ? document.getElementById('newFileAuthedOnly').checked : true;
 
             const btn = document.getElementById('btnSubmitFile');
@@ -3366,7 +3335,7 @@
                     method: 'POST',
                     body: {
                         app_id: currentAppId,
-                        file_id: finalFileId,
+                        file_id: generatedFileId,
                         file_name: fileName,
                         download_url: download_url,
                         authed_only: authed_only
@@ -3377,7 +3346,8 @@
                     closeModal('newFileModal');
                     resetNewFileModal();
                     loadFiles();
-                    showToast(`บันทึกเรียบร้อย! File ID: '${finalFileId}' (${fileName})`, 'success');
+                    const savedId = (res.file && res.file.file_id) ? res.file.file_id : generatedFileId;
+                    showToast(`บันทึกเรียบร้อย! สุ่ม File ID: '${savedId}' (คลิกปุ่ม 📋 ในตารางเพื่อคัดลอกไปใช้ใน C++)`, 'success');
                 } else {
                     customAlert(res && res.message ? res.message : 'Save failed', { type: 'error' });
                 }

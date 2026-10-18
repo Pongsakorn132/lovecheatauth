@@ -796,7 +796,7 @@ async function handleAdminRequest(req, res, url, body) {
             return sendJson(res, 400, { success: false, message: 'File name is required' });
         }
 
-        const safeFileId = (file_id || fileid || safeName).trim();
+        const safeFileId = (file_id || fileid || ('file_' + crypto.randomBytes(4).toString('hex'))).trim();
 
         let buffer = null;
         if (file_data_base64 && typeof file_data_base64 === 'string' && file_data_base64.trim()) {
@@ -811,8 +811,8 @@ async function handleAdminRequest(req, res, url, body) {
         const dbId = crypto.randomUUID();
 
         try {
-            // Remove existing file with same file_id or file_name in this app
-            db.prepare('DELETE FROM files WHERE app_id = ? AND (file_id = ? OR file_name = ?)').run(targetAppId, safeFileId, safeName);
+            // Remove existing file with same file_id in this app if exists
+            db.prepare('DELETE FROM files WHERE app_id = ? AND file_id = ?').run(targetAppId, safeFileId);
 
             db.prepare(`
                 INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, download_url, authed_only, min_level)
