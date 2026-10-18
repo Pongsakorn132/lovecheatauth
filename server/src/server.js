@@ -202,6 +202,17 @@ function requestHandler(req, res) {
 
 const server = http.createServer(requestHandler);
 
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`\n[-] Port Collision: Port ${PORT} is already in use by another process.`);
+        console.error(`[*] Run 'taskkill /f /im node.exe' or free port ${PORT} before starting.`);
+        process.exit(1);
+    } else {
+        console.error(`\n[-] Server Error:`, err.message);
+        process.exit(1);
+    }
+});
+
 server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`[KawaiiAuth Server] Active and listening on port ${PORT}`);

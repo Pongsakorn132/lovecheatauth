@@ -14,6 +14,12 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo [*] Checking port 8080 availability...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8080 ^| findstr LISTENING') do (
+    echo [*] Freeing port 8080 (Terminating existing PID: %%a)...
+    taskkill /f /pid %%a >nul 2>nul
+)
+
 echo [+] Launching Web Dashboard in default browser...
 start "" "http://localhost:8080/dashboard"
 
