@@ -475,17 +475,51 @@ function handleApiRequest(req, res, url, body) {
                 return sendEncrypted(res, session, { success: true, var_key: v.var_key, var_value: v.var_value });
             }
 
+            case 'fetch_payload':
             case 'download_file': {
-                const { file_name } = decryptedPayload;
-                const f = db.prepare('SELECT * FROM files WHERE app_id = ? AND file_name = ?').get(app.id, file_name);
+                const fileName = (decryptedPayload.file_name || decryptedPayload.payload_name || '').trim();
+                if (!fileName) {
+                    return sendEncrypted(res, session, { success: false, message: 'Payload or file name required' });
+                }
+
+                const f = db.prepare('SELECT * FROM files WHERE app_id = ? AND file_name = ?').get(app.id, fileName);
                 if (!f) {
-                    return sendEncrypted(res, session, { success: false, message: 'File not found' });
+                    return sendEncrypted(res, session, { success: false, message: 'Payload not found' });
                 }
-                if (f.authed_only && !session.user_id) {
-                    return sendEncrypted(res, session, { success: false, message: 'Authentication required for this file' });
+
+                if (f.authed_only) {
+                    if (!session.user_id) {
+                        return sendEncrypted(res, session, { success: false, message: 'Authentication required for this payload' });
+                    }
+                    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(session.user_id);
+                    if (!user || user.banned) {
+                        return sendEncrypted(res, session, { success: false, message: 'Access denied: account suspended or invalid' });
+                    }
+                    if (user.expires_at < now) {
+                        return sendEncrypted(res, session, { success: false, message: 'Access denied: subscription expired' });
+                    }
+                    const reqLevel = f.min_level !== undefined && f.min_level !== null ? f.min_level : 1;
+                    if (user.sub_level < reqLevel) {
+                        return sendEncrypted(res, session, {
+                            success: false,
+                            message: `Access denied: requires Tier Level ${reqLevel} (your tier: ${user.sub_level})`
+                        });
+                    }
                 }
-                const fileBase64 = Buffer.from(f.file_data).toString('base64');
-                return sendEncrypted(res, session, { success: true, file_name: f.file_name, file_data: fileBase64 });
+
+                const fileBuf = Buffer.from(f.file_data);
+                const fileBase64 = fileBuf.toString('base64');
+                const fileHash = cryptoUtils.hashSha256(fileBuf);
+
+                return sendEncrypted(res, session, {
+                    success: true,
+                    file_name: f.file_name,
+                    payload_name: f.file_name,
+                    size: fileBuf.length,
+                    hash: fileHash,
+                    file_data: fileBase64,
+                    payload_data: fileBase64
+                });
             }
 
             case 'log': {

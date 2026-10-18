@@ -48,11 +48,22 @@ function seedInitialData() {
         console.log(`[KawaiiAuth] Seeded default application '${appName}' with ID: ${appId}`);
         console.log(`[KawaiiAuth] Seeded Demo Keys: ${keys.join(', ')}`);
     }
+
+    // Ensure sample protected payload is seeded for demo app
+    const fileCount = db.prepare('SELECT COUNT(*) as count FROM files WHERE app_id = ?').get('kawaii_demo_app')?.count || 0;
+    if (fileCount === 0) {
+        const samplePayload = Buffer.from('KAWAII_PROTECTED_CORE_PAYLOAD_V2_VERIFIED_SIGNATURE_OK_0xCAFEBABE');
+        db.prepare(`
+            INSERT INTO files (id, app_id, file_name, file_data, authed_only, min_level)
+            VALUES (?, ?, ?, ?, 1, 1)
+        `).run('file_core_demo', 'kawaii_demo_app', 'core_module.bin', samplePayload);
+        console.log("[KawaiiAuth] Seeded sample protected payload 'core_module.bin'");
+    }
 }
 
 seedInitialData();
 
-const server = http.createServer((req, res) => {
+function requestHandler(req, res) {
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, DELETE');
@@ -64,7 +75,8 @@ const server = http.createServer((req, res) => {
     }
 
     const host = req.headers.host || `localhost:${PORT}`;
-    const url = new URL(req.url, `http://${host}`);
+    const protocol = req.socket.encrypted ? 'https' : 'http';
+    const url = new URL(req.url, `${protocol}://${host}`);
 
     // Dashboard UI
     if (url.pathname === '/' || url.pathname === '/dashboard') {
@@ -127,7 +139,9 @@ const server = http.createServer((req, res) => {
             res.end(JSON.stringify({ success: false, message: 'Internal Server Error', error: error.message }));
         }
     });
-});
+}
+
+const server = http.createServer(requestHandler);
 
 server.listen(PORT, () => {
     console.log(`=======================================================`);
@@ -138,3 +152,26 @@ server.listen(PORT, () => {
     console.log(`[Default Client]   Key: CK-KAWAII-DEMO-2025 | PIN: 123456`);
     console.log(`=======================================================`);
 });
+
+// Optional HTTPS Server if SSL certs exist in server/ssl/
+const https = require('node:https');
+const sslDir = path.resolve(__dirname, '../ssl');
+const sslCertPath = path.join(sslDir, 'cert.pem');
+const sslKeyPath = path.join(sslDir, 'key.pem');
+const SSL_PORT = process.env.SSL_PORT || 8443;
+
+if (fs.existsSync(sslCertPath) && fs.existsSync(sslKeyPath)) {
+    try {
+        const httpsServer = https.createServer({
+            cert: fs.readFileSync(sslCertPath),
+            key: fs.readFileSync(sslKeyPath)
+        }, requestHandler);
+
+        httpsServer.listen(SSL_PORT, () => {
+            console.log(`[KawaiiAuth HTTPS] Secure TLS Gateway active on port ${SSL_PORT}`);
+            console.log(`[Secure Gateway]   https://localhost:${SSL_PORT}/api/v1/init`);
+        });
+    } catch (err) {
+        console.warn(`[KawaiiAuth HTTPS] Failed to initialize HTTPS listener: ${err.message}`);
+    }
+}

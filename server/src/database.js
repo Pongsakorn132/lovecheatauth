@@ -107,6 +107,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_name TEXT NOT NULL,
     file_data BLOB NOT NULL,
     authed_only INTEGER NOT NULL DEFAULT 1,
+    min_level INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
 );
 
@@ -219,6 +220,17 @@ try {
     }
 } catch (e) {
     console.error('[DB Migration Error - Subscriptions]', e);
+}
+
+// Migration: add min_level to files if missing
+try {
+    const fileInfo = db.prepare("PRAGMA table_info(files)").all();
+    const hasMinLevel = fileInfo.some(col => col.name === 'min_level');
+    if (!hasMinLevel) {
+        db.exec("ALTER TABLE files ADD COLUMN min_level INTEGER NOT NULL DEFAULT 1;");
+    }
+} catch (e) {
+    console.error('[DB Migration Error - Files min_level]', e);
 }
 
 // Seed default subscription for every app if missing

@@ -334,11 +334,21 @@ int main() {
     // 6. Post-Authentication Asset Decryption & Telemetry
     std::cout << "\n" << CLR_CYAN << "─── [ Launching Protected Assets ] ─────────────────────────────" << CLR_RESET << std::endl;
     PrintStatus("LOAD", "Requesting protected server variables...", CLR_CYAN);
-    std::string secretVar = auth.FetchVariable(skCrypt("TEST"));
+    std::string secretVar = auth.FetchVariable(skCrypt("payload_offset"));
     if (!secretVar.empty()) {
-        PrintStatus(" OK ", "Decrypted server variable [TEST]: " + secretVar, CLR_GREEN);
+        PrintStatus(" OK ", "Decrypted server variable [payload_offset]: " + secretVar, CLR_GREEN);
     } else {
-        PrintStatus("INFO", "Server variable [TEST]: (none or default)", CLR_GRAY);
+        PrintStatus("INFO", "Server variable [payload_offset]: (none or default)", CLR_GRAY);
+    }
+
+    // Dynamic Server-Decrypted Payload Streaming
+    PrintStatus("LOAD", "Streaming protected binary payload from gateway into memory...", CLR_CYAN);
+    KawaiiAuth::ProtectedPayload payload = auth.FetchProtectedPayload(skCrypt("core_module.bin"));
+    if (payload.success && !payload.data.empty()) {
+        PrintStatus(" OK ", "Decrypted in-memory payload [" + payload.name + "]: " + std::to_string(payload.size) + " bytes verified", CLR_GREEN);
+        PrintStatus(" OK ", "Payload SHA-256 integrity: " + payload.hash.substr(0, 16) + "...", CLR_GREEN);
+    } else {
+        PrintStatus("WARN", "Protected payload: " + (payload.message.empty() ? "None available" : payload.message), CLR_YELLOW);
     }
 
     // Heartbeat verification

@@ -388,6 +388,14 @@ namespace KawaiiAuth {
         HINTERNET hRequest = HttpOpenRequestA(m_hConnect, skCrypt("POST"), path.c_str(), nullptr, nullptr, nullptr, flags, 0);
         if (!hRequest) return response;
 
+        if (m_use_ssl && m_ignore_ssl_errors) {
+            DWORD secFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                             SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                             SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                             SECURITY_FLAG_IGNORE_WRONG_USAGE;
+            InternetSetOptionA(hRequest, INTERNET_OPTION_SECURITY_FLAGS, &secFlags, sizeof(secFlags));
+        }
+
         std::string headers = skCrypt("Content-Type: application/json\r\n");
         if (!extra_header.empty()) {
             headers += extra_header + "\r\n";
@@ -904,6 +912,75 @@ namespace KawaiiAuth {
             }
         } catch (...) {}
         return {};
+    }
+
+    ProtectedPayload Client::FetchProtectedPayload(const std::string& payload_name) {
+        ProtectedPayload res;
+        res.name = payload_name;
+        if (m_session_token.empty()) {
+            res.message = skCrypt("Active authenticated session required");
+            return res;
+        }
+
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
+        json payload = {
+            { skCrypt("action"), skCrypt("fetch_payload") },
+            { skCrypt("payload_name"), payload_name },
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
+        };
+
+        std::string enc = EncryptAES256(payload.dump());
+        json reqBody = { { skCrypt("data"), enc } };
+        std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
+
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            res.message = skCrypt("Gateway response signature verification failed");
+            return res;
+        }
+
+        try {
+            auto outer = json::parse(httpResp.body);
+            if (!outer.contains(skCrypt("data")) || outer[skCrypt("data")].is_null()) {
+                res.message = outer.value(skCrypt("message"), skCrypt("Server rejected payload request"));
+                return res;
+            }
+            std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
+            auto inner = json::parse(dec);
+
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                res.message = skCrypt("Nonce verification failed");
+                return res;
+            }
+
+            res.success = inner.value(skCrypt("success"), false);
+            res.message = inner.value(skCrypt("message"), "");
+            if (res.success) {
+                std::string b64 = inner.value(skCrypt("payload_data"), "");
+                res.data = Base64Decode(b64);
+                res.size = res.data.size();
+                res.hash = inner.value(skCrypt("hash"), "");
+
+                // Verify in-memory SHA-256 hash matches server signed hash
+                std::string localHash = HashSHA256(std::string(res.data.begin(), res.data.end()));
+                if (!res.hash.empty() && localHash != res.hash) {
+                    res.success = false;
+                    res.message = skCrypt("Payload hash verification failed (tampering detected)");
+                    res.data.clear();
+                    res.size = 0;
+                    return res;
+                }
+            }
+            return res;
+        } catch (...) {
+            res.message = skCrypt("Payload parsing or decryption failure");
+            return res;
+        }
     }
 
     bool Client::SendLog(const std::string& log_message) {

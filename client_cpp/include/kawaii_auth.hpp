@@ -39,6 +39,17 @@ namespace KawaiiAuth {
         std::string algorithm;
     };
 
+    struct ProtectedPayload {
+        bool success = false;
+        std::string message;
+        std::string name;
+        std::string hash;
+        size_t size = 0;
+        std::vector<uint8_t> data;
+
+        ProtectedPayload() = default;
+    };
+
     struct SessionStatus {
         bool success = false;
         bool authed = false;
@@ -73,9 +84,11 @@ namespace KawaiiAuth {
         // Assets and Telemetry
         std::string FetchVariable(const std::string& var_key);
         std::vector<uint8_t> DownloadFile(const std::string& file_name);
+        ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
         bool SendLog(const std::string& log_message);
 
-        // Verification & Security
+        // Security & SSL
+        void SetIgnoreSslErrors(bool ignore) { m_ignore_ssl_errors = ignore; }
         bool VerifyServerSignature(const std::string& body, const std::string& timestamp, const std::string& sig_b64);
 
         // Accessors
@@ -90,6 +103,7 @@ namespace KawaiiAuth {
         std::string m_host;
         INTERNET_PORT m_port;
         bool m_use_ssl;
+        bool m_ignore_ssl_errors = false;
 
         std::string m_session_token;
         std::string m_session_key_hex;
