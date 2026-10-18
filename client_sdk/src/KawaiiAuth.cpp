@@ -79,6 +79,46 @@ namespace KawaiiAuth {
         return m_impl->SendLog(log_message);
     }
 
+    uintptr_t Client::GetBrokerOffset(const std::string& var_key, uintptr_t default_val) {
+        return m_impl->GetBrokerOffset(var_key, default_val);
+    }
+
+    std::string Client::GetBrokerKey(const std::string& var_key) {
+        return m_impl->GetBrokerKey(var_key);
+    }
+
+    std::vector<uint8_t> Client::UnlockBrokerMemory(
+        const std::string& var_key,
+        const std::vector<uint8_t>& encrypted_data,
+        const std::string& custom_iv
+    ) {
+        return m_impl->UnlockBrokerMemory(var_key, encrypted_data, custom_iv);
+    }
+
+    std::vector<uint8_t> Client::UnlockBrokerFile(
+        const std::string& var_key,
+        const std::string& file_path,
+        const std::string& custom_iv
+    ) {
+        return m_impl->UnlockBrokerFile(var_key, file_path, custom_iv);
+    }
+
+    std::vector<uint8_t> Client::DecryptBrokerPayload(
+        const std::vector<uint8_t>& encrypted_data,
+        const std::string& key,
+        const std::string& custom_iv
+    ) {
+        return m_impl->DecryptBrokerPayload(encrypted_data, key, custom_iv);
+    }
+
+    std::vector<uint8_t> Client::EncryptBrokerPayload(
+        const std::vector<uint8_t>& raw_data,
+        const std::string& key,
+        const std::string& custom_iv
+    ) {
+        return m_impl->EncryptBrokerPayload(raw_data, key, custom_iv);
+    }
+
     void Client::SetIgnoreSslErrors(bool ignore) {
         m_impl->SetIgnoreSslErrors(ignore);
     }
@@ -301,6 +341,68 @@ namespace KawaiiAuth {
         std::lock_guard<std::mutex> lock(g_authMutex);
         if (!g_defaultClient) return false;
         return g_defaultClient->IsMaintenance();
+    }
+
+    // ========================================================================
+    // Key & Offset Broker Global API
+    // ========================================================================
+
+    uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return default_val;
+        return g_defaultClient->GetBrokerOffset(var_key, default_val);
+    }
+
+    std::string GetBrokerKey(const std::string& var_key) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return "";
+        return g_defaultClient->GetBrokerKey(var_key);
+    }
+
+    std::vector<uint8_t> UnlockBrokerMemory(
+        const std::string& var_key,
+        const std::vector<uint8_t>& encrypted_data,
+        const std::string& custom_iv
+    ) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return {};
+        return g_defaultClient->UnlockBrokerMemory(var_key, encrypted_data, custom_iv);
+    }
+
+    std::vector<uint8_t> UnlockBrokerFile(
+        const std::string& var_key,
+        const std::string& file_path,
+        const std::string& custom_iv
+    ) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return {};
+        return g_defaultClient->UnlockBrokerFile(var_key, file_path, custom_iv);
+    }
+
+    std::vector<uint8_t> DecryptBrokerPayload(
+        const std::vector<uint8_t>& encrypted_data,
+        const std::string& key,
+        const std::string& custom_iv
+    ) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) {
+            KawaiiAuth::Client::Impl dummy({});
+            return dummy.DecryptBrokerPayload(encrypted_data, key, custom_iv);
+        }
+        return g_defaultClient->DecryptBrokerPayload(encrypted_data, key, custom_iv);
+    }
+
+    std::vector<uint8_t> EncryptBrokerPayload(
+        const std::vector<uint8_t>& raw_data,
+        const std::string& key,
+        const std::string& custom_iv
+    ) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) {
+            KawaiiAuth::Client::Impl dummy({});
+            return dummy.EncryptBrokerPayload(raw_data, key, custom_iv);
+        }
+        return g_defaultClient->EncryptBrokerPayload(raw_data, key, custom_iv);
     }
 
 } // namespace KawaiiAuth

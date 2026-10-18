@@ -3818,11 +3818,9 @@
                 const key = (keyInput ? keyInput.value : '').trim();
                 if (key) {
                     localStorage.setItem('kawaii_saved_client_key', key);
-                    showToast('Client Key will be remembered on this browser', 'info');
                 }
             } else {
                 localStorage.removeItem('kawaii_saved_client_key');
-                showToast('Client Key memory cleared', 'info');
             }
         }
 

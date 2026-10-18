@@ -178,6 +178,67 @@ namespace KawaiiAuth {
     bool IsUpdateRequired();
     bool IsMaintenance();
 
+    // ========================================================================
+    // KEY & OFFSET BROKER API (Zero-Server-Footprint Protected Binary Loader)
+    // ========================================================================
+
+    /**
+     * @brief Fetch an offset variable from server and parse as memory address/offset
+     * @param var_key Name of the variable on dashboard (e.g. "OFFSET_UWORLD")
+     * @param default_val Fallback value if variable is missing or invalid
+     * @return Parsed uintptr_t offset
+     */
+    uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
+
+    /**
+     * @brief Fetch a secret broker key string (e.g. 32-byte hex key) from server
+     */
+    std::string GetBrokerKey(const std::string& var_key);
+
+    /**
+     * @brief Decrypt in-memory binary payload with AES-256 using key fetched from server variable
+     * @param var_key Name of the secret key variable on dashboard (e.g. "CORE_KEY")
+     * @param encrypted_data Raw encrypted binary data
+     * @param custom_iv Optional custom IV. If empty, reads prepended 16-byte IV from ciphertext.
+     * @return Decrypted executable/DLL payload bytes in RAM
+     */
+    std::vector<uint8_t> UnlockBrokerMemory(
+        const std::string& var_key,
+        const std::vector<uint8_t>& encrypted_data,
+        const std::string& custom_iv = ""
+    );
+
+    /**
+     * @brief Read encrypted binary from disk and decrypt directly in RAM with key from server variable
+     * @param var_key Name of the secret key variable on dashboard (e.g. "CORE_KEY")
+     * @param file_path Path to local encrypted file (e.g. "core_module.bin")
+     * @param custom_iv Optional custom IV. If empty, reads prepended 16-byte IV.
+     * @return Decrypted executable/DLL payload bytes in RAM (never touches disk)
+     */
+    std::vector<uint8_t> UnlockBrokerFile(
+        const std::string& var_key,
+        const std::string& file_path,
+        const std::string& custom_iv = ""
+    );
+
+    /**
+     * @brief Standalone helper to decrypt binary buffer with AES-256-CBC in RAM
+     */
+    std::vector<uint8_t> DecryptBrokerPayload(
+        const std::vector<uint8_t>& encrypted_data,
+        const std::string& key,
+        const std::string& custom_iv = ""
+    );
+
+    /**
+     * @brief Standalone helper to encrypt binary buffer with AES-256-CBC (prepends 16-byte IV)
+     */
+    std::vector<uint8_t> EncryptBrokerPayload(
+        const std::vector<uint8_t>& raw_data,
+        const std::string& key,
+        const std::string& custom_iv = ""
+    );
+
 
     // ========================================================================
     // OBJECT-ORIENTED CLIENT CLASS (For advanced / multi-instance use cases)
@@ -212,6 +273,30 @@ namespace KawaiiAuth {
         ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
         bool SendLog(const std::string& log_message);
 
+        // Key & Offset Broker Methods
+        uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
+        std::string GetBrokerKey(const std::string& var_key);
+        std::vector<uint8_t> UnlockBrokerMemory(
+            const std::string& var_key,
+            const std::vector<uint8_t>& encrypted_data,
+            const std::string& custom_iv = ""
+        );
+        std::vector<uint8_t> UnlockBrokerFile(
+            const std::string& var_key,
+            const std::string& file_path,
+            const std::string& custom_iv = ""
+        );
+        std::vector<uint8_t> DecryptBrokerPayload(
+            const std::vector<uint8_t>& encrypted_data,
+            const std::string& key,
+            const std::string& custom_iv = ""
+        );
+        std::vector<uint8_t> EncryptBrokerPayload(
+            const std::vector<uint8_t>& raw_data,
+            const std::string& key,
+            const std::string& custom_iv = ""
+        );
+
         void SetIgnoreSslErrors(bool ignore);
 
         const std::string& GetHWID() const;
@@ -226,8 +311,9 @@ namespace KawaiiAuth {
         bool IsUpdateRequired() const;
         bool IsMaintenance() const;
 
-    private:
+    public:
         class Impl;
+    private:
         std::unique_ptr<Impl> m_impl;
     };
 

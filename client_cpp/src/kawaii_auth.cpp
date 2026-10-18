@@ -1009,4 +1009,227 @@ namespace KawaiiAuth {
         return true;
     }
 
+    // ========================================================================
+    // Key & Offset Broker Implementation (Zero-Server-Footprint Architecture)
+    // ========================================================================
+
+    static bool IsAllHexStr(const std::string& s) {
+        if (s.empty()) return false;
+        for (char c : s) {
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    std::vector<uint8_t> Client::DecryptBrokerPayload(
+        const std::vector<uint8_t>& encryptedData,
+        const std::string& keyStr,
+        const std::string& customIvStr
+    ) {
+        if (encryptedData.empty() || keyStr.empty()) return {};
+
+        // 1. Derive 32-byte AES key
+        std::vector<uint8_t> keyBytes;
+        if (keyStr.length() == 64 && IsAllHexStr(keyStr)) {
+            keyBytes = HexToBytes(keyStr);
+        } else if (keyStr.length() == 32) {
+            keyBytes.assign(keyStr.begin(), keyStr.end());
+        } else {
+            std::string hashHex = HashSHA256(keyStr);
+            keyBytes = HexToBytes(hashHex);
+        }
+
+        if (keyBytes.size() != 32) return {};
+
+        // 2. Determine IV and Ciphertext bytes
+        std::vector<uint8_t> ivBytes;
+        std::vector<uint8_t> cipherBytes;
+
+        if (!customIvStr.empty()) {
+            if (customIvStr.length() == 32 && IsAllHexStr(customIvStr)) {
+                ivBytes = HexToBytes(customIvStr);
+            } else if (customIvStr.length() == 16) {
+                ivBytes.assign(customIvStr.begin(), customIvStr.end());
+            } else {
+                std::string ivHash = HashSHA256(customIvStr);
+                ivBytes = HexToBytes(ivHash.substr(0, 32));
+            }
+            cipherBytes = encryptedData;
+        } else {
+            // Default: check if first 16 bytes are the prepended IV
+            if (encryptedData.size() > 16) {
+                ivBytes.assign(encryptedData.begin(), encryptedData.begin() + 16);
+                cipherBytes.assign(encryptedData.begin() + 16, encryptedData.end());
+            } else {
+                return {};
+            }
+        }
+
+        if (cipherBytes.empty() || (cipherBytes.size() % 16 != 0)) {
+            if (encryptedData.size() % 16 == 0 && customIvStr.empty()) {
+                std::string kHash = HashSHA256(keyStr);
+                ivBytes = HexToBytes(kHash.substr(0, 32));
+                cipherBytes = encryptedData;
+            } else {
+                return {};
+            }
+        }
+
+        BCRYPT_ALG_HANDLE hAlg = nullptr;
+        BCRYPT_KEY_HANDLE hKey = nullptr;
+        std::vector<uint8_t> decrypted;
+
+        if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_AES_ALGORITHM, nullptr, 0) == 0) {
+            BCryptSetProperty(hAlg, BCRYPT_CHAINING_MODE, (PUCHAR)BCRYPT_CHAIN_MODE_CBC, sizeof(BCRYPT_CHAIN_MODE_CBC), 0);
+
+            DWORD keyObjSize = 0, dataLen = 0;
+            BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&keyObjSize, sizeof(DWORD), &dataLen, 0);
+            std::vector<uint8_t> keyObj(keyObjSize);
+
+            if (BCryptGenerateSymmetricKey(hAlg, &hKey, keyObj.data(), keyObjSize, keyBytes.data(), static_cast<ULONG>(keyBytes.size()), 0) == 0) {
+                std::vector<uint8_t> ivBuf = ivBytes;
+                DWORD plainLen = 0;
+                NTSTATUS status = BCryptDecrypt(hKey, cipherBytes.data(), static_cast<ULONG>(cipherBytes.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), nullptr, 0, &plainLen, BCRYPT_BLOCK_PADDING);
+                if (status == 0 && plainLen > 0) {
+                    decrypted.resize(plainLen);
+                    ivBuf = ivBytes;
+                    status = BCryptDecrypt(hKey, cipherBytes.data(), static_cast<ULONG>(cipherBytes.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), decrypted.data(), plainLen, &plainLen, BCRYPT_BLOCK_PADDING);
+                    if (status != 0) {
+                        decrypted.clear();
+                    }
+                }
+                BCryptDestroyKey(hKey);
+            }
+            BCryptCloseAlgorithmProvider(hAlg, 0);
+        }
+        return decrypted;
+    }
+
+    std::vector<uint8_t> Client::EncryptBrokerPayload(
+        const std::vector<uint8_t>& rawData,
+        const std::string& keyStr,
+        const std::string& customIvStr
+    ) {
+        if (rawData.empty() || keyStr.empty()) return {};
+
+        std::vector<uint8_t> keyBytes;
+        if (keyStr.length() == 64 && IsAllHexStr(keyStr)) {
+            keyBytes = HexToBytes(keyStr);
+        } else if (keyStr.length() == 32) {
+            keyBytes.assign(keyStr.begin(), keyStr.end());
+        } else {
+            std::string hashHex = HashSHA256(keyStr);
+            keyBytes = HexToBytes(hashHex);
+        }
+
+        std::vector<uint8_t> ivBytes(16);
+        bool prependIv = false;
+        if (!customIvStr.empty()) {
+            if (customIvStr.length() == 32 && IsAllHexStr(customIvStr)) {
+                ivBytes = HexToBytes(customIvStr);
+            } else if (customIvStr.length() == 16) {
+                ivBytes.assign(customIvStr.begin(), customIvStr.end());
+            } else {
+                std::string ivHash = HashSHA256(customIvStr);
+                ivBytes = HexToBytes(ivHash.substr(0, 32));
+            }
+        } else {
+            if (BCryptGenRandom(nullptr, ivBytes.data(), 16, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0) {
+                for (size_t i = 0; i < 16; ++i) ivBytes[i] = static_cast<uint8_t>(rand() & 0xFF);
+            }
+            prependIv = true;
+        }
+
+        BCRYPT_ALG_HANDLE hAlg = nullptr;
+        BCRYPT_KEY_HANDLE hKey = nullptr;
+        std::vector<uint8_t> result;
+
+        if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_AES_ALGORITHM, nullptr, 0) == 0) {
+            BCryptSetProperty(hAlg, BCRYPT_CHAINING_MODE, (PUCHAR)BCRYPT_CHAIN_MODE_CBC, sizeof(BCRYPT_CHAIN_MODE_CBC), 0);
+
+            DWORD keyObjSize = 0, dataLen = 0;
+            BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&keyObjSize, sizeof(DWORD), &dataLen, 0);
+            std::vector<uint8_t> keyObj(keyObjSize);
+
+            if (BCryptGenerateSymmetricKey(hAlg, &hKey, keyObj.data(), keyObjSize, keyBytes.data(), static_cast<ULONG>(keyBytes.size()), 0) == 0) {
+                std::vector<uint8_t> ivBuf = ivBytes;
+                DWORD cipherLen = 0;
+                NTSTATUS status = BCryptEncrypt(hKey, (PUCHAR)rawData.data(), static_cast<ULONG>(rawData.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), nullptr, 0, &cipherLen, BCRYPT_BLOCK_PADDING);
+                if (status == 0 && cipherLen > 0) {
+                    std::vector<uint8_t> cipherBuf(cipherLen);
+                    ivBuf = ivBytes;
+                    status = BCryptEncrypt(hKey, (PUCHAR)rawData.data(), static_cast<ULONG>(rawData.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), cipherBuf.data(), cipherLen, &cipherLen, BCRYPT_BLOCK_PADDING);
+                    if (status == 0) {
+                        if (prependIv) {
+                            result.reserve(16 + cipherLen);
+                            result.insert(result.end(), ivBytes.begin(), ivBytes.end());
+                            result.insert(result.end(), cipherBuf.begin(), cipherBuf.end());
+                        } else {
+                            result = std::move(cipherBuf);
+                        }
+                    }
+                }
+                BCryptDestroyKey(hKey);
+            }
+            BCryptCloseAlgorithmProvider(hAlg, 0);
+        }
+        return result;
+    }
+
+    uintptr_t Client::GetBrokerOffset(const std::string& var_key, uintptr_t default_val) {
+        std::string valStr = FetchVariable(var_key);
+        if (valStr.empty()) return default_val;
+        try {
+            size_t idx = 0;
+            unsigned long long parsed = std::stoull(valStr, &idx, 0);
+            return static_cast<uintptr_t>(parsed);
+        } catch (...) {
+            return default_val;
+        }
+    }
+
+    std::string Client::GetBrokerKey(const std::string& var_key) {
+        return FetchVariable(var_key);
+    }
+
+    std::vector<uint8_t> Client::UnlockBrokerMemory(
+        const std::string& var_key,
+        const std::vector<uint8_t>& encrypted_data,
+        const std::string& custom_iv
+    ) {
+        std::string key = FetchVariable(var_key);
+        if (key.empty()) return {};
+        return DecryptBrokerPayload(encrypted_data, key, custom_iv);
+    }
+
+    std::vector<uint8_t> Client::UnlockBrokerFile(
+        const std::string& var_key,
+        const std::string& file_path,
+        const std::string& custom_iv
+    ) {
+        std::string key = FetchVariable(var_key);
+        if (key.empty()) return {};
+
+        HANDLE hFile = CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (hFile == INVALID_HANDLE_VALUE) return {};
+
+        LARGE_INTEGER fileSize;
+        if (!GetFileSizeEx(hFile, &fileSize) || fileSize.QuadPart <= 0 || fileSize.QuadPart > 500 * 1024 * 1024) {
+            CloseHandle(hFile);
+            return {};
+        }
+
+        std::vector<uint8_t> buffer(static_cast<size_t>(fileSize.QuadPart));
+        DWORD bytesRead = 0;
+        if (!ReadFile(hFile, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, nullptr) || bytesRead != buffer.size()) {
+            CloseHandle(hFile);
+            return {};
+        }
+        CloseHandle(hFile);
+
+        return DecryptBrokerPayload(buffer, key, custom_iv);
+    }
+
 }

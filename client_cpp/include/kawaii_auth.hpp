@@ -87,6 +87,30 @@ namespace KawaiiAuth {
         ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
         bool SendLog(const std::string& log_message);
 
+        // Key & Offset Broker (Zero-Server-Footprint Architecture)
+        uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
+        std::string GetBrokerKey(const std::string& var_key);
+        std::vector<uint8_t> UnlockBrokerMemory(
+            const std::string& var_key,
+            const std::vector<uint8_t>& encrypted_data,
+            const std::string& custom_iv = ""
+        );
+        std::vector<uint8_t> UnlockBrokerFile(
+            const std::string& var_key,
+            const std::string& file_path,
+            const std::string& custom_iv = ""
+        );
+        std::vector<uint8_t> DecryptBrokerPayload(
+            const std::vector<uint8_t>& encrypted_data,
+            const std::string& key,
+            const std::string& custom_iv = ""
+        );
+        std::vector<uint8_t> EncryptBrokerPayload(
+            const std::vector<uint8_t>& raw_data,
+            const std::string& key,
+            const std::string& custom_iv = ""
+        );
+
         // Security & SSL
         void SetIgnoreSslErrors(bool ignore) { m_ignore_ssl_errors = ignore; }
         bool VerifyServerSignature(const std::string& body, const std::string& timestamp, const std::string& sig_b64);

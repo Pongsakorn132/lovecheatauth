@@ -475,6 +475,26 @@ function handleApiRequest(req, res, url, body) {
                 return sendEncrypted(res, session, { success: true, var_key: v.var_key, var_value: v.var_value });
             }
 
+            case 'fetch_vars':
+            case 'fetch_broker': {
+                const keys = decryptedPayload.keys || [];
+                if (!Array.isArray(keys) || keys.length === 0) {
+                    return sendEncrypted(res, session, { success: false, message: 'No variable keys specified' });
+                }
+                const placeholders = keys.map(() => '?').join(',');
+                const query = `SELECT var_key, var_value, authed_only FROM variables WHERE app_id = ? AND var_key IN (${placeholders})`;
+                const rows = db.prepare(query).all(app.id, ...keys);
+
+                const result = {};
+                for (const row of rows) {
+                    if (row.authed_only && !session.user_id) {
+                        continue; // Skip unauthorized variables
+                    }
+                    result[row.var_key] = row.var_value;
+                }
+                return sendEncrypted(res, session, { success: true, variables: result });
+            }
+
             case 'fetch_payload':
             case 'download_file': {
                 const fileName = (decryptedPayload.file_name || decryptedPayload.payload_name || '').trim();
