@@ -69,11 +69,26 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #38bdf8;
         }
+        html {
+            scroll-behavior: smooth;
+        }
+        main section {
+            scroll-margin-top: 85px;
+        }
+        .nav-item {
+            border-left: 3px solid transparent;
+            transition: all 0.15s ease-in-out;
+        }
+        .nav-item:hover {
+            color: #7dd3fc;
+            background: rgba(30, 41, 59, 0.5);
+        }
         .nav-item.active {
-            color: #38bdf8;
-            font-weight: 600;
-            border-left-color: #38bdf8;
-            background: rgba(56, 189, 248, 0.08);
+            color: #38bdf8 !important;
+            font-weight: 600 !important;
+            border-left-color: #38bdf8 !important;
+            background: rgba(56, 189, 248, 0.12) !important;
+            padding-left: 0.85rem !important;
         }
     </style>
 </head>
@@ -737,25 +752,125 @@ curl -X POST https://your-server.com/api/seller/licenses/generate \
             });
         }
 
-        // Active link tracking on scroll
-        window.addEventListener('scroll', () => {
-            const sections = document.querySelectorAll('main section');
+        // Set active navigation item by target section ID
+        function setActiveNavId(id) {
+            if (!id) return;
             const navItems = document.querySelectorAll('.nav-item');
-            let current = '';
-
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop - 120;
-                if (window.pageYOffset >= sectionTop) {
-                    current = section.getAttribute('id');
-                }
-            });
-
             navItems.forEach(item => {
-                item.classList.remove('active');
-                if (item.getAttribute('href') === '#' + current) {
+                if (item.getAttribute('href') === '#' + id) {
                     item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
                 }
             });
+        }
+
+        // Manual click lock flag to avoid scroll events overriding active tab during smooth scroll
+        let isManualNavClick = false;
+        let navScrollTimer = null;
+
+        // Smooth scroll & instant active state on clicking sidebar items
+        document.querySelectorAll('.nav-item, a[href^="#"]').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                if (!href || !href.startsWith('#') || href === '#') return;
+                const targetId = href.substring(1);
+                const targetEl = document.getElementById(targetId);
+                if (!targetEl) return;
+
+                e.preventDefault();
+                setActiveNavId(targetId);
+
+                isManualNavClick = true;
+                clearTimeout(navScrollTimer);
+
+                const headerOffset = 85;
+                const elementPosition = targetEl.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                window.scrollTo({
+                    top: Math.max(0, offsetPosition),
+                    behavior: 'smooth'
+                });
+
+                if (window.history && window.history.pushState) {
+                    window.history.pushState(null, null, href);
+                }
+
+                navScrollTimer = setTimeout(() => {
+                    isManualNavClick = false;
+                    updateActiveNavOnScroll();
+                }, 800);
+            });
+        });
+
+        // Robust Scrollspy tracking based on viewport bounding rectangles
+        function updateActiveNavOnScroll() {
+            if (isManualNavClick) return;
+
+            const sections = Array.from(document.querySelectorAll('main section')).filter(sec => sec.offsetParent !== null);
+            if (!sections.length) return;
+
+            // 1. If user is at or very near bottom of the page, activate the last visible section
+            const scrollBottom = window.innerHeight + window.pageYOffset;
+            const pageHeight = document.documentElement.scrollHeight;
+            if (scrollBottom >= pageHeight - 60) {
+                const lastSection = sections[sections.length - 1];
+                setActiveNavId(lastSection.getAttribute('id'));
+                return;
+            }
+
+            // 2. If user is near top of page, activate the first section
+            if (window.pageYOffset < 120) {
+                setActiveNavId(sections[0].getAttribute('id'));
+                return;
+            }
+
+            // 3. Find section that spans across focal line (140px below top)
+            let currentId = null;
+            for (const section of sections) {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 140 && rect.bottom > 140) {
+                    currentId = section.getAttribute('id');
+                    break;
+                }
+            }
+
+            // 4. Fallback: find highest section with top <= 220px
+            if (!currentId) {
+                for (let i = sections.length - 1; i >= 0; i--) {
+                    const rect = sections[i].getBoundingClientRect();
+                    if (rect.top <= 220) {
+                        currentId = sections[i].getAttribute('id');
+                        break;
+                    }
+                }
+            }
+
+            if (currentId) {
+                setActiveNavId(currentId);
+            }
+        }
+
+        window.addEventListener('scroll', updateActiveNavOnScroll, { passive: true });
+
+        // Initialize active state on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash ? window.location.hash.substring(1) : '';
+            if (hash && document.getElementById(hash)) {
+                setActiveNavId(hash);
+                setTimeout(() => {
+                    const targetEl = document.getElementById(hash);
+                    if (targetEl) {
+                        const headerOffset = 85;
+                        const elementPosition = targetEl.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                        window.scrollTo({ top: Math.max(0, offsetPosition), behavior: 'smooth' });
+                    }
+                }, 100);
+            } else {
+                updateActiveNavOnScroll();
+            }
         });
     </script>
 </body>
