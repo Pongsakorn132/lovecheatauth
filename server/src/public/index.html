@@ -1186,7 +1186,9 @@
                     </label>
                     <div class="relative">
                         <input type="url" id="newFileDownloadUrl" oninput="onCdnUrlChanged(this.value)" placeholder="https://pub-f76bfee4682d40bebce65d48f3e96bd5.r2.dev/FF/n.txt" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-sky-400 placeholder:text-slate-600 pr-10">
-                        <button type="button" onclick="navigator.clipboard.readText().then(t => { document.getElementById('newFileDownloadUrl').value = t; onCdnUrlChanged(t); })" class="absolute right-2.5 top-2.5 text-slate-500 hover:text-white text-xs p-1" title="Paste from clipboard">📋</button>
+                        <button type="button" onclick="navigator.clipboard.readText().then(t => { document.getElementById('newFileDownloadUrl').value = t; onCdnUrlChanged(t); })" class="absolute right-2.5 top-2.5 text-slate-500 hover:text-white text-xs p-1 transition" title="Paste from clipboard">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        </button>
                     </div>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
                         🚀 ไคลเอนต์ C++ จะสตรีมไฟล์จากลิงก์นี้ตรงเข้า RAM ทันที (Zero-Disk) เซิร์ฟเวอร์ไม่เสียพื้นที่จัดเก็บ (0 MB)
@@ -1252,8 +1254,9 @@
                 <div class="p-3 bg-slate-950/80 border border-slate-800 rounded-xl space-y-1">
                     <div class="flex items-center justify-between text-xs text-slate-400">
                         <span class="font-semibold text-slate-300">File ID (สำหรับ C++):</span>
-                        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('editFileId').value); showToast('Copied File ID!', 'info')" class="text-sky-400 hover:text-sky-300 font-mono text-[11px] flex items-center gap-1">
-                            📋 คัดลอก ID
+                        <button type="button" onclick="copyToClipboard(document.getElementById('editFileId').value, this)" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-[11px] transition" title="Copy File ID">
+                            <svg class="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                            <span>Copy ID</span>
                         </button>
                     </div>
                     <div id="editFileIdDisplay" class="font-mono text-sm text-sky-300 font-bold tracking-wide">file_xxxxxxxx</div>
@@ -1267,7 +1270,9 @@
                     </label>
                     <div class="relative">
                         <input type="url" id="editFileDownloadUrl" oninput="onEditCdnUrlChanged(this.value)" placeholder="https://pub-f76bfee4682d40bebce65d48f3e96bd5.r2.dev/FF/n.txt" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-sky-400 placeholder:text-slate-600 pr-10">
-                        <button type="button" onclick="navigator.clipboard.readText().then(t => { document.getElementById('editFileDownloadUrl').value = t; onEditCdnUrlChanged(t); })" class="absolute right-2.5 top-2.5 text-slate-500 hover:text-white text-xs p-1" title="Paste from clipboard">📋</button>
+                        <button type="button" onclick="navigator.clipboard.readText().then(t => { document.getElementById('editFileDownloadUrl').value = t; onEditCdnUrlChanged(t); })" class="absolute right-2.5 top-2.5 text-slate-500 hover:text-white text-xs p-1 transition" title="Paste from clipboard">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        </button>
                     </div>
                     <p class="text-[11px] text-slate-400 leading-relaxed">
                         🚀 วางลิงก์ดาวน์โหลดใหม่ที่ต้องการ ไคลเอนต์จะดาวน์โหลดไฟล์ใหม่จาก URL นี้ทันที
@@ -3366,10 +3371,11 @@
                 const storageBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold">☁️ R2 / CDN (0 MB)</span>';
 
                 const urlDisplay = f.download_url 
-                    ? `<div class="flex items-center gap-1.5 font-mono text-xs text-sky-400">
+                    ? `<div class="flex items-center gap-2 font-mono text-xs text-sky-400">
                          <a href="${escapeHtml(f.download_url)}" target="_blank" class="truncate max-w-[240px] hover:underline" title="${escapeHtml(f.download_url)}">${escapeHtml(f.download_url)}</a>
-                         <button onclick="navigator.clipboard.writeText('${escapeHtml(f.download_url)}'); showToast('Copied Download URL!', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy URL">📋</button>
-                         <button onclick="openEditFileUrlModal('${escapeHtml(f.id)}')" class="text-sky-400 hover:text-sky-200 p-0.5 transition" title="Edit Direct Download URL">✏️</button>
+                         <button onclick="copyToClipboard('${escapeHtml(f.download_url)}', this)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition shrink-0" title="Copy Download URL">
+                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                         </button>
                        </div>`
                     : '<span class="text-slate-500 font-mono text-xs">-</span>';
 
@@ -3377,7 +3383,9 @@
                     <td class="px-4 py-3 font-semibold text-white font-mono">
                         <div class="flex items-center gap-2">
                             <span class="text-sky-300 font-bold">${escapeHtml(fileId)}</span>
-                            <button onclick="navigator.clipboard.writeText('${escapeHtml(fileId)}'); showToast('Copied File ID: ${escapeHtml(fileId)} (ใช้ใน C++)', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File ID for C++">📋</button>
+                            <button onclick="copyToClipboard('${escapeHtml(fileId)}', this)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition shrink-0" title="Copy File ID for C++">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                            </button>
                         </div>
                     </td>
                     <td class="px-4 py-3 font-mono text-slate-300">${escapeHtml(fileName)}</td>
@@ -3514,7 +3522,7 @@
                     resetNewFileModal();
                     loadFiles();
                     const savedId = (res.file && res.file.file_id) ? res.file.file_id : generatedFileId;
-                    showToast(`บันทึกเรียบร้อย! สุ่ม File ID: '${savedId}' (คลิกปุ่ม 📋 ในตารางเพื่อคัดลอกไปใช้ใน C++)`, 'success');
+                    showToast(`บันทึกเรียบร้อย! สุ่ม File ID: '${savedId}' (คลิกปุ่ม Copy ในตารางเพื่อคัดลอกไปใช้ใน C++)`, 'success');
                 } else {
                     customAlert(res && res.message ? res.message : 'Save failed', { type: 'error' });
                 }
