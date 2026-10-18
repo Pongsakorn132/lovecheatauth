@@ -93,14 +93,14 @@
             <div class="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400">
                 <span class="text-emerald-400">C++20 Native</span> &bull; 
                 <span class="text-sky-300">Zero 3rd-Party DLLs</span> &bull; 
-                <span class="text-amber-300">Broker Security</span>
+                <span class="text-amber-300">HWID Lock</span>
             </div>
         </div>
 
         <!-- Search Bar & Links -->
         <div class="flex items-center space-x-3">
             <div class="relative hidden md:block w-64">
-                <input type="text" id="docSearchInput" oninput="filterDocSearch(this.value)" placeholder="Search API, functions, offsets..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 font-mono transition">
+                <input type="text" id="docSearchInput" oninput="filterDocSearch(this.value)" placeholder="Search API, functions, variables..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 font-mono transition">
                 <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
 
@@ -136,9 +136,8 @@
                         <li><a href="#sdk-init" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Init &amp; Configuration</a></li>
                         <li><a href="#sdk-auth" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">License &amp; User Login</a></li>
                         <li><a href="#sdk-user" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">User &amp; HWID Info</a></li>
-                        <li><a href="#sdk-vars" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Encrypted Variables</a></li>
-                        <li><a href="#sdk-broker" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Offset &amp; Key Broker</a></li>
-                        <li><a href="#sdk-payload" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">In-Memory Decryption</a></li>
+                        <li><a href="#sdk-vars" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Server Variables</a></li>
+                        <li><a href="#sdk-payload" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Files &amp; Payloads</a></li>
                         <li><a href="#sdk-security" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Anti-Debug &amp; Watchdog</a></li>
                     </ul>
                 </div>
@@ -146,8 +145,7 @@
                 <div>
                     <h5 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-2">📋 Complete Examples</h5>
                     <ul class="space-y-1 text-xs">
-                        <li><a href="#example-simple" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Simple Key Loader</a></li>
-                        <li><a href="#example-broker" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Zero-Footprint Broker</a></li>
+                        <li><a href="#example-simple" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Complete C++ Loader</a></li>
                     </ul>
                 </div>
 
@@ -175,7 +173,7 @@
                     </div>
                     <h2 class="text-3xl font-extrabold text-white tracking-tight">KawaiiAuth Developer Documentation</h2>
                     <p class="text-sm text-slate-300 leading-relaxed max-w-3xl">
-                        ระบบจัดการสิทธิ์การใช้งาน (Licensing System), ตรวจสอบตัวตนผู้ใช้, เข้ารหัสตัวแปร (Broker Offsets) และส่งไฟล์ Payload ปลอดภัยสู่หน่วยความจำ (RAM) โดยไม่ต้องบันทึกลงดิสก์ ออกแบบมาสำหรับ Loader, เครื่องมือพัฒนาระบบ และโปรแกรม C++ ที่ต้องการความปลอดภัยระดับสูงสุด
+                        ระบบจัดการสิทธิ์การใช้งาน (Licensing System), ตรวจสอบตัวตนผู้ใช้, ดึงตัวแปรเซิร์ฟเวอร์แบบเข้ารหัส (Server Variables) และดาวน์โหลดไฟล์ Payload สู่หน่วยความจำ (RAM) โดยไม่ต้องบันทึกลงดิสก์ ออกแบบมาสำหรับ Loader, เครื่องมือพัฒนาระบบ และโปรแกรม C++ ที่ต้องการความปลอดภัยระดับสูงสุด
                     </p>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                         <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
@@ -187,8 +185,8 @@
                             <span class="text-sm font-bold text-sky-400">AES-256 + RSA-2048</span>
                         </div>
                         <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
-                            <span class="text-xs text-slate-400 block font-mono">Game Mod Protection</span>
-                            <span class="text-sm font-bold text-emerald-400">Zero-Footprint Broker</span>
+                            <span class="text-xs text-slate-400 block font-mono">Encrypted Configs</span>
+                            <span class="text-sm font-bold text-emerald-400">Server Variables</span>
                         </div>
                     </div>
                 </div>
@@ -387,63 +385,61 @@
                 </div>
             </section>
 
-            <!-- C++ SDK Reference: Broker & Offsets -->
-            <section id="sdk-broker" class="space-y-4">
+            <!-- C++ SDK Reference: Server Variables -->
+            <section id="sdk-vars" class="space-y-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2 rounded-lg bg-amber-950/80 border border-amber-800 text-amber-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold text-white">Broker Offsets: ป้องกันเกมอัปเดตและซ่อนแอดเดรส</h3>
+                    <h3 class="text-xl font-bold text-white">Server Variables: ดึงค่าตัวแปรแบบเข้ารหัสจากเซิร์ฟเวอร์</h3>
                 </div>
 
                 <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
                     <p class="text-slate-300 leading-relaxed">
-                        ฟังก์ชัน <code class="text-amber-300 font-mono font-bold">GetBrokerOffset()</code> อนุญาตให้ผู้พัฒนา**ไม่จำเป็นต้อง Hardcode ค่า Game Offset หรือ Pointer ลงในตัวโปรแกรม C++** โดยให้ดึงค่าผ่านเซิร์ฟเวอร์แบบ Real-time:
+                        ฟังก์ชัน <code class="text-amber-300 font-mono font-bold">GetVariable()</code> อนุญาตให้ผู้พัฒนาดึงค่าข้อความ, Secret Key, Token, หรือ Config ที่ตั้งไว้ในแดชบอร์ดแท็บ <strong>Server Variables</strong> โดยส่งผ่านการเข้ารหัส AES-256 ปลอดภัย:
                     </p>
                     <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
-<pre class="text-slate-200"><code><span class="text-slate-500">// ดึง Offset จากเซิร์ฟเวอร์และแปลงเป็น uintptr_t อัตโนมัติ (รองรับเลขฐาน 16 เช่น "0x12F8")</span>
-<span class="text-blue-400">uintptr_t</span> offset_uworld = KawaiiAuth::<span class="text-yellow-400">GetBrokerOffset</span>(<span class="text-emerald-400">"OFFSET_UWORLD"</span>, <span class="text-orange-400">0x0</span>);
-<span class="text-blue-400">uintptr_t</span> offset_gobjects = KawaiiAuth::<span class="text-yellow-400">GetBrokerOffset</span>(<span class="text-emerald-400">"OFFSET_GOBJECTS"</span>, <span class="text-orange-400">0x0</span>);
+<pre class="text-slate-200"><code><span class="text-slate-500">// ดึงค่าตัวแปรจากเซิร์ฟเวอร์ด้วย Variable Key</span>
+std::string apiKey = KawaiiAuth::<span class="text-yellow-400">GetVariable</span>(<span class="text-emerald-400">"API_KEY"</span>);
+std::string configData = KawaiiAuth::<span class="text-yellow-400">GetVariable</span>(<span class="text-emerald-400">"APP_CONFIG"</span>);
 
-<span class="text-blue-400">if</span> (offset_uworld == <span class="text-orange-400">0</span>) {
-    std::cout &lt;&lt; <span class="text-red-400">"[-] Offset not found or game is currently updating."</span> &lt;&lt; std::endl;
-    <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
-}
-
-<span class="text-slate-500">// นำ Offset ไปอ่านหน่วยความจำเกมทันที</span>
-<span class="text-blue-400">uintptr_t</span> uworld_addr = game_base + offset_uworld;</code></pre>
+<span class="text-blue-400">if</span> (apiKey.empty()) {
+    std::cout &lt;&lt; <span class="text-red-400">"[-] Variable not found or access denied."</span> &lt;&lt; std::endl;
+} <span class="text-blue-400">else</span> {
+    std::cout &lt;&lt; <span class="text-emerald-400">"[+] Variable loaded: "</span> &lt;&lt; apiKey &lt;&lt; std::endl;
+}</code></pre>
                     </div>
                     <div class="p-3 rounded-xl bg-amber-950/20 border border-amber-800/40 text-amber-300">
-                        💡 <strong>ประโยชน์:</strong> เมื่อเกมมีแพตช์อัปเดตใหม่ คุณเพียงแค่แก้เลข Offset ในหน้าเว็บแดชบอร์ด ผู้เล่นทุกคนก็จะสามารถใช้งานต่อได้ทันทีโดยไม่ต้องแจกไฟล์ .exe หรือ compile ตัวโปรแกรมใหม่!
+                        💡 <strong>ประโยชน์:</strong> หากต้องการเปลี่ยนค่า Config หรือคีย์ลับ สามารถเข้าไปแก้ไขในหน้าแดชบอร์ดได้ทันที โดยไม่ต้องแจกไฟล์ .exe หรือ compile ตัวโปรแกรมใหม่
                     </div>
                 </div>
             </section>
 
-            <!-- C++ SDK Reference: In-Memory Payload Decryption -->
+            <!-- C++ SDK Reference: Files & Payloads -->
             <section id="sdk-payload" class="space-y-4">
                 <div class="flex items-center gap-3">
                     <div class="p-2 rounded-lg bg-purple-950/80 border border-purple-800 text-purple-400">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
-                    <h3 class="text-xl font-bold text-white">In-Memory Payload Decryption (RAM-Only)</h3>
+                    <h3 class="text-xl font-bold text-white">Files &amp; Payloads: ดาวน์โหลดไฟล์ปลอดภัยสู่ RAM</h3>
                 </div>
 
                 <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
                     <p class="text-slate-300 leading-relaxed">
-                        ถอดรหัสโมดูลเกม (DLL / Shellcode / Driver) เข้าสู่ RAM โดยตรงเพื่อนำไป Manual Map เข้าเกม ไม่มีการสร้างไฟล์ทิ้งไว้บน Harddisk ป้องกัน Antivirus และ Anti-cheat จากการสแกนไฟล์บนดิสก์:
+                        ฟังก์ชัน <code class="text-purple-300 font-mono font-bold">DownloadFile()</code> ดาวน์โหลดไฟล์หรือโมดูลไบนารีจากแท็บ <strong>Files &amp; Payloads</strong> ลงสู่ Memory (RAM) โดยตรง ป้องกัน Antivirus จากการสแกนไฟล์บน Harddisk:
                     </p>
                     <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
-<pre class="text-slate-200"><code><span class="text-slate-500">// 1. ปลดล็อคและถอดรหัสไฟล์จากเซิร์ฟเวอร์ด้วย File ID</span>
-std::vector&lt;<span class="text-blue-400">uint8_t</span>&gt; rawBytes = KawaiiAuth::<span class="text-yellow-400">UnlockBrokerFile</span>(<span class="text-emerald-400">"core_cheat_dll"</span>);
+<pre class="text-slate-200"><code><span class="text-slate-500">// ดาวน์โหลดไฟล์จากเซิร์ฟเวอร์เข้าสู่หน่วยความจำ (RAM)</span>
+std::vector&lt;<span class="text-blue-400">uint8_t</span>&gt; fileBytes = KawaiiAuth::<span class="text-yellow-400">DownloadFile</span>(<span class="text-emerald-400">"core_module.dll"</span>);
 
-<span class="text-blue-400">if</span> (rawBytes.empty()) {
-    std::cout &lt;&lt; <span class="text-red-400">"[-] Failed to unlock payload: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetLastError</span>() &lt;&lt; std::endl;
+<span class="text-blue-400">if</span> (fileBytes.empty()) {
+    std::cout &lt;&lt; <span class="text-red-400">"[-] Failed to download payload: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetLastError</span>() &lt;&lt; std::endl;
     <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
 }
 
-std::cout &lt;&lt; <span class="text-emerald-400">"[+] Payload decrypted in RAM! Size: "</span> &lt;&lt; rawBytes.size() &lt;&lt; <span class="text-emerald-400">" bytes."</span> &lt;&lt; std::endl;
+std::cout &lt;&lt; <span class="text-emerald-400">"[+] Payload loaded into RAM! Size: "</span> &lt;&lt; fileBytes.size() &lt;&lt; <span class="text-emerald-400">" bytes."</span> &lt;&lt; std::endl;
 
-<span class="text-slate-500">// 2. นำ rawBytes.data() ไป Manual Map เข้า process เกมได้ทันที</span>
+<span class="text-slate-500">// ใช้งานไฟล์ไบนารีใน RAM ได้ทันที</span>
 <span class="text-slate-500">// ManualMapDll(targetProcess, rawBytes.data(), rawBytes.size());</span>
 
 <span class="text-slate-500">// 3. ล้าง Memory ทันทีหลังฉีดเสร็จ (Zero Memory)</span>
@@ -508,9 +504,9 @@ std::cout &lt;&lt; <span class="text-emerald-400">"[+] Payload decrypted in RAM!
     std::cout &lt;&lt; <span class="text-slate-300">"[+] HWID Locked: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetHWID</span>().substr(<span class="text-orange-400">0</span>, <span class="text-orange-400">16</span>) &lt;&lt; <span class="text-slate-500">"..."</span> &lt;&lt; std::endl;
     std::cout &lt;&lt; <span class="text-emerald-400">"==========================================\n"</span> &lt;&lt; std::endl;
 
-    <span class="text-slate-500">// 5. ดึง Offsets</span>
-    <span class="text-blue-400">uintptr_t</span> uworld = KawaiiAuth::<span class="text-yellow-400">GetBrokerOffset</span>(<span class="text-emerald-400">"OFFSET_UWORLD"</span>);
-    std::cout &lt;&lt; <span class="text-cyan-300">"[+] Injected Game Offset UWorld: 0x"</span> &lt;&lt; std::hex &lt;&lt; uworld &lt;&lt; std::endl;
+    // 5. ดึงตัวแปรเซิร์ฟเวอร์ (Server Variable)
+    std::string configVar = KawaiiAuth::GetVariable("SERVER_CONFIG");
+    std::cout << "[+] Server Variable loaded: " << configVar << std::endl;
 
     system(<span class="text-emerald-400">"pause"</span>);
     <span class="text-blue-400">return</span> <span class="text-orange-400">0</span>;
@@ -552,9 +548,9 @@ std::cout &lt;&lt; <span class="text-emerald-400">"[+] Payload decrypted in RAM!
 
                         <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                             <span class="text-emerald-400 font-bold block text-sm">3. POST /api/v1/var</span>
-                            <span class="text-slate-400 text-[11px] block">ดึงค่าตัวแปร (Variables / Game Offsets) ที่ถูกเข้ารหัส</span>
+                            <span class="text-slate-400 text-[11px] block">ดึงค่าตัวแปรเซิร์ฟเวอร์ (Server Variables) ที่ถูกเข้ารหัส</span>
                             <div class="text-[12px] text-slate-300 pt-1">
-                                <strong>Payload:</strong> <code>{"session_token": "...", "var_key": "OFFSET_UWORLD"}</code>
+                                <strong>Payload:</strong> <code>{"session_token": "...", "var_key": "APP_SECRET_TOKEN"}</code>
                             </div>
                         </div>
                     </div>
