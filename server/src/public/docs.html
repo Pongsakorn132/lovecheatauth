@@ -385,6 +385,38 @@
                 </div>
             </section>
 
+            <!-- C++ SDK Reference: User & HWID Info -->
+            <section id="sdk-user" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-teal-950/80 border border-teal-800 text-teal-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">User &amp; HWID Info: ข้อมูลผู้ใช้และระยะเวลาคงเหลือ</h3>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
+                    <p class="text-slate-300 leading-relaxed">
+                        หลังการยืนยันตัวตนสำเร็จ สามารถเรียกดูข้อมูลผู้ใช้, สิทธิ์การใช้งาน, ระยะเวลาคงเหลือ (วัน/ชั่วโมง/นาที/วินาที) และค่า Hardware ID (HWID) ที่ผูกกับเครื่องได้ทันที:
+                    </p>
+                    <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-slate-500">// 1. ดึงข้อความระยะเวลาคงเหลือ (เช่น "29d 14h 32m 10s" หรือ "Permanent")</span>
+std::string timeLeft = KawaiiAuth::<span class="text-yellow-400">GetFormattedTimeLeft</span>();
+
+<span class="text-slate-500">// 2. ดึงจำนวนวินาทีคงเหลือ (สำหรับเขียนระบบนับถอยหลัง)</span>
+<span class="text-blue-400">uint64_t</span> secondsLeft = KawaiiAuth::<span class="text-yellow-400">GetSecondsLeft</span>();
+
+<span class="text-slate-500">// 3. ดึง Hardware ID (SHA-256 Hash ของ Motherboard + CPU + Disk)</span>
+std::string hwid = KawaiiAuth::<span class="text-yellow-400">GetHWID</span>();
+
+<span class="text-slate-500">// 4. ดึงข้อมูล UserInfo ทั้งหมด</span>
+KawaiiAuth::UserInfo user = KawaiiAuth::<span class="text-yellow-400">GetUser</span>();
+std::cout &lt;&lt; <span class="text-emerald-400">"Username: "</span> &lt;&lt; user.username &lt;&lt; std::endl;
+std::cout &lt;&lt; <span class="text-emerald-400">"Level: "</span> &lt;&lt; user.level &lt;&lt; std::endl;
+std::cout &lt;&lt; <span class="text-emerald-400">"Expires at: "</span> &lt;&lt; user.expires_at &lt;&lt; std::endl;</code></pre>
+                    </div>
+                </div>
+            </section>
+
             <!-- C++ SDK Reference: Server Variables -->
             <section id="sdk-vars" class="space-y-4">
                 <div class="flex items-center gap-3">
@@ -444,6 +476,32 @@ std::cout &lt;&lt; <span class="text-emerald-400">"[+] Payload loaded into RAM! 
 
 <span class="text-slate-500">// 3. ล้าง Memory ทันทีหลังฉีดเสร็จ (Zero Memory)</span>
 <span class="text-yellow-400">RtlSecureZeroMemory</span>(rawBytes.data(), rawBytes.size());</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- C++ SDK Reference: Anti-Debug & Security -->
+            <section id="sdk-security" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-red-950/80 border border-red-800 text-red-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Anti-Debug &amp; Security Watchdog</h3>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
+                    <p class="text-slate-300 leading-relaxed">
+                        ฟังก์ชัน <code class="text-red-400 font-mono font-bold">RunSecurityChecks()</code> ตรวจสอบสภาพแวดล้อมก่อนและระหว่างรันโปรแกรม ดักจับ Debugger, Hardware Breakpoints (DR0-DR7), และโปรแกรม Reverse Engineering (x64dbg, IDA Pro, Cheat Engine, Process Hacker):
+                    </p>
+                    <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-slate-500">// ตรวจสอบความปลอดภัยของเครื่อง</span>
+<span class="text-blue-400">if</span> (!KawaiiAuth::<span class="text-yellow-400">RunSecurityChecks</span>()) {
+    std::cout &lt;&lt; <span class="text-red-400">"[-] Security check failed! Debugger or reverse engineering tool detected."</span> &lt;&lt; std::endl;
+    ExitProcess(<span class="text-orange-400">1</span>);
+}
+
+<span class="text-slate-500">// ส่ง Audit Log ขึ้นแดชบอร์ด</span>
+KawaiiAuth::<span class="text-yellow-400">Log</span>(<span class="text-emerald-400">"Client initiated main workflow"</span>);</code></pre>
                     </div>
                 </div>
             </section>
