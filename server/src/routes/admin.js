@@ -740,7 +740,7 @@ async function handleAdminRequest(req, res, url, body) {
         const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
         if (!appId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
         const files = db.prepare(`
-            SELECT id, app_id, file_name, LENGTH(file_data) as file_size, authed_only 
+            SELECT id, app_id, COALESCE(file_id, id) as file_id, file_name, LENGTH(file_data) as file_size, decryption_key, authed_only, min_level 
             FROM files 
             WHERE app_id = ? 
             ORDER BY file_name ASC
@@ -749,48 +749,63 @@ async function handleAdminRequest(req, res, url, body) {
     }
 
     if (pathname === '/api/admin/files' && method === 'POST') {
-        const { app_id, file_name, file_data_base64, authed_only } = body || {};
+        const { app_id, file_id, fileid, file_name, file_data_base64, decryption_key, authed_only, min_level } = body || {};
         const targetAppId = isSeller ? sellerApp.id : app_id;
         if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
         if (!file_name || typeof file_name !== 'string' || !file_name.trim()) {
             return sendJson(res, 400, { success: false, message: 'File name is required' });
         }
-        if (!file_data_base64 || typeof file_data_base64 !== 'string') {
-            return sendJson(res, 400, { success: false, message: 'File data (base64) is required' });
-        }
 
-        const buffer = Buffer.from(file_data_base64, 'base64');
-        if (buffer.length > 50 * 1024 * 1024) { // 50MB limit
-            return sendJson(res, 400, { success: false, message: 'File exceeds maximum limit of 50MB' });
-        }
-
-        const fileId = crypto.randomUUID();
         const safeName = file_name.trim();
+        const safeFileId = (file_id || fileid || safeName.replace(/[^a-zA-Z0-9_-]/g, '_')).trim();
 
-        // Remove existing file with same name in this app
-        db.prepare('DELETE FROM files WHERE app_id = ? AND file_name = ?').run(targetAppId, safeName);
+        let buffer = null;
+        if (file_data_base64 && typeof file_data_base64 === 'string' && file_data_base64.trim()) {
+            buffer = Buffer.from(file_data_base64, 'base64');
+            if (buffer.length > 100 * 1024 * 1024) { // 100MB limit
+                return sendJson(res, 400, { success: false, message: 'File exceeds maximum limit of 100MB' });
+            }
+        }
+
+        let finalDecryptionKey = (decryption_key || '').trim();
+        if (!finalDecryptionKey) {
+            finalDecryptionKey = crypto.randomBytes(32).toString('hex');
+        }
+
+        const dbId = crypto.randomUUID();
+
+        // Remove existing file with same file_id or file_name in this app
+        db.prepare('DELETE FROM files WHERE app_id = ? AND (file_id = ? OR file_name = ?)').run(targetAppId, safeFileId, safeName);
 
         db.prepare(`
-            INSERT INTO files (id, app_id, file_name, file_data, authed_only)
-            VALUES (?, ?, ?, ?, ?)
-        `).run(fileId, targetAppId, safeName, buffer, authed_only ? 1 : 0);
+            INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(dbId, targetAppId, safeFileId, safeName, buffer, finalDecryptionKey, authed_only ? 1 : 0, min_level ? Number(min_level) : 1);
 
-        logAudit(targetAppId, 'FILE_UPLOADED', `Uploaded file '${safeName}' (${(buffer.length / 1024).toFixed(1)} KB)`, clientIp);
+        const sizeDesc = buffer ? `${(buffer.length / 1024).toFixed(1)} KB` : 'Broker Mode (0 KB)';
+        logAudit(targetAppId, 'FILE_UPLOADED', `Configured file '${safeName}' [fileid: ${safeFileId}] (${sizeDesc})`, clientIp);
         return sendJson(res, 200, {
             success: true,
-            message: `File '${safeName}' uploaded successfully`,
-            file: { id: fileId, file_name: safeName, file_size: buffer.length, authed_only: authed_only ? 1 : 0 }
+            message: `File '${safeName}' (fileid: ${safeFileId}) saved successfully`,
+            file: {
+                id: dbId,
+                file_id: safeFileId,
+                file_name: safeName,
+                file_size: buffer ? buffer.length : 0,
+                decryption_key: finalDecryptionKey,
+                authed_only: authed_only ? 1 : 0
+            }
         });
     }
 
     if (pathname === '/api/admin/files' && method === 'DELETE') {
-        const { id, app_id, file_name } = body || {};
-        const queryId = url.searchParams.get('id') || id;
+        const { id, file_id, fileid, app_id, file_name } = body || {};
+        const queryId = url.searchParams.get('id') || url.searchParams.get('file_id') || id || file_id || fileid;
         if (queryId) {
-            const f = db.prepare('SELECT app_id, file_name FROM files WHERE id = ?').get(queryId);
+            const f = db.prepare('SELECT app_id, file_name, file_id FROM files WHERE id = ? OR file_id = ?').get(queryId, queryId);
             if (f) {
-                db.prepare('DELETE FROM files WHERE id = ?').run(queryId);
-                logAudit(f.app_id, 'FILE_DELETED', `Deleted file '${f.file_name}'`, clientIp);
+                db.prepare('DELETE FROM files WHERE id = ? OR file_id = ?').run(queryId, queryId);
+                logAudit(f.app_id, 'FILE_DELETED', `Deleted file '${f.file_name}' [fileid: ${f.file_id || f.id}]`, clientIp);
             }
             return sendJson(res, 200, { success: true, message: 'File deleted' });
         } else if (app_id && file_name) {
@@ -798,7 +813,7 @@ async function handleAdminRequest(req, res, url, body) {
             logAudit(app_id, 'FILE_DELETED', `Deleted file '${file_name}'`, clientIp);
             return sendJson(res, 200, { success: true, message: 'File deleted' });
         } else {
-            return sendJson(res, 400, { success: false, message: 'Missing file id' });
+            return sendJson(res, 400, { success: false, message: 'Missing file id or file_id' });
         }
     }
 

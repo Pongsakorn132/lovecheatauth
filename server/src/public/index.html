@@ -459,14 +459,16 @@
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
+                            <th class="px-4 py-3">File ID (fileid)</th>
                             <th class="px-4 py-3">File Name</th>
-                            <th class="px-4 py-3">Size</th>
+                            <th class="px-4 py-3">Type / Size</th>
+                            <th class="px-4 py-3">Decryption Key (AES-256)</th>
                             <th class="px-4 py-3">Auth Required</th>
                             <th class="px-4 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="filesTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
-                        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No files uploaded yet</td></tr>
+                        <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No files uploaded yet</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1121,25 +1123,54 @@
             </div>
             <div class="space-y-3.5 text-sm">
                 <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Choose File (.dll, .bin, .exe, etc.)</label>
-                    <input type="file" id="newFileInput" onchange="onFileSelected(this)" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3 py-2 text-white text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">File ID (fileid) <span class="text-sky-400 font-mono">*</span></label>
+                    <input type="text" id="newFileId" placeholder="e.g. core_module (สำหรับ Client: auth.UnlockBrokerFile(&quot;core_module&quot;, ...))" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-sky-400 font-mono">
+                    <p class="text-[11px] text-slate-500 mt-1">ใช้เป็น ID สำหรับ Client C++ เรียกถอดรหัสใน RAM หรือดาวน์โหลด</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Payload Name (ชื่อไฟล์อ้างอิง)</label>
-                    <input type="text" id="newFileName" placeholder="e.g. cheat_core.dll" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 font-mono">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">File Name (ชื่อไฟล์อ้างอิง) <span class="text-sky-400 font-mono">*</span></label>
+                    <input type="text" id="newFileName" placeholder="e.g. core_module.bin" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs focus:outline-none focus:border-sky-400 font-mono">
+                </div>
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="text-xs font-semibold text-slate-300">Decryption Key (กุญแจถอดรหัส AES-256)</label>
+                        <button type="button" onclick="generateNewFileKey()" class="text-[11px] text-sky-400 hover:text-sky-300 flex items-center gap-1 transition">
+                            <span>🎲 สุ่มกุญแจใหม่</span>
+                        </button>
+                    </div>
+                    <input type="text" id="newFileDecryptionKey" placeholder="64-character Hex หรือปล่อยว่างเพื่อสุ่มอัตโนมัติ" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2 text-white text-xs focus:outline-none focus:border-sky-400 font-mono">
+                </div>
+                <div class="p-3 bg-slate-900/80 border border-slate-700/80 rounded-xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-300">โหมดจัดเก็บ (Storage Mode)</span>
+                        <div class="flex items-center gap-3 text-xs">
+                            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
+                                <input type="radio" name="fileStorageMode" value="broker" checked onchange="toggleFileStorageMode()" class="accent-sky-500">
+                                <span>Broker (Key Only - 0 MB)</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
+                                <input type="radio" name="fileStorageMode" value="upload" onchange="toggleFileStorageMode()" class="accent-sky-500">
+                                <span>Upload File (เก็บไฟล์บน Server)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="fileUploadContainer" class="hidden pt-2 border-t border-slate-800">
+                        <label class="block text-[11px] font-medium text-slate-400 mb-1">เลือกไฟล์เพื่ออัปโหลด (.dll, .bin, .exe):</label>
+                        <input type="file" id="newFileInput" onchange="onFileSelected(this)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white text-xs file:mr-2 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-[11px] file:bg-sky-600 file:text-white cursor-pointer">
+                    </div>
                 </div>
                 <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
                     <div>
                         <label for="newFileAuthedOnly" class="text-xs font-semibold text-slate-200 cursor-pointer">Require Authentication</label>
-                        <p class="text-[11px] text-slate-400">ดาวน์โหลดได้เฉพาะ Client ที่ผ่านการยืนยันตัวตนแล้วเท่านั้น</p>
+                        <p class="text-[11px] text-slate-400">เข้าถึงหรือดึงกุญแจได้เฉพาะ Client ที่ผ่านการยืนยันตัวตนแล้วเท่านั้น</p>
                     </div>
                     <input type="checkbox" id="newFileAuthedOnly" checked class="round-checkbox">
                 </div>
-                <div id="fileUploadStatus" class="text-xs font-mono text-sky-400 hidden">Reading file...</div>
+                <div id="fileUploadStatus" class="text-xs font-mono text-sky-400 hidden">Ready</div>
             </div>
             <div class="flex justify-end gap-2.5 pt-2">
                 <button onclick="closeModal('newFileModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
-                <button onclick="submitNewFile()" id="btnSubmitFile" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">Upload Payload</button>
+                <button onclick="submitNewFile()" id="btnSubmitFile" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">Save Payload</button>
             </div>
         </div>
     </div>
@@ -3066,16 +3097,40 @@
             }
         }
 
-        // Files & Payloads Management
+        // Files & Payloads Management (Supports File ID & Key & Offset Broker)
         let uploadedFileBase64 = '';
         let uploadedFileSize = 0;
+
+        function generateNewFileKey() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            const hex = Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+            const input = document.getElementById('newFileDecryptionKey');
+            if (input) input.value = hex;
+            showToast('Generated random 32-byte AES key', 'info');
+        }
+
+        function toggleFileStorageMode() {
+            const mode = document.querySelector('input[name="fileStorageMode"]:checked')?.value || 'broker';
+            const uploadContainer = document.getElementById('fileUploadContainer');
+            const submitBtn = document.getElementById('btnSubmitFile');
+            if (uploadContainer) {
+                if (mode === 'upload') {
+                    uploadContainer.classList.remove('hidden');
+                    if (submitBtn) submitBtn.textContent = 'Upload & Save Payload';
+                } else {
+                    uploadContainer.classList.add('hidden');
+                    if (submitBtn) submitBtn.textContent = 'Save Broker Payload';
+                }
+            }
+        }
 
         function onFileSelected(input) {
             const file = input.files && input.files[0];
             if (!file) return;
 
-            if (file.size > 50 * 1024 * 1024) {
-                customAlert(`File '${file.name}' (${formatBytes(file.size)}) exceeds the 50MB upload limit.<br><br>💡 <b>Tip:</b> For large binaries or cheats, use the <b>Key & Offset Broker</b> model (storing file locally on client and sending only the decryption key via Dashboard Variables).`, { type: 'warning' });
+            if (file.size > 100 * 1024 * 1024) {
+                customAlert(`File '${file.name}' (${formatBytes(file.size)}) exceeds the 100MB upload limit.<br><br>💡 <b>Tip:</b> Use <b>Broker Mode</b> (Key Only) where the file is kept locally on client and only the decryption key is managed here.`, { type: 'warning' });
                 input.value = '';
                 uploadedFileBase64 = '';
                 return;
@@ -3084,6 +3139,10 @@
             const nameInput = document.getElementById('newFileName');
             if (nameInput && !nameInput.value.trim()) {
                 nameInput.value = file.name;
+            }
+            const idInput = document.getElementById('newFileId');
+            if (idInput && !idInput.value.trim()) {
+                idInput.value = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
             }
             const statusEl = document.getElementById('fileUploadStatus');
             if (statusEl) {
@@ -3105,19 +3164,19 @@
 
         async function loadFiles() {
             if (!currentAppId) {
-                document.getElementById('filesTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
+                document.getElementById('filesTableBody').innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
                 return;
             }
             const res = await api(`/api/admin/files?app_id=${currentAppId}`);
             const tbody = document.getElementById('filesTableBody');
             tbody.innerHTML = '';
             if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load files')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load files')}</td></tr>`;
                 return;
             }
             const files = res.files || [];
             if (files.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No files or payloads uploaded yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No files or payloads configured yet</td></tr>';
                 return;
             }
             files.forEach(f => {
@@ -3126,15 +3185,34 @@
                     ? '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950/60 text-amber-400 border border-amber-800">Authed Only</span>'
                     : '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-800">Public</span>';
 
+                const displayFileId = f.file_id || f.id;
+                const sizeDisplay = (f.file_size && f.file_size > 0)
+                    ? `<span class="text-slate-300 font-mono text-xs">${formatBytes(f.file_size)}</span>`
+                    : '<span class="px-2 py-0.5 rounded text-[10px] bg-sky-950/80 text-sky-400 border border-sky-800 font-mono font-semibold">Broker (0 MB)</span>';
+
+                const keyDisplay = f.decryption_key
+                    ? `<div class="flex items-center gap-1.5 font-mono text-xs text-amber-300">
+                         <span title="${escapeHtml(f.decryption_key)}">${escapeHtml(f.decryption_key.slice(0, 10))}...${escapeHtml(f.decryption_key.slice(-6))}</span>
+                         <button onclick="navigator.clipboard.writeText('${escapeHtml(f.decryption_key)}'); showToast('Copied Decryption Key!', 'info')" class="p-1 hover:text-white text-slate-400 transition" title="Copy Key">📋</button>
+                       </div>`
+                    : '<span class="text-slate-500 text-xs">Auto/None</span>';
+
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-bold text-sky-300 font-mono flex items-center gap-2">
-                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <td class="px-4 py-3 font-mono font-bold text-sky-400">
+                        <div class="flex items-center gap-1.5">
+                            <span>${escapeHtml(displayFileId)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtml(displayFileId)}'); showToast('Copied File ID!', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File ID">📋</button>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 font-semibold text-white font-mono flex items-center gap-2">
+                        <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <span>${escapeHtml(f.file_name)}</span>
                     </td>
-                    <td class="px-4 py-3 font-mono text-xs text-slate-300">${formatBytes(f.file_size)}</td>
+                    <td class="px-4 py-3">${sizeDisplay}</td>
+                    <td class="px-4 py-3">${keyDisplay}</td>
                     <td class="px-4 py-3">${authedBadge}</td>
                     <td class="px-4 py-3 text-right">
-                        <button onclick="deleteFile('${escapeHtml(f.id)}', '${escapeHtml(f.file_name)}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
+                        <button onclick="deleteFile('${escapeHtml(f.id)}', '${escapeHtml(displayFileId)}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -3143,17 +3221,26 @@
 
         async function submitNewFile() {
             if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
+            const fileIdInput = document.getElementById('newFileId');
             const nameInput = document.getElementById('newFileName');
+            const keyInput = document.getElementById('newFileDecryptionKey');
+            const mode = document.querySelector('input[name="fileStorageMode"]:checked')?.value || 'broker';
+
+            const file_id = (fileIdInput ? fileIdInput.value : '').trim();
             const file_name = (nameInput ? nameInput.value : '').trim();
+            const decryption_key = (keyInput ? keyInput.value : '').trim();
             const authed_only = document.getElementById('newFileAuthedOnly').checked;
 
-            if (!file_name) return customAlert('File name is required', { type: 'warning' });
-            if (!uploadedFileBase64) return customAlert('Please select a file to upload', { type: 'warning' });
+            if (!file_id) return customAlert('File ID (fileid) is required', { type: 'warning' });
+            if (!file_name) return customAlert('File Name is required', { type: 'warning' });
+            if (mode === 'upload' && !uploadedFileBase64) {
+                return customAlert('Please select a file to upload when in Server Upload mode', { type: 'warning' });
+            }
 
             const btn = document.getElementById('btnSubmitFile');
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = 'Uploading...';
+                btn.textContent = 'Saving...';
             }
 
             try {
@@ -3161,29 +3248,33 @@
                     method: 'POST',
                     body: {
                         app_id: currentAppId,
+                        file_id: file_id,
                         file_name: file_name,
-                        file_data_base64: uploadedFileBase64,
+                        file_data_base64: mode === 'upload' ? uploadedFileBase64 : '',
+                        decryption_key: decryption_key,
                         authed_only: authed_only
                     }
                 });
 
                 if (res && res.success) {
                     closeModal('newFileModal');
+                    if (fileIdInput) fileIdInput.value = '';
                     if (nameInput) nameInput.value = '';
+                    if (keyInput) keyInput.value = '';
                     const fileInput = document.getElementById('newFileInput');
                     if (fileInput) fileInput.value = '';
                     uploadedFileBase64 = '';
                     loadFiles();
-                    showToast(res.message || 'Payload uploaded successfully', 'success');
+                    showToast(res.message || 'Payload saved successfully', 'success');
                 } else {
-                    customAlert(res && res.message ? res.message : 'Upload failed', { type: 'error' });
+                    customAlert(res && res.message ? res.message : 'Save failed', { type: 'error' });
                 }
             } catch (err) {
-                customAlert('Failed to upload file due to network error', { type: 'error' });
+                customAlert('Failed to save payload due to network error', { type: 'error' });
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = 'Upload Payload';
+                    btn.textContent = 'Save Payload';
                 }
             }
         }

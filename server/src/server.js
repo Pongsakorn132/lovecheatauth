@@ -55,10 +55,12 @@ function seedInitialData() {
     if (fileCount === 0) {
         const samplePayload = Buffer.from('KAWAII_PROTECTED_CORE_PAYLOAD_V2_VERIFIED_SIGNATURE_OK_0xCAFEBABE');
         db.prepare(`
-            INSERT INTO files (id, app_id, file_name, file_data, authed_only, min_level)
-            VALUES (?, ?, ?, ?, 1, 1)
-        `).run('file_core_demo', 'kawaii_demo_app', 'core_module.bin', samplePayload);
-        console.log("[KawaiiAuth] Seeded sample protected payload 'core_module.bin'");
+            INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
+            VALUES (?, ?, ?, ?, ?, ?, 1, 1)
+        `).run('file_core_demo', 'kawaii_demo_app', 'core_module', 'core_module.bin', samplePayload, '7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069');
+        console.log("[KawaiiAuth] Seeded sample protected payload 'core_module.bin' (file_id: 'core_module')");
+    } else {
+        db.prepare("UPDATE files SET file_id = 'core_module', decryption_key = '7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069' WHERE id = 'file_core_demo' AND (file_id IS NULL OR file_id = '' OR decryption_key IS NULL);").run();
     }
 }
 

@@ -83,24 +83,28 @@ namespace KawaiiAuth {
         return m_impl->GetBrokerOffset(var_key, default_val);
     }
 
-    std::string Client::GetBrokerKey(const std::string& var_key) {
-        return m_impl->GetBrokerKey(var_key);
+    std::string Client::GetBrokerKey(const std::string& file_id) {
+        return m_impl->GetBrokerKey(file_id);
+    }
+
+    std::string Client::GetFileKey(const std::string& file_id) {
+        return m_impl->GetFileKey(file_id);
     }
 
     std::vector<uint8_t> Client::UnlockBrokerMemory(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::vector<uint8_t>& encrypted_data,
         const std::string& custom_iv
     ) {
-        return m_impl->UnlockBrokerMemory(var_key, encrypted_data, custom_iv);
+        return m_impl->UnlockBrokerMemory(file_id, encrypted_data, custom_iv);
     }
 
     std::vector<uint8_t> Client::UnlockBrokerFile(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::string& file_path,
         const std::string& custom_iv
     ) {
-        return m_impl->UnlockBrokerFile(var_key, file_path, custom_iv);
+        return m_impl->UnlockBrokerFile(file_id, file_path, custom_iv);
     }
 
     std::vector<uint8_t> Client::DecryptBrokerPayload(
@@ -353,30 +357,36 @@ namespace KawaiiAuth {
         return g_defaultClient->GetBrokerOffset(var_key, default_val);
     }
 
-    std::string GetBrokerKey(const std::string& var_key) {
+    std::string GetBrokerKey(const std::string& file_id) {
         std::lock_guard<std::mutex> lock(g_authMutex);
         if (!g_defaultClient) return "";
-        return g_defaultClient->GetBrokerKey(var_key);
+        return g_defaultClient->GetBrokerKey(file_id);
+    }
+
+    std::string GetFileKey(const std::string& file_id) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return "";
+        return g_defaultClient->GetFileKey(file_id);
     }
 
     std::vector<uint8_t> UnlockBrokerMemory(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::vector<uint8_t>& encrypted_data,
         const std::string& custom_iv
     ) {
         std::lock_guard<std::mutex> lock(g_authMutex);
         if (!g_defaultClient) return {};
-        return g_defaultClient->UnlockBrokerMemory(var_key, encrypted_data, custom_iv);
+        return g_defaultClient->UnlockBrokerMemory(file_id, encrypted_data, custom_iv);
     }
 
     std::vector<uint8_t> UnlockBrokerFile(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::string& file_path,
         const std::string& custom_iv
     ) {
         std::lock_guard<std::mutex> lock(g_authMutex);
         if (!g_defaultClient) return {};
-        return g_defaultClient->UnlockBrokerFile(var_key, file_path, custom_iv);
+        return g_defaultClient->UnlockBrokerFile(file_id, file_path, custom_iv);
     }
 
     std::vector<uint8_t> DecryptBrokerPayload(

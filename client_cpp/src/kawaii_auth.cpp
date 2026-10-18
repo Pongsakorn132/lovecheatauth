@@ -1190,26 +1190,68 @@ namespace KawaiiAuth {
         }
     }
 
-    std::string Client::GetBrokerKey(const std::string& var_key) {
-        return FetchVariable(var_key);
+    std::string Client::FetchFileKey(const std::string& file_id) {
+        if (m_session_token.empty()) return "";
+
+        std::string nonce = GenerateNonce(16);
+        uint64_t seq = ++m_request_seq;
+        uint64_t ts = static_cast<uint64_t>(time(nullptr));
+
+        json payload = {
+            { skCrypt("action"), skCrypt("fetch_file_key") },
+            { skCrypt("file_id"), file_id },
+            { skCrypt("timestamp"), ts },
+            { skCrypt("nonce"), nonce },
+            { skCrypt("seq"), seq }
+        };
+
+        std::string enc = EncryptAES256(payload.dump());
+        json reqBody = { { skCrypt("data"), enc } };
+        std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
+
+        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
+        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
+            return FetchVariable(file_id);
+        }
+
+        try {
+            auto outer = json::parse(httpResp.body);
+            std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
+            auto inner = json::parse(dec);
+            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
+                return "";
+            }
+            if (inner.value(skCrypt("success"), false)) {
+                return inner.value(skCrypt("decryption_key"), "");
+            }
+        } catch (...) {}
+        return FetchVariable(file_id);
+    }
+
+    std::string Client::GetFileKey(const std::string& file_id) {
+        return FetchFileKey(file_id);
+    }
+
+    std::string Client::GetBrokerKey(const std::string& file_id) {
+        return FetchFileKey(file_id);
     }
 
     std::vector<uint8_t> Client::UnlockBrokerMemory(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::vector<uint8_t>& encrypted_data,
         const std::string& custom_iv
     ) {
-        std::string key = FetchVariable(var_key);
+        std::string key = FetchFileKey(file_id);
         if (key.empty()) return {};
         return DecryptBrokerPayload(encrypted_data, key, custom_iv);
     }
 
     std::vector<uint8_t> Client::UnlockBrokerFile(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::string& file_path,
         const std::string& custom_iv
     ) {
-        std::string key = FetchVariable(var_key);
+        std::string key = FetchFileKey(file_id);
         if (key.empty()) return {};
 
         HANDLE hFile = CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);

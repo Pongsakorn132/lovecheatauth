@@ -85,11 +85,12 @@ int main() {
     uintptr_t uworldOffset = KawaiiAuth::GetBrokerOffset("OFFSET_UWORLD", 0x12A45B0);
     std::cout << "[+] Broker Offset 'OFFSET_UWORLD': 0x" << std::hex << uworldOffset << std::dec << std::endl;
 
-    std::string brokerKey = KawaiiAuth::GetBrokerKey("CORE_KEY");
-    if (!brokerKey.empty()) {
-        std::cout << "[+] Broker Key 'CORE_KEY': " << brokerKey.substr(0, 16) << "..." << std::endl;
+    // Retrieve secret AES decryption key by file_id from Application Files & Payloads
+    std::string coreFileKey = KawaiiAuth::GetFileKey("core_module");
+    if (!coreFileKey.empty()) {
+        std::cout << "[+] Broker Decryption Key for fileid 'core_module': " << coreFileKey.substr(0, 16) << "..." << std::endl;
     } else {
-        std::cout << "[*] Note: 'CORE_KEY' variable not set on dashboard yet. (Add it in Dashboard Variables to use UnlockBrokerFile/Memory)" << std::endl;
+        std::cout << "[*] Note: fileid 'core_module' not configured or no decryption key set on dashboard." << std::endl;
     }
 
     // 6. Send Audit Log

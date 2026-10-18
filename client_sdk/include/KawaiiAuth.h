@@ -191,32 +191,34 @@ namespace KawaiiAuth {
     uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
 
     /**
-     * @brief Fetch a secret broker key string (e.g. 32-byte hex key) from server
+     * @brief Fetch a secret broker / decryption key from server using file_id (or variable key)
+     * @param file_id File ID from Application Files & Payloads (e.g. "core_module") or variable key
      */
-    std::string GetBrokerKey(const std::string& var_key);
+    std::string GetBrokerKey(const std::string& file_id);
+    std::string GetFileKey(const std::string& file_id);
 
     /**
-     * @brief Decrypt in-memory binary payload with AES-256 using key fetched from server variable
-     * @param var_key Name of the secret key variable on dashboard (e.g. "CORE_KEY")
+     * @brief Decrypt in-memory binary payload with AES-256 using key fetched from server by file_id
+     * @param file_id File ID from Application Files & Payloads (e.g. "core_module")
      * @param encrypted_data Raw encrypted binary data
      * @param custom_iv Optional custom IV. If empty, reads prepended 16-byte IV from ciphertext.
      * @return Decrypted executable/DLL payload bytes in RAM
      */
     std::vector<uint8_t> UnlockBrokerMemory(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::vector<uint8_t>& encrypted_data,
         const std::string& custom_iv = ""
     );
 
     /**
-     * @brief Read encrypted binary from disk and decrypt directly in RAM with key from server variable
-     * @param var_key Name of the secret key variable on dashboard (e.g. "CORE_KEY")
+     * @brief Read encrypted binary from disk and decrypt directly in RAM with key from server by file_id
+     * @param file_id File ID from Application Files & Payloads (e.g. "core_module")
      * @param file_path Path to local encrypted file (e.g. "core_module.bin")
      * @param custom_iv Optional custom IV. If empty, reads prepended 16-byte IV.
      * @return Decrypted executable/DLL payload bytes in RAM (never touches disk)
      */
     std::vector<uint8_t> UnlockBrokerFile(
-        const std::string& var_key,
+        const std::string& file_id,
         const std::string& file_path,
         const std::string& custom_iv = ""
     );
@@ -275,14 +277,15 @@ namespace KawaiiAuth {
 
         // Key & Offset Broker Methods
         uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
-        std::string GetBrokerKey(const std::string& var_key);
+        std::string GetBrokerKey(const std::string& file_id);
+        std::string GetFileKey(const std::string& file_id);
         std::vector<uint8_t> UnlockBrokerMemory(
-            const std::string& var_key,
+            const std::string& file_id,
             const std::vector<uint8_t>& encrypted_data,
             const std::string& custom_iv = ""
         );
         std::vector<uint8_t> UnlockBrokerFile(
-            const std::string& var_key,
+            const std::string& file_id,
             const std::string& file_path,
             const std::string& custom_iv = ""
         );

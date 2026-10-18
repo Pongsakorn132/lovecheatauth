@@ -89,14 +89,16 @@ namespace KawaiiAuth {
 
         // Key & Offset Broker (Zero-Server-Footprint Architecture)
         uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
-        std::string GetBrokerKey(const std::string& var_key);
+        std::string GetBrokerKey(const std::string& file_id);
+        std::string GetFileKey(const std::string& file_id);
+        std::string FetchFileKey(const std::string& file_id);
         std::vector<uint8_t> UnlockBrokerMemory(
-            const std::string& var_key,
+            const std::string& file_id,
             const std::vector<uint8_t>& encrypted_data,
             const std::string& custom_iv = ""
         );
         std::vector<uint8_t> UnlockBrokerFile(
-            const std::string& var_key,
+            const std::string& file_id,
             const std::string& file_path,
             const std::string& custom_iv = ""
         );

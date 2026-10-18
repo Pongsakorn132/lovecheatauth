@@ -104,8 +104,10 @@ CREATE TABLE IF NOT EXISTS variables (
 CREATE TABLE IF NOT EXISTS files (
     id TEXT PRIMARY KEY,
     app_id TEXT NOT NULL,
+    file_id TEXT,
     file_name TEXT NOT NULL,
-    file_data BLOB NOT NULL,
+    file_data BLOB,
+    decryption_key TEXT,
     authed_only INTEGER NOT NULL DEFAULT 1,
     min_level INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
@@ -229,8 +231,17 @@ try {
     if (!hasMinLevel) {
         db.exec("ALTER TABLE files ADD COLUMN min_level INTEGER NOT NULL DEFAULT 1;");
     }
+    const hasFileId = fileInfo.some(col => col.name === 'file_id');
+    if (!hasFileId) {
+        db.exec("ALTER TABLE files ADD COLUMN file_id TEXT;");
+    }
+    const hasDecryptionKey = fileInfo.some(col => col.name === 'decryption_key');
+    if (!hasDecryptionKey) {
+        db.exec("ALTER TABLE files ADD COLUMN decryption_key TEXT;");
+    }
+    db.exec("UPDATE files SET file_id = id WHERE file_id IS NULL OR file_id = '';");
 } catch (e) {
-    console.error('[DB Migration Error - Files min_level]', e);
+    console.error('[DB Migration Error - Files columns]', e);
 }
 
 // Seed default subscription for every app if missing

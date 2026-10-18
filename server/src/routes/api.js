@@ -482,13 +482,27 @@ function handleApiRequest(req, res, url, body) {
             case 'fetch_var': {
                 const { var_key } = decryptedPayload;
                 const v = db.prepare('SELECT * FROM variables WHERE app_id = ? AND var_key = ?').get(app.id, var_key);
-                if (!v) {
-                    return sendEncrypted(res, session, { success: false, message: 'Variable not found' });
+                if (v) {
+                    if (v.authed_only && !session.user_id) {
+                        return sendEncrypted(res, session, { success: false, message: 'Authentication required for this variable' });
+                    }
+                    return sendEncrypted(res, session, { success: true, var_key: v.var_key, var_value: v.var_value });
                 }
-                if (v.authed_only && !session.user_id) {
-                    return sendEncrypted(res, session, { success: false, message: 'Authentication required for this variable' });
+
+                // If not found in variables, fallback to Application Files by file_id or file_name
+                const f = db.prepare('SELECT file_id, file_name, decryption_key, authed_only, min_level, file_data FROM files WHERE app_id = ? AND (file_id = ? OR id = ? OR file_name = ?)').get(app.id, var_key, var_key, var_key);
+                if (f) {
+                    if (f.authed_only && !session.user_id) {
+                        return sendEncrypted(res, session, { success: false, message: 'Authentication required for this payload' });
+                    }
+                    let key = (f.decryption_key || '').trim();
+                    if (!key && f.file_data) {
+                        key = cryptoUtils.hashSha256(f.file_data);
+                    }
+                    return sendEncrypted(res, session, { success: true, var_key: var_key, var_value: key });
                 }
-                return sendEncrypted(res, session, { success: true, var_key: v.var_key, var_value: v.var_value });
+
+                return sendEncrypted(res, session, { success: false, message: 'Variable or File ID not found' });
             }
 
             case 'fetch_vars':
@@ -511,16 +525,62 @@ function handleApiRequest(req, res, url, body) {
                 return sendEncrypted(res, session, { success: true, variables: result });
             }
 
-            case 'fetch_payload':
-            case 'download_file': {
-                const fileName = (decryptedPayload.file_name || decryptedPayload.payload_name || '').trim();
-                if (!fileName) {
-                    return sendEncrypted(res, session, { success: false, message: 'Payload or file name required' });
+            case 'fetch_file_key':
+            case 'fetch_broker_key': {
+                const fileIdentifier = (decryptedPayload.file_id || decryptedPayload.fileid || decryptedPayload.file_name || decryptedPayload.payload_name || '').trim();
+                if (!fileIdentifier) {
+                    return sendEncrypted(res, session, { success: false, message: 'file_id or file_name required' });
                 }
 
-                const f = db.prepare('SELECT * FROM files WHERE app_id = ? AND file_name = ?').get(app.id, fileName);
+                const f = db.prepare('SELECT * FROM files WHERE app_id = ? AND (file_id = ? OR id = ? OR file_name = ?)').get(app.id, fileIdentifier, fileIdentifier, fileIdentifier);
                 if (!f) {
-                    return sendEncrypted(res, session, { success: false, message: 'Payload not found' });
+                    return sendEncrypted(res, session, { success: false, message: `File ID '${fileIdentifier}' not found in Application Files` });
+                }
+
+                if (f.authed_only) {
+                    if (!session.user_id) {
+                        return sendEncrypted(res, session, { success: false, message: 'Authentication required for this file' });
+                    }
+                    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(session.user_id);
+                    if (!user || user.banned) {
+                        return sendEncrypted(res, session, { success: false, message: 'Access denied: account suspended or invalid' });
+                    }
+                    if (user.expires_at < now) {
+                        return sendEncrypted(res, session, { success: false, message: 'Access denied: subscription expired' });
+                    }
+                    const reqLevel = f.min_level !== undefined && f.min_level !== null ? f.min_level : 1;
+                    if (user.sub_level < reqLevel) {
+                        return sendEncrypted(res, session, {
+                            success: false,
+                            message: `Access denied: requires Tier Level ${reqLevel} (your tier: ${user.sub_level})`
+                        });
+                    }
+                }
+
+                let key = (f.decryption_key || '').trim();
+                if (!key && f.file_data) {
+                    key = cryptoUtils.hashSha256(f.file_data);
+                }
+
+                return sendEncrypted(res, session, {
+                    success: true,
+                    file_id: f.file_id || f.id,
+                    file_name: f.file_name,
+                    decryption_key: key,
+                    key: key
+                });
+            }
+
+            case 'fetch_payload':
+            case 'download_file': {
+                const fileIdentifier = (decryptedPayload.file_id || decryptedPayload.fileid || decryptedPayload.file_name || decryptedPayload.payload_name || '').trim();
+                if (!fileIdentifier) {
+                    return sendEncrypted(res, session, { success: false, message: 'Payload, file_id or file name required' });
+                }
+
+                const f = db.prepare('SELECT * FROM files WHERE app_id = ? AND (file_id = ? OR id = ? OR file_name = ?)').get(app.id, fileIdentifier, fileIdentifier, fileIdentifier);
+                if (!f) {
+                    return sendEncrypted(res, session, { success: false, message: `Payload '${fileIdentifier}' not found` });
                 }
 
                 if (f.authed_only) {
@@ -543,16 +603,32 @@ function handleApiRequest(req, res, url, body) {
                     }
                 }
 
+                if (!f.file_data) {
+                    return sendEncrypted(res, session, {
+                        success: true,
+                        file_id: f.file_id || f.id,
+                        file_name: f.file_name,
+                        payload_name: f.file_name,
+                        is_broker_only: true,
+                        decryption_key: f.decryption_key || '',
+                        key: f.decryption_key || '',
+                        message: 'This payload is configured in Broker Mode (Key Only). Use auth.UnlockBrokerFile() on client.'
+                    });
+                }
+
                 const fileBuf = Buffer.from(f.file_data);
                 const fileBase64 = fileBuf.toString('base64');
                 const fileHash = cryptoUtils.hashSha256(fileBuf);
 
                 return sendEncrypted(res, session, {
                     success: true,
+                    file_id: f.file_id || f.id,
                     file_name: f.file_name,
                     payload_name: f.file_name,
                     size: fileBuf.length,
                     hash: fileHash,
+                    decryption_key: f.decryption_key || fileHash,
+                    key: f.decryption_key || fileHash,
                     file_data: fileBase64,
                     payload_data: fileBase64
                 });
