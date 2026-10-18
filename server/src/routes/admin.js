@@ -2,6 +2,7 @@ const crypto = require('node:crypto');
 const db = require('../database');
 const cryptoUtils = require('../crypto');
 const { sendDiscordWebhook } = require('../utils/webhook');
+const { rateLimiter } = require('../utils/rate_limiter');
 
 const MASTER_KEY = process.env.ADMIN_KEY || 'kawaii_master_secret';
 
@@ -46,7 +47,7 @@ async function handleAdminRequest(req, res, url, body) {
     const pathname = rawPath.replace(/^\/api\/seller\//, '/api/admin/');
     const method = req.method;
     const now = Math.floor(Date.now() / 1000);
-    const clientIp = req.socket?.remoteAddress || '127.0.0.1';
+    const clientIp = rateLimiter.getClientIp(req);
 
     const clientSession = req.headers['x-client-session'] || req.headers['x-session-token'];
     const clientKey = req.headers['x-client-key'] || req.headers['x-admin-key'] || url.searchParams.get('client_key') || url.searchParams.get('admin_key');

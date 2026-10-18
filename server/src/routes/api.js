@@ -1,10 +1,11 @@
 const cryptoUtils = require('../crypto');
 const db = require('../database');
 const { sendDiscordWebhook } = require('../utils/webhook');
+const { rateLimiter, LIMITS } = require('../utils/rate_limiter');
 
 function handleApiRequest(req, res, url, body) {
     const pathname = url.pathname;
-    const clientIp = req.socket.remoteAddress || '127.0.0.1';
+    const clientIp = rateLimiter.getClientIp(req);
     const now = Math.floor(Date.now() / 1000);
 
     // Clean expired sessions periodically
@@ -208,6 +209,21 @@ function handleApiRequest(req, res, url, body) {
 
         const app = db.prepare('SELECT * FROM apps WHERE id = ?').get(session.app_id);
         const action = decryptedPayload.action;
+
+        // Rate limit sensitive credential-checking actions (brute-force defense)
+        if (action === 'login' || action === 'register' || action === 'license_only') {
+            const sensitiveCheck = rateLimiter.consume(`auth_sensitive:${clientIp}`, LIMITS.AUTH_SENSITIVE.max, LIMITS.AUTH_SENSITIVE.windowMs);
+            if (!sensitiveCheck.allowed) {
+                db.prepare('INSERT INTO audit_logs (app_id, event, details, ip, created_at) VALUES (?, ?, ?, ?, ?)')
+                    .run(session.app_id, 'RATE_LIMIT_HIT', `Rate limit triggered on action '${action}'. Cooldown: ${sensitiveCheck.resetAfterSec}s`, clientIp, now);
+
+                return sendEncrypted(res, session, {
+                    success: false,
+                    error: 'RATE_LIMIT_EXCEEDED',
+                    message: `Too many authentication attempts. Please wait ${sensitiveCheck.resetAfterSec} seconds before retrying.`
+                });
+            }
+        }
 
         // Process Action
         switch (action) {

@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const db = require('./database');
 const cryptoUtils = require('./crypto');
+const { rateLimiter, LIMITS } = require('./utils/rate_limiter');
 const { handleApiRequest } = require('./routes/api');
 const { handleAdminRequest, MASTER_KEY } = require('./routes/admin');
 const { handleMasterRequest } = require('./routes/master');
@@ -93,6 +94,58 @@ function requestHandler(req, res) {
         if (fs.existsSync(backendPath)) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             return fs.createReadStream(backendPath).pipe(res);
+        }
+    }
+
+    // ========================================================
+    // Rate Limiting Defense Gate (Early Interception before Body Accumulation)
+    // ========================================================
+    if (url.pathname.startsWith('/api/')) {
+        const clientIp = rateLimiter.getClientIp(req);
+
+        // 1. Handshake Burst Protection (/api/v1/init)
+        if (url.pathname === '/api/v1/init') {
+            const initCheck = rateLimiter.consume(`init:${clientIp}`, LIMITS.AUTH_INIT.max, LIMITS.AUTH_INIT.windowMs);
+            if (!initCheck.allowed) {
+                return rateLimiter.sendRateLimitResponse(
+                    res,
+                    initCheck,
+                    `Too many initialization handshakes from this IP. Please retry in ${initCheck.resetAfterSec} seconds.`,
+                    true
+                );
+            }
+        }
+
+        // 2. Admin & Master Portal Authentication Protection
+        const isAdminAuthRoute = (
+            url.pathname === '/api/master/login' ||
+            url.pathname === '/api/master/verify-pin' ||
+            url.pathname === '/api/auth/check-client-key' ||
+            url.pathname === '/api/auth/verify-pin' ||
+            url.pathname === '/api/admin/client-key/change-pin'
+        );
+        if (isAdminAuthRoute && req.method === 'POST') {
+            const adminCheck = rateLimiter.consume(`admin_auth:${clientIp}`, LIMITS.ADMIN_AUTH.max, LIMITS.ADMIN_AUTH.windowMs);
+            if (!adminCheck.allowed) {
+                return rateLimiter.sendRateLimitResponse(
+                    res,
+                    adminCheck,
+                    `Too many administrative authentication attempts. Access temporarily restricted for ${adminCheck.resetAfterSec} seconds.`,
+                    false
+                );
+            }
+        }
+
+        // 3. Global API DDoS & Burst Protection
+        const globalCheck = rateLimiter.consume(`global:${clientIp}`, LIMITS.GLOBAL_API.max, LIMITS.GLOBAL_API.windowMs);
+        if (!globalCheck.allowed) {
+            const isClientApi = url.pathname.startsWith('/api/v1/');
+            return rateLimiter.sendRateLimitResponse(
+                res,
+                globalCheck,
+                `API request quota exceeded. Please slow down. Retry in ${globalCheck.resetAfterSec} seconds.`,
+                isClientApi
+            );
         }
     }
 

@@ -1,6 +1,7 @@
 const crypto = require('node:crypto');
 const db = require('../database');
 const cryptoUtils = require('../crypto');
+const { rateLimiter } = require('../utils/rate_limiter');
 
 // In-memory sessions
 // tempChallenges: challengeToken -> { adminId, username, expiresAt }
@@ -78,7 +79,7 @@ function handleMasterRequest(req, res, url, body) {
     const pathname = url.pathname;
     const method = req.method;
     const now = Math.floor(Date.now() / 1000);
-    const clientIp = req.socket?.remoteAddress || '127.0.0.1';
+    const clientIp = rateLimiter.getClientIp(req);
 
     // ==========================================
     // 1. Client Key 2-Factor Authentication & 6-Hour Sessions
