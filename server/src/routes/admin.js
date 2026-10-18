@@ -775,7 +775,7 @@ async function handleAdminRequest(req, res, url, body) {
     }
 
     if (pathname === '/api/admin/files' && method === 'POST') {
-        const { app_id, file_id, fileid, file_name, file_data_base64, download_url, decryption_key, authed_only, min_level } = body || {};
+        const { id, app_id, file_id, fileid, file_name, file_data_base64, download_url, decryption_key, authed_only, min_level } = body || {};
         const targetAppId = isSeller ? sellerApp.id : app_id;
         if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
 
@@ -794,6 +794,32 @@ async function handleAdminRequest(req, res, url, body) {
 
         if (!safeName) {
             return sendJson(res, 400, { success: false, message: 'File name is required' });
+        }
+
+        // Support editing existing file (keep same file_id)
+        if (id) {
+            const existing = db.prepare('SELECT * FROM files WHERE app_id = ? AND id = ?').get(targetAppId, id);
+            if (existing) {
+                const targetFileId = (file_id || fileid || existing.file_id || existing.id).trim();
+                db.prepare(`
+                    UPDATE files 
+                    SET file_id = ?, file_name = ?, download_url = ?, authed_only = ?, min_level = ?
+                    WHERE app_id = ? AND id = ?
+                `).run(targetFileId, safeName, safeDownloadUrl, authed_only ? 1 : 0, min_level ? Number(min_level) : 1, targetAppId, id);
+
+                logAudit(targetAppId, 'FILE_UPDATED', `Updated file '${safeName}' [File ID: ${targetFileId}] (URL: ${safeDownloadUrl})`, clientIp);
+                return sendJson(res, 200, {
+                    success: true,
+                    message: `File '${safeName}' (fileid: ${targetFileId}) updated successfully`,
+                    file: {
+                        id: id,
+                        file_id: targetFileId,
+                        file_name: safeName,
+                        download_url: safeDownloadUrl,
+                        authed_only: authed_only ? 1 : 0
+                    }
+                });
+            }
         }
 
         const safeFileId = (file_id || fileid || ('file_' + crypto.randomBytes(4).toString('hex'))).trim();
