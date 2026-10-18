@@ -1,0 +1,294 @@
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 87
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 87
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=init&ver=2.1&hash=a1206112455743671d35aea8e1b7058e\n&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"Initialized","sessionid":"3ec2f83e","appinfo":{"numUsers":"N/A - Use fetchStats() function in latest example","numOnlineUsers":"N/A - Use fetchStats() function in latest example","numKeys":"N/A - Use fetchStats() function in latest example","version":"2.1","customerPanelLink":"https://keyauth.cc/panel/ashershop1/bypass/"},"newSession":true,"nonce":"a0de0bba-87a7-48c1-8a7a-db3a4d7432ea","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 87
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 87
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=init&ver=2.1&hash=a1206112455743671d35aea8e1b7058e\n&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"Initialized","sessionid":"4580cd38","appinfo":{"numUsers":"N/A - Use fetchStats() function in latest example","numOnlineUsers":"N/A - Use fetchStats() function in latest example","numKeys":"N/A - Use fetchStats() function in latest example","version":"2.1","customerPanelLink":"https://keyauth.cc/panel/ashershop1/bypass/"},"newSession":true,"nonce":"c7785fea-d997-4fb8-a97b-f1069b283f2e","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 145
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 145
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=license&key=CW-BP-kPaY9D-UGyhI6-X&code=&hwid=S-1-5-21-2730507363-2400160898-2132438200-500&sessionid=4580cd38&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"Logged in!","info":{"username":"CW-BP-kPaY9D-UGyhI6-X","subscriptions":[{"subscription":"default","key":null,"expiry":"253391523360","timeleft":251602216955}],"ip":"104.28.214.151","hwid":null,"createdate":"1787980612","lastlogin":"1789306405"},"nonce":"6f7207f4-ce30-41c6-80da-ed089de712a8","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 77
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 77
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=LDefault.dll&sessionid=4580cd38&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"https://pub-b2a78e1ba94e4590bb002da124c14131.r2.dev/LDefault.dll","nonce":"b17ee9fe-8613-4add-ab42-db95a754c9a0","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 71
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 71
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=lm.dll&sessionid=4580cd38&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"https://pub-b2a78e1ba94e4590bb002da124c14131.r2.dev/lm.dll","nonce":"553eb305-0db5-464d-ab00-3146123457b5","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 72
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 72
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=lmm.dll&sessionid=4580cd38&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"https://pub-b2a78e1ba94e4590bb002da124c14131.r2.dev/lmm.dll","nonce":"3738fe36-664c-4cca-b9e9-c5a42554dae9","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 78
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 78
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=LDefaultm.dll&sessionid=4580cd38&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"https://pub-b2a78e1ba94e4590bb002da124c14131.r2.dev/LDefaultm.dll","nonce":"6e70f08d-ad5b-4039-9bc5-0d414dea6d0c","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 78
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 78
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=BypassEnabled&sessionid=4580cd38&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":false,"code":0,"message":"Variable not found.","ownerid":"oI7zy4PmPP"}'
+[20:33:35.755] [REDIR/DNS] Pass-through time.cloudflare.com (type=1)
+[20:33:35.755] [REDIR/DNS] Pass-through time.cloudflare.com (type=28)
+[20:33:35.756] [REDIR/DNS] Pass-through time.cloudflare.com (type=1)
+[20:33:35.757] [REDIR/DNS] Pass-through time.cloudflare.com (type=28)
+[20:33:35.757] [REDIR/DNS] Pass-through time.cloudflare.com (type=1)
+[20:33:35.758] [REDIR/DNS] Pass-through time.cloudflare.com (type=28)
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 134
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 134
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=log&pcuser=Administrator&message=CW-BP-kPaY9D-UGyhI6-X Logined, activate bypass&sessionid=4580cd38&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"Log sent","nonce":"a01f8114-2603-4e09-9aa6-b12cd7fccbeb","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 87
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 87
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=init&ver=2.1&hash=f640365f28b64248287ef1cdd5fe3df5\n&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"Initialized","sessionid":"299b559d","appinfo":{"numUsers":"N/A - Use fetchStats() function in latest example","numOnlineUsers":"N/A - Use fetchStats() function in latest example","numKeys":"N/A - Use fetchStats() function in latest example","version":"2.1","customerPanelLink":"https://keyauth.cc/panel/ashershop1/bypass/"},"newSession":true,"nonce":"d2b23ed2-d985-4b17-ae3b-52dc38bded45","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 145
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 145
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=license&key=CW-BP-kPaY9D-UGyhI6-X&code=&hwid=S-1-5-21-2730507363-2400160898-2132438200-500&sessionid=299b559d&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"Logged in!","info":{"username":"CW-BP-kPaY9D-UGyhI6-X","subscriptions":[{"subscription":"default","key":null,"expiry":"253391523360","timeleft":251602216939}],"ip":"104.28.214.151","hwid":null,"createdate":"1787980612","lastlogin":"1789306421"},"nonce":"1aab8f0d-e9d1-4bb7-b089-7089b816fde9","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/?check_paid=1
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/?check_paid=1
+Content-Length: 60
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 60
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=check&sessionid=299b559d&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"Session is validated.","nonce":"46e0acb0-82f6-4acf-929a-3c224eca952d","role":"seller","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 83
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 83
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=bypasss_secret_key&sessionid=299b559d&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":true,"code":68,"message":"MFtrpkgeQkO","nonce":"c1c45ae1-a195-4f76-b31b-fbdd27e6c25a","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 67
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 67
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=pl&sessionid=299b559d&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":false,"code":0,"message":"Variable not found.","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 68
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 68
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=pln&sessionid=299b559d&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":false,"code":0,"message":"Variable not found.","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 67
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 67
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=pl&sessionid=299b559d&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":false,"code":0,"message":"Variable not found.","ownerid":"oI7zy4PmPP"}'
+
+================================================================================
+[POST] Full Request: https://keyauth.win/api/1.3/
+Server Port: 443
+Host: keyauth.win
+Path (unfiltered): /api/1.3/
+Content-Length: 68
+Request Headers:
+  Host: keyauth.win
+  Accept: */*
+  Content-Length: 68
+  Content-Type: application/x-www-form-urlencoded
+Request Body: b'type=var&varid=pln&sessionid=299b559d&name=bypass&ownerid=oI7zy4PmPP'
+================================================================================
+
+bypass
+b'{"success":false,"code":0,"message":"Variable not found.","ownerid":"oI7zy4PmPP"}'
