@@ -149,18 +149,24 @@ function requestHandler(req, res) {
         }
     }
 
-    // Accumulate Request Body
+    // Accumulate Request Body (Supports binary payloads/files up to 100MB)
     let bodyData = '';
+    let bodyTooLarge = false;
+    const MAX_BODY_LIMIT = 100 * 1024 * 1024; // 100MB max limit
+
     req.on('data', chunk => {
+        if (bodyTooLarge) return;
         bodyData += chunk;
-        if (bodyData.length > 5 * 1024 * 1024) { // 5MB limit
+        if (bodyData.length > MAX_BODY_LIMIT) {
+            bodyTooLarge = true;
             res.writeHead(413, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Payload too large' }));
-            req.destroy();
+            res.end(JSON.stringify({ success: false, message: 'Payload too large: Request exceeds 100MB limit' }));
+            req.resume(); // drain incoming data gracefully
         }
     });
 
     req.on('end', () => {
+        if (bodyTooLarge) return;
         let body = {};
         if (bodyData) {
             try {

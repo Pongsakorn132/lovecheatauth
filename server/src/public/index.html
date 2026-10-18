@@ -1660,10 +1660,21 @@
             }
             try {
                 const res = await fetch(path, options);
-                return await res.json();
+                const text = await res.text();
+                try {
+                    return JSON.parse(text);
+                } catch {
+                    if (res.status === 413) {
+                        return { success: false, message: 'Payload too large: The file exceeds maximum upload size (100MB limit).' };
+                    }
+                    if (res.status >= 500) {
+                        return { success: false, message: `Server error (${res.status}): ${text.slice(0, 150)}` };
+                    }
+                    return { success: false, message: text ? `Server (${res.status}): ${text.slice(0, 150)}` : `HTTP ${res.status} error` };
+                }
             } catch (err) {
                 console.error('[API Error]', err);
-                return { success: false, message: 'Network or server error' };
+                return { success: false, message: err.message ? `Connection error: ${err.message}` : 'Network or server error' };
             }
         }
 
@@ -3062,6 +3073,14 @@
         function onFileSelected(input) {
             const file = input.files && input.files[0];
             if (!file) return;
+
+            if (file.size > 50 * 1024 * 1024) {
+                customAlert(`File '${file.name}' (${formatBytes(file.size)}) exceeds the 50MB upload limit.<br><br>💡 <b>Tip:</b> For large binaries or cheats, use the <b>Key & Offset Broker</b> model (storing file locally on client and sending only the decryption key via Dashboard Variables).`, { type: 'warning' });
+                input.value = '';
+                uploadedFileBase64 = '';
+                return;
+            }
+
             const nameInput = document.getElementById('newFileName');
             if (nameInput && !nameInput.value.trim()) {
                 nameInput.value = file.name;

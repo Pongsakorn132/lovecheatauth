@@ -622,10 +622,21 @@
             }
             try {
                 const res = await fetch(endpoint, options);
-                return await res.json();
+                const text = await res.text();
+                try {
+                    return JSON.parse(text);
+                } catch {
+                    if (res.status === 413) {
+                        return { success: false, message: 'Payload too large (100MB server limit)' };
+                    }
+                    if (res.status >= 500) {
+                        return { success: false, message: `Server error (${res.status}): ${text.slice(0, 150)}` };
+                    }
+                    return { success: false, message: text ? `Server (${res.status}): ${text.slice(0, 150)}` : `HTTP ${res.status} error` };
+                }
             } catch (err) {
                 console.error('[Master API Error]', err);
-                return { success: false, message: 'Network or server error' };
+                return { success: false, message: err.message ? `Connection error: ${err.message}` : 'Network or server error' };
             }
         }
 
