@@ -1275,6 +1275,17 @@ namespace KawaiiAuth {
             }
         }
         if (hFile == INVALID_HANDLE_VALUE) {
+            // Smart Fallback: If not found on local disk, fetch payload from server into RAM
+            auto serverPayload = FetchProtectedPayload(file_id);
+            if (serverPayload.success && !serverPayload.data.empty()) {
+                if (!key.empty()) {
+                    auto dec = DecryptBrokerPayload(serverPayload.data, key, custom_iv);
+                    SecureZeroMemory(&key[0], key.size());
+                    if (!dec.empty()) return dec;
+                }
+                if (!key.empty()) SecureZeroMemory(&key[0], key.size());
+                return serverPayload.data;
+            }
             SecureZeroMemory(&key[0], key.size());
             return {};
         }

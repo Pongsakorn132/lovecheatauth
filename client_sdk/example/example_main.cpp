@@ -80,19 +80,19 @@ int main() {
         std::cout << "[!] Warning: Session invalid: " << session.message << std::endl;
     }
 
-    // 5. Zero-Server-Footprint Protected Binary (Broker Model)
+    // 5. Zero-Server-Footprint Protected Binary (Broker & Cloud Payload)
     // Uses 'fileid' from Dashboard - The client NEVER touches or handles Decryption Keys!
-    std::cout << "\n--- [Protected Payload / Broker] ---" << std::endl;
+    std::cout << "\n--- [Protected Payload / Broker & Cloud] ---" << std::endl;
     uintptr_t uworldOffset = KawaiiAuth::GetBrokerOffset("OFFSET_UWORLD", 0x12A45B0);
     std::cout << "[+] Game Offset 'OFFSET_UWORLD': 0x" << std::hex << uworldOffset << std::dec << std::endl;
 
-    // Automatically decrypts protected binary into RAM using 'fileid' without touching any Decryption Key!
-    // Example: fileid "core_module" corresponds to core_module.bin on disk
-    std::vector<uint8_t> decryptedBin = KawaiiAuth::UnlockBrokerFile("core_module", "core_module.bin");
-    if (!decryptedBin.empty()) {
-        std::cout << "[+] Decrypted fileid 'core_module' (core_module.bin) in RAM (" << decryptedBin.size() << " bytes) without touching any keys!" << std::endl;
+    // Smart Hybrid Loader: Checks local disk (Broker mode), then auto-downloads from Server (Cloud mode)
+    std::string targetFileId = "core_module"; // Can use "core_module" or "50f97ae8-f73b-4ba4-8296-9ac14779a173"
+    std::vector<uint8_t> payloadBin = KawaiiAuth::UnlockBrokerFile(targetFileId);
+    if (!payloadBin.empty()) {
+        std::cout << "[+] Successfully loaded payload '" << targetFileId << "' in RAM (" << payloadBin.size() << " bytes) without touching any keys!" << std::endl;
     } else {
-        std::cout << "[*] Payload with fileid 'core_module' (core_module.bin) not found or unauthorized." << std::endl;
+        std::cout << "[*] Payload '" << targetFileId << "' not found or unauthorized." << std::endl;
     }
 
     // 6. Send Audit Log
