@@ -98,8 +98,8 @@ namespace KawaiiAuth {
             const std::string& custom_iv = ""
         );
         std::vector<uint8_t> UnlockBrokerFile(
-            const std::string& file_id,
-            const std::string& file_path,
+            const std::string& file_name_or_id,
+            const std::string& file_path = "",
             const std::string& custom_iv = ""
         );
         std::vector<uint8_t> DecryptBrokerPayload(

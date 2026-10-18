@@ -80,17 +80,18 @@ int main() {
         std::cout << "[!] Warning: Session invalid: " << session.message << std::endl;
     }
 
-    // 5. Key & Offset Broker Demonstration (Zero-Server-Footprint Model)
-    std::cout << "\n--- [Key & Offset Broker] ---" << std::endl;
+    // 5. Zero-Server-Footprint Protected Binary (Broker Model)
+    // The client NEVER touches or handles Decryption Keys - everything decrypts directly into RAM!
+    std::cout << "\n--- [Protected Payload / Broker] ---" << std::endl;
     uintptr_t uworldOffset = KawaiiAuth::GetBrokerOffset("OFFSET_UWORLD", 0x12A45B0);
-    std::cout << "[+] Broker Offset 'OFFSET_UWORLD': 0x" << std::hex << uworldOffset << std::dec << std::endl;
+    std::cout << "[+] Game Offset 'OFFSET_UWORLD': 0x" << std::hex << uworldOffset << std::dec << std::endl;
 
-    // Retrieve secret AES decryption key by file_id from Application Files & Payloads
-    std::string coreFileKey = KawaiiAuth::GetFileKey("core_module");
-    if (!coreFileKey.empty()) {
-        std::cout << "[+] Broker Decryption Key for fileid 'core_module': " << coreFileKey.substr(0, 16) << "..." << std::endl;
+    // Automatically decrypts protected binary into RAM without touching any Decryption Key!
+    std::vector<uint8_t> decryptedBin = KawaiiAuth::UnlockBrokerFile("core_module.bin");
+    if (!decryptedBin.empty()) {
+        std::cout << "[+] Decrypted 'core_module.bin' in RAM (" << decryptedBin.size() << " bytes) without touching any keys!" << std::endl;
     } else {
-        std::cout << "[*] Note: fileid 'core_module' not configured or no decryption key set on dashboard." << std::endl;
+        std::cout << "[*] 'core_module.bin' not found on local disk or session unauthorized." << std::endl;
     }
 
     // 6. Send Audit Log

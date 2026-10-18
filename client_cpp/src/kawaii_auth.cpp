@@ -1254,12 +1254,23 @@ namespace KawaiiAuth {
         std::string key = FetchFileKey(file_id);
         if (key.empty()) return {};
 
-        HANDLE hFile = CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-        if (hFile == INVALID_HANDLE_VALUE) return {};
+        std::string targetPath = file_path.empty() ? file_id : file_path;
+        HANDLE hFile = CreateFileA(targetPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (hFile == INVALID_HANDLE_VALUE) {
+            if (targetPath.find('.') == std::string::npos) {
+                targetPath += ".bin";
+                hFile = CreateFileA(targetPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+            }
+            if (hFile == INVALID_HANDLE_VALUE) {
+                SecureZeroMemory(&key[0], key.size());
+                return {};
+            }
+        }
 
         LARGE_INTEGER fileSize;
         if (!GetFileSizeEx(hFile, &fileSize) || fileSize.QuadPart <= 0 || fileSize.QuadPart > 500 * 1024 * 1024) {
             CloseHandle(hFile);
+            SecureZeroMemory(&key[0], key.size());
             return {};
         }
 
@@ -1267,11 +1278,14 @@ namespace KawaiiAuth {
         DWORD bytesRead = 0;
         if (!ReadFile(hFile, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, nullptr) || bytesRead != buffer.size()) {
             CloseHandle(hFile);
+            SecureZeroMemory(&key[0], key.size());
             return {};
         }
         CloseHandle(hFile);
 
-        return DecryptBrokerPayload(buffer, key, custom_iv);
+        auto dec = DecryptBrokerPayload(buffer, key, custom_iv);
+        SecureZeroMemory(&key[0], key.size());
+        return dec;
     }
 
 }

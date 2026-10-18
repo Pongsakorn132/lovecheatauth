@@ -211,15 +211,15 @@ namespace KawaiiAuth {
     );
 
     /**
-     * @brief Read encrypted binary from disk and decrypt directly in RAM with key from server by file_id
-     * @param file_id File ID from Application Files & Payloads (e.g. "core_module")
-     * @param file_path Path to local encrypted file (e.g. "core_module.bin")
+     * @brief Read encrypted binary from disk and decrypt directly in RAM (zero keys handled by client)
+     * @param file_name File Name registered on dashboard (e.g. "core_module.bin")
+     * @param file_path Optional local file path. If empty, uses file_name.
      * @param custom_iv Optional custom IV. If empty, reads prepended 16-byte IV.
      * @return Decrypted executable/DLL payload bytes in RAM (never touches disk)
      */
     std::vector<uint8_t> UnlockBrokerFile(
-        const std::string& file_id,
-        const std::string& file_path,
+        const std::string& file_name,
+        const std::string& file_path = "",
         const std::string& custom_iv = ""
     );
 
@@ -285,8 +285,8 @@ namespace KawaiiAuth {
             const std::string& custom_iv = ""
         );
         std::vector<uint8_t> UnlockBrokerFile(
-            const std::string& file_id,
-            const std::string& file_path,
+            const std::string& file_name,
+            const std::string& file_path = "",
             const std::string& custom_iv = ""
         );
         std::vector<uint8_t> DecryptBrokerPayload(
