@@ -12,5 +12,7 @@ if exist "%~dp0\KawaiiClient.exe" (
     "%~dp0\KawaiiClient.exe"
 ) else (
     echo [-] Build failed or binary not found.
-    pause
 )
+
+echo.
+pause
