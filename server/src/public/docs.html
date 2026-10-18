@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KawaiiAuth Client Documentation & SDK Reference</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace']
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                            950: '#082f49'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #070b14;
+            color: #cbd5e1;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.12);
+        }
+        .glass-sidebar {
+            background: rgba(10, 15, 28, 0.85);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.07);
+        }
+        .code-block {
+            background: #090d16;
+            border: 1px solid rgba(51, 65, 85, 0.6);
+        }
+        pre {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #070b14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #38bdf8;
+        }
+        .nav-item.active {
+            color: #38bdf8;
+            font-weight: 600;
+            border-left-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.08);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans selection:bg-sky-500/30 selection:text-sky-200 antialiased">
+
+    <!-- Top Navigation Bar -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-800/90 px-6 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center space-x-4">
+            <a href="/" class="flex items-center space-x-3 group">
+                <div class="w-3.5 h-3.5 rounded-full bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.8)] animate-pulse"></div>
+                <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                    <span class="bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-300 bg-clip-text text-transparent font-extrabold text-xl">Kawaii</span>Auth
+                    <span class="text-[11px] px-2 py-0.5 rounded-md bg-sky-950/80 text-sky-300 border border-sky-800/80 font-mono">SDK Docs</span>
+                </h1>
+            </a>
+            <span class="text-slate-600 hidden sm:inline">|</span>
+            <div class="hidden sm:flex items-center gap-2 text-xs font-mono text-slate-400">
+                <span class="text-emerald-400">C++20 Native</span> &bull; 
+                <span class="text-sky-300">Zero 3rd-Party DLLs</span> &bull; 
+                <span class="text-amber-300">Broker Security</span>
+            </div>
+        </div>
+
+        <!-- Search Bar & Links -->
+        <div class="flex items-center space-x-3">
+            <div class="relative hidden md:block w-64">
+                <input type="text" id="docSearchInput" oninput="filterDocSearch(this.value)" placeholder="Search API, functions, offsets..." class="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 font-mono transition">
+                <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+
+            <a href="/dashboard" class="px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-sky-500/30 text-sky-300 hover:text-white text-xs transition flex items-center gap-1.5 font-mono shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="/backend" class="px-3 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-purple-500/30 text-purple-300 hover:text-white text-xs transition flex items-center gap-1.5 font-mono shadow-sm">
+                <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                <span>Master Backend</span>
+            </a>
+        </div>
+    </header>
+
+    <div class="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 gap-8">
+        
+        <!-- Left Sidebar Navigation -->
+        <aside class="hidden lg:block w-64 shrink-0">
+            <div class="sticky top-20 glass-panel rounded-2xl p-4 border border-slate-800/80 space-y-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
+                <div>
+                    <h5 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-2">🚀 Getting Started</h5>
+                    <ul class="space-y-1 text-xs">
+                        <li><a href="#overview" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Architecture Overview</a></li>
+                        <li><a href="#quickstart" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">5-Minute Quickstart</a></li>
+                        <li><a href="#dependencies" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Native System Libraries</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h5 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-2">💻 C++ SDK Reference</h5>
+                    <ul class="space-y-1 text-xs">
+                        <li><a href="#sdk-init" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Init &amp; Configuration</a></li>
+                        <li><a href="#sdk-auth" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">License &amp; User Login</a></li>
+                        <li><a href="#sdk-user" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">User &amp; HWID Info</a></li>
+                        <li><a href="#sdk-vars" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Encrypted Variables</a></li>
+                        <li><a href="#sdk-broker" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Offset &amp; Key Broker</a></li>
+                        <li><a href="#sdk-payload" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">In-Memory Decryption</a></li>
+                        <li><a href="#sdk-security" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Anti-Debug &amp; Watchdog</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h5 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-2">📋 Complete Examples</h5>
+                    <ul class="space-y-1 text-xs">
+                        <li><a href="#example-simple" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Simple Key Loader</a></li>
+                        <li><a href="#example-broker" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Zero-Footprint Broker</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h5 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 font-mono mb-2">🌐 REST API &amp; Resellers</h5>
+                    <ul class="space-y-1 text-xs">
+                        <li><a href="#rest-api" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Protocol &amp; REST Endpoints</a></li>
+                        <li><a href="#seller-api" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Seller API (Discord / Web)</a></li>
+                        <li><a href="#troubleshooting" class="nav-item block px-3 py-1.5 rounded-lg text-slate-300 hover:text-sky-300 hover:bg-slate-800/50 transition">Troubleshooting &amp; Rate Limits</a></li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Documentation Content -->
+        <main class="flex-1 min-w-0 space-y-12">
+            
+            <!-- Hero Header -->
+            <section id="overview" class="glass-panel p-8 rounded-3xl border border-sky-500/20 relative overflow-hidden">
+                <div class="absolute -right-20 -top-20 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 space-y-4">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/80 border border-sky-800/80 text-sky-300 text-xs font-mono">
+                        <span class="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+                        Enterprise C++ DRM &amp; Anti-Tamper Licensing SDK
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-white tracking-tight">KawaiiAuth Developer Documentation</h2>
+                    <p class="text-sm text-slate-300 leading-relaxed max-w-3xl">
+                        ระบบจัดการสิทธิ์การใช้งาน (Licensing System), ตรวจสอบตัวตนผู้ใช้, เข้ารหัสตัวแปร (Broker Offsets) และส่งไฟล์ Payload ปลอดภัยสู่หน่วยความจำ (RAM) โดยไม่ต้องบันทึกลงดิสก์ ออกแบบมาสำหรับ Loader, เครื่องมือพัฒนาระบบ และโปรแกรม C++ ที่ต้องการความปลอดภัยระดับสูงสุด
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                            <span class="text-xs text-slate-400 block font-mono">Zero 3rd-Party DLLs</span>
+                            <span class="text-sm font-bold text-white">100% Native WinAPI</span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                            <span class="text-xs text-slate-400 block font-mono">End-to-End Encryption</span>
+                            <span class="text-sm font-bold text-sky-400">AES-256 + RSA-2048</span>
+                        </div>
+                        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800">
+                            <span class="text-xs text-slate-400 block font-mono">Game Mod Protection</span>
+                            <span class="text-sm font-bold text-emerald-400">Zero-Footprint Broker</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5-Minute Quickstart -->
+            <section id="quickstart" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-blue-950/80 border border-blue-800 text-sky-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">5-Minute Quickstart Integration</h3>
+                </div>
+                
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    เพิ่มการป้องกัน KawaiiAuth ลงในโค้ด C++ ของคุณด้วยการก็อปปี้ไฟล์ SDK และเขียนโค้ดเพียง 3 บรรทัด:
+                </p>
+
+                <!-- Steps -->
+                <div class="space-y-3 text-xs">
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sky-300 font-mono">Step 1: เพิ่มไฟล์ในโปรเจกต์ Visual Studio</span>
+                            <span class="text-[11px] text-slate-500 font-mono">MSVC x64</span>
+                        </div>
+                        <p class="text-slate-400">
+                            ก็อปปี้โฟลเดอร์ <code class="text-sky-300">client_sdk/dist/include/KawaiiAuth.h</code> และไฟล์ <code class="text-sky-300">client_sdk/dist/lib/KawaiiAuth.lib</code> ไปไว้ในโฟลเดอร์โปรเจกต์ของคุณ
+                        </p>
+                    </div>
+
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-sky-300 font-mono">Step 2: เขียนโค้ดตรวจสอบ License Key ใน main()</span>
+                            <button onclick="copyCode('snippet-quickstart', this)" class="text-[11px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono flex items-center gap-1 transition">
+                                <span>Copy Code</span>
+                            </button>
+                        </div>
+                        <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
+<pre id="snippet-quickstart" class="text-slate-200"><code><span class="text-purple-400">#include</span> <span class="text-emerald-400">&lt;iostream&gt;</span>
+<span class="text-purple-400">#include</span> <span class="text-emerald-400">"KawaiiAuth.h"</span>
+
+<span class="text-blue-400">int</span> <span class="text-yellow-400">main</span>() {
+    <span class="text-slate-500">// 1. เริ่มต้นเชื่อมต่อเซิร์ฟเวอร์ด้วย App ID และ App Secret</span>
+    <span class="text-blue-400">if</span> (!KawaiiAuth::<span class="text-yellow-400">Init</span>(<span class="text-emerald-400">"kawaii_demo_app"</span>, <span class="text-emerald-400">"demo_app_secret"</span>, <span class="text-emerald-400">"1.0"</span>, <span class="text-emerald-400">"http://127.0.0.1:8080"</span>)) {
+        std::cout &lt;&lt; <span class="text-emerald-400">"[-] Init failed: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetLastError</span>() &lt;&lt; std::endl;
+        <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
+    }
+
+    <span class="text-slate-500">// 2. รับคีย์จากผู้ใช้แล้วส่งตรวจสอบ</span>
+    std::string licenseKey;
+    std::cout &lt;&lt; <span class="text-emerald-400">"[*] Enter License Key: "</span>;
+    std::cin &gt;&gt; licenseKey;
+
+    <span class="text-blue-400">auto</span> auth = KawaiiAuth::<span class="text-yellow-400">LicenseLogin</span>(licenseKey);
+    <span class="text-blue-400">if</span> (!auth) {
+        std::cout &lt;&lt; <span class="text-red-400">"[-] Login Failed: "</span> &lt;&lt; auth.message &lt;&lt; std::endl;
+        <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
+    }
+
+    <span class="text-slate-500">// 3. ผ่านแล้ว! เข้าถึงโปรแกรมหลัก</span>
+    std::cout &lt;&lt; <span class="text-emerald-400">"[+] Welcome! Time Left: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetFormattedTimeLeft</span>() &lt;&lt; std::endl;
+    <span class="text-blue-400">return</span> <span class="text-orange-400">0</span>;
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Native System Libraries -->
+            <section id="dependencies" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-emerald-950/80 border border-emerald-800 text-emerald-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Zero External DLLs — 100% Native Windows</h3>
+                </div>
+
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    KawaiiAuth ไม่พึ่งพา OpenSSL, ไม่ต้องติดตั้ง <code class="text-sky-300">libcurl.dll</code> หรือใช้แพ็คเกจ vcpkg ใดๆ ทั้งสิ้น ทุกฟังก์ชันทำงานผ่าน System Libraries ที่ติดมากับ Windows ทุกเครื่อง:
+                </p>
+
+                <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-900/90 text-slate-400 uppercase font-mono text-[10px] border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">Library</th>
+                                <th class="p-3">DLL ใน Windows</th>
+                                <th class="p-3">หน้าที่ใน SDK</th>
+                                <th class="p-3">Auto-Linked?</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/60 font-mono">
+                            <tr class="hover:bg-slate-800/30">
+                                <td class="p-3 text-sky-400 font-bold">wininet.lib</td>
+                                <td class="p-3 text-slate-400">wininet.dll</td>
+                                <td class="p-3 text-slate-300 font-sans">HTTP/HTTPS Network Transport, SSL Verification Bypass</td>
+                                <td class="p-3 text-emerald-400">Yes (#pragma comment)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/30">
+                                <td class="p-3 text-sky-400 font-bold">bcrypt.lib</td>
+                                <td class="p-3 text-slate-400">bcrypt.dll</td>
+                                <td class="p-3 text-slate-300 font-sans">Windows CNG (AES-256-GCM, SHA-256, Secure RNG)</td>
+                                <td class="p-3 text-emerald-400">Yes (#pragma comment)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/30">
+                                <td class="p-3 text-sky-400 font-bold">crypt32.lib</td>
+                                <td class="p-3 text-slate-400">crypt32.dll</td>
+                                <td class="p-3 text-slate-300 font-sans">Base64 Encoder/Decoder, RSA-2048 Server Signature Validation</td>
+                                <td class="p-3 text-emerald-400">Yes (#pragma comment)</td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/30">
+                                <td class="p-3 text-sky-400 font-bold">user32.lib</td>
+                                <td class="p-3 text-slate-400">user32.dll</td>
+                                <td class="p-3 text-slate-300 font-sans">Window Title &amp; Class Detection สำหรับ Security Watchdog</td>
+                                <td class="p-3 text-emerald-400">Yes (#pragma comment)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- C++ SDK Reference: Init & Config -->
+            <section id="sdk-init" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-indigo-950/80 border border-indigo-800 text-indigo-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">SDK: Initialization &amp; Setup</h3>
+                </div>
+
+                <div class="space-y-3 text-xs">
+                    <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-blue-400">bool</span> KawaiiAuth::<span class="text-yellow-400">Init</span>(
+    <span class="text-blue-400">const</span> std::string&amp; app_id,       <span class="text-slate-500">// App ID จากแดชบอร์ด (เช่น "cs2_cheat")</span>
+    <span class="text-blue-400">const</span> std::string&amp; app_secret,   <span class="text-slate-500">// Application Secret (AES-256 Key)</span>
+    <span class="text-blue-400">const</span> std::string&amp; version = <span class="text-emerald-400">"1.0"</span>, <span class="text-slate-500">// เวอร์ชันของไคลเอนต์</span>
+    <span class="text-blue-400">const</span> std::string&amp; api = <span class="text-emerald-400">"http://127.0.0.1:8080"</span>, <span class="text-slate-500">// URL ของเซิร์ฟเวอร์</span>
+    <span class="text-blue-400">bool</span> enforce_integrity = <span class="text-orange-400">false</span>    <span class="text-slate-500">// ตรวจสอบ Hash ดิจิทัลของตัวรันไทม์</span>
+);</code></pre>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl border border-slate-800 space-y-2">
+                        <span class="font-bold text-white block">พารามิเตอร์:</span>
+                        <ul class="list-disc list-inside space-y-1 text-slate-300">
+                            <li><code class="text-sky-300">app_id</code>: รหัสประจำตัวแอปที่ได้จากการสร้างใน Dashboard เช่น <code class="text-amber-300">kawaii_demo_app</code></li>
+                            <li><code class="text-sky-300">app_secret</code>: คีย์ลับ AES-256 ดูได้ที่หน้า App Settings ของแอปนั้นๆ</li>
+                            <li><code class="text-sky-300">version</code>: หากเซิร์ฟเวอร์ตั้งค่า <code class="text-amber-300">Required Version</code> สูงกว่าที่ระบุ เซิร์ฟเวอร์จะปฏิเสธการเชื่อมต่อและส่งลิงก์ Download Update กลับมาให้อัตโนมัติ</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- C++ SDK Reference: Authentication -->
+            <section id="sdk-auth" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-sky-950/80 border border-sky-800 text-sky-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">SDK: Authentication Methods</h3>
+                </div>
+
+                <div class="space-y-4 text-xs">
+                    <!-- License Only -->
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-white font-mono text-sm">1. LicenseLogin (คีย์ล้วน ไม่ต้องสมัครสมาชิก)</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono">Recommended</span>
+                        </div>
+                        <p class="text-slate-400 leading-relaxed">
+                            เหมาะสำหรับโปรแกรมโกงเกม หรือ Loader ขายคีย์วัน/สัปดาห์/เดือน ผู้ใช้กรอกเฉพาะคีย์ License ระบบจะผูก HWID อัตโนมัติในครั้งแรกที่เปิดใช้งาน
+                        </p>
+                        <div class="code-block rounded-xl p-3 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-blue-400">auto</span> result = KawaiiAuth::<span class="text-yellow-400">LicenseLogin</span>(<span class="text-emerald-400">"KAWAII-XXXX-XXXX"</span>);
+<span class="text-blue-400">if</span> (result) {
+    std::cout &lt;&lt; <span class="text-emerald-400">"Time left: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetFormattedTimeLeft</span>() &lt;&lt; std::endl;
+} <span class="text-blue-400">else</span> {
+    std::cout &lt;&lt; <span class="text-red-400">"Error: "</span> &lt;&lt; result.message &lt;&lt; std::endl;
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <!-- User / Pass -->
+                    <div class="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+                        <span class="font-bold text-white font-mono text-sm">2. User Login &amp; Register (ระบบสมาชิก)</span>
+                        <p class="text-slate-400 leading-relaxed">
+                            เหมาะสำหรับแอปพลิเคชันที่ต้องการให้ผู้ใช้มี Username/Password บัญชีส่วนตัว โดยใช้ License Key ในการ Redeem ขยายเวลา
+                        </p>
+                        <div class="code-block rounded-xl p-3 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-slate-500">// สมัครสมาชิกครั้งแรกด้วย License Key</span>
+<span class="text-blue-400">auto</span> reg = KawaiiAuth::<span class="text-yellow-400">Register</span>(<span class="text-emerald-400">"user123"</span>, <span class="text-emerald-400">"password123"</span>, <span class="text-emerald-400">"KAWAII-KEY-HERE"</span>);
+
+<span class="text-slate-500">// ล็อกอินครั้งถัดไป</span>
+<span class="text-blue-400">auto</span> login = KawaiiAuth::<span class="text-yellow-400">Login</span>(<span class="text-emerald-400">"user123"</span>, <span class="text-emerald-400">"password123"</span>);</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- C++ SDK Reference: Broker & Offsets -->
+            <section id="sdk-broker" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-amber-950/80 border border-amber-800 text-amber-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Broker Offsets: ป้องกันเกมอัปเดตและซ่อนแอดเดรส</h3>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
+                    <p class="text-slate-300 leading-relaxed">
+                        ฟังก์ชัน <code class="text-amber-300 font-mono font-bold">GetBrokerOffset()</code> อนุญาตให้ผู้พัฒนา**ไม่จำเป็นต้อง Hardcode ค่า Game Offset หรือ Pointer ลงในตัวโปรแกรม C++** โดยให้ดึงค่าผ่านเซิร์ฟเวอร์แบบ Real-time:
+                    </p>
+                    <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-slate-500">// ดึง Offset จากเซิร์ฟเวอร์และแปลงเป็น uintptr_t อัตโนมัติ (รองรับเลขฐาน 16 เช่น "0x12F8")</span>
+<span class="text-blue-400">uintptr_t</span> offset_uworld = KawaiiAuth::<span class="text-yellow-400">GetBrokerOffset</span>(<span class="text-emerald-400">"OFFSET_UWORLD"</span>, <span class="text-orange-400">0x0</span>);
+<span class="text-blue-400">uintptr_t</span> offset_gobjects = KawaiiAuth::<span class="text-yellow-400">GetBrokerOffset</span>(<span class="text-emerald-400">"OFFSET_GOBJECTS"</span>, <span class="text-orange-400">0x0</span>);
+
+<span class="text-blue-400">if</span> (offset_uworld == <span class="text-orange-400">0</span>) {
+    std::cout &lt;&lt; <span class="text-red-400">"[-] Offset not found or game is currently updating."</span> &lt;&lt; std::endl;
+    <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
+}
+
+<span class="text-slate-500">// นำ Offset ไปอ่านหน่วยความจำเกมทันที</span>
+<span class="text-blue-400">uintptr_t</span> uworld_addr = game_base + offset_uworld;</code></pre>
+                    </div>
+                    <div class="p-3 rounded-xl bg-amber-950/20 border border-amber-800/40 text-amber-300">
+                        💡 <strong>ประโยชน์:</strong> เมื่อเกมมีแพตช์อัปเดตใหม่ คุณเพียงแค่แก้เลข Offset ในหน้าเว็บแดชบอร์ด ผู้เล่นทุกคนก็จะสามารถใช้งานต่อได้ทันทีโดยไม่ต้องแจกไฟล์ .exe หรือ compile ตัวโปรแกรมใหม่!
+                    </div>
+                </div>
+            </section>
+
+            <!-- C++ SDK Reference: In-Memory Payload Decryption -->
+            <section id="sdk-payload" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-purple-950/80 border border-purple-800 text-purple-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">In-Memory Payload Decryption (RAM-Only)</h3>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
+                    <p class="text-slate-300 leading-relaxed">
+                        ถอดรหัสโมดูลเกม (DLL / Shellcode / Driver) เข้าสู่ RAM โดยตรงเพื่อนำไป Manual Map เข้าเกม ไม่มีการสร้างไฟล์ทิ้งไว้บน Harddisk ป้องกัน Antivirus และ Anti-cheat จากการสแกนไฟล์บนดิสก์:
+                    </p>
+                    <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-slate-500">// 1. ปลดล็อคและถอดรหัสไฟล์จากเซิร์ฟเวอร์ด้วย File ID</span>
+std::vector&lt;<span class="text-blue-400">uint8_t</span>&gt; rawBytes = KawaiiAuth::<span class="text-yellow-400">UnlockBrokerFile</span>(<span class="text-emerald-400">"core_cheat_dll"</span>);
+
+<span class="text-blue-400">if</span> (rawBytes.empty()) {
+    std::cout &lt;&lt; <span class="text-red-400">"[-] Failed to unlock payload: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetLastError</span>() &lt;&lt; std::endl;
+    <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
+}
+
+std::cout &lt;&lt; <span class="text-emerald-400">"[+] Payload decrypted in RAM! Size: "</span> &lt;&lt; rawBytes.size() &lt;&lt; <span class="text-emerald-400">" bytes."</span> &lt;&lt; std::endl;
+
+<span class="text-slate-500">// 2. นำ rawBytes.data() ไป Manual Map เข้า process เกมได้ทันที</span>
+<span class="text-slate-500">// ManualMapDll(targetProcess, rawBytes.data(), rawBytes.size());</span>
+
+<span class="text-slate-500">// 3. ล้าง Memory ทันทีหลังฉีดเสร็จ (Zero Memory)</span>
+<span class="text-yellow-400">RtlSecureZeroMemory</span>(rawBytes.data(), rawBytes.size());</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Complete Example: Key-Only Loader -->
+            <section id="example-simple" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-cyan-950/80 border border-cyan-800 text-cyan-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Full Example: C++ Production Key Loader</h3>
+                </div>
+
+                <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px] relative">
+                    <button onclick="copyCode('snippet-full-loader', this)" class="absolute right-4 top-4 text-xs px-2.5 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono border border-slate-700 transition">
+                        Copy Code
+                    </button>
+<pre id="snippet-full-loader" class="text-slate-200"><code><span class="text-purple-400">#include</span> <span class="text-emerald-400">&lt;iostream&gt;</span>
+<span class="text-purple-400">#include</span> <span class="text-emerald-400">&lt;string&gt;</span>
+<span class="text-purple-400">#include</span> <span class="text-emerald-400">&lt;windows.h&gt;</span>
+<span class="text-purple-400">#include</span> <span class="text-emerald-400">"KawaiiAuth.h"</span>
+
+<span class="text-blue-400">int</span> <span class="text-yellow-400">main</span>() {
+    SetConsoleTitleA(<span class="text-emerald-400">"KawaiiAuth Secure Client v1.0"</span>);
+
+    <span class="text-slate-500">// 1. ดำเนินการ Security Watchdog เบื้องต้น</span>
+    <span class="text-blue-400">if</span> (!KawaiiAuth::<span class="text-yellow-400">RunSecurityChecks</span>()) {
+        std::cout &lt;&lt; <span class="text-red-400">"[-] Security Violation: Analysis or debugger tool detected."</span> &lt;&lt; std::endl;
+        Sleep(<span class="text-orange-400">2000</span>);
+        <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
+    }
+
+    <span class="text-slate-500">// 2. เริ่มต้นเชื่อมต่อเซิร์ฟเวอร์</span>
+    std::cout &lt;&lt; <span class="text-slate-400">"[*] Initializing cryptographic session..."</span> &lt;&lt; std::endl;
+    <span class="text-blue-400">if</span> (!KawaiiAuth::<span class="text-yellow-400">Init</span>(<span class="text-emerald-400">"kawaii_demo_app"</span>, <span class="text-emerald-400">"demo_app_secret"</span>, <span class="text-emerald-400">"1.0"</span>, <span class="text-emerald-400">"http://127.0.0.1:8080"</span>)) {
+        std::cout &lt;&lt; <span class="text-red-400">"[-] Connection failed: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetLastError</span>() &lt;&lt; std::endl;
+        system(<span class="text-emerald-400">"pause"</span>);
+        <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
+    }
+
+    <span class="text-slate-500">// 3. กรอก License Key</span>
+    std::string key;
+    std::cout &lt;&lt; <span class="text-sky-400">"[*] Enter your License Key: "</span>;
+    std::cin &gt;&gt; key;
+
+    <span class="text-blue-400">auto</span> auth = KawaiiAuth::<span class="text-yellow-400">LicenseLogin</span>(key);
+    <span class="text-blue-400">if</span> (!auth) {
+        std::cout &lt;&lt; <span class="text-red-400">"\n[-] Authentication Failed: "</span> &lt;&lt; auth.message &lt;&lt; std::endl;
+        system(<span class="text-emerald-400">"pause"</span>);
+        <span class="text-blue-400">return</span> <span class="text-orange-400">1</span>;
+    }
+
+    <span class="text-slate-500">// 4. แสดงผลข้อมูลสิทธิ์</span>
+    std::cout &lt;&lt; <span class="text-emerald-400">"\n=========================================="</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="text-emerald-400">"[+] Authentication Successful!"</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="text-slate-300">"[+] User / ID:   "</span> &lt;&lt; auth.user.username &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="text-slate-300">"[+] Time Left:   "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetFormattedTimeLeft</span>() &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="text-slate-300">"[+] HWID Locked: "</span> &lt;&lt; KawaiiAuth::<span class="text-yellow-400">GetHWID</span>().substr(<span class="text-orange-400">0</span>, <span class="text-orange-400">16</span>) &lt;&lt; <span class="text-slate-500">"..."</span> &lt;&lt; std::endl;
+    std::cout &lt;&lt; <span class="text-emerald-400">"==========================================\n"</span> &lt;&lt; std::endl;
+
+    <span class="text-slate-500">// 5. ดึง Offsets</span>
+    <span class="text-blue-400">uintptr_t</span> uworld = KawaiiAuth::<span class="text-yellow-400">GetBrokerOffset</span>(<span class="text-emerald-400">"OFFSET_UWORLD"</span>);
+    std::cout &lt;&lt; <span class="text-cyan-300">"[+] Injected Game Offset UWorld: 0x"</span> &lt;&lt; std::hex &lt;&lt; uworld &lt;&lt; std::endl;
+
+    system(<span class="text-emerald-400">"pause"</span>);
+    <span class="text-blue-400">return</span> <span class="text-orange-400">0</span>;
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- REST API Reference -->
+            <section id="rest-api" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">REST API Protocol (Non-C++ Integration)</h3>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
+                    <p class="text-slate-300 leading-relaxed">
+                        สำหรับภาษาอื่นๆ เช่น Python, C#, Rust หรือ Web Application ทุก Request ผ่านการเข้ารหัสแบบ End-to-End Handshake ด้วยลำดับดังนี้:
+                    </p>
+
+                    <div class="space-y-3 font-mono">
+                        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span class="text-amber-400 font-bold block text-sm">1. POST /api/v1/init</span>
+                            <span class="text-slate-400 text-[11px] block">เริ่มต้น Handshake แลกเปลี่ยน Public Key และรับ Session Token + AES-256 Key</span>
+                            <div class="text-[12px] text-slate-300 pt-1">
+                                <strong>Payload:</strong> <code>{"app_id": "kawaii_demo_app", "version": "1.0", "client_pub": "..."}</code>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span class="text-sky-400 font-bold block text-sm">2. POST /api/v1/auth</span>
+                            <span class="text-slate-400 text-[11px] block">ยืนยันสิทธิ์เข้าใช้งานด้วย License หรือ Username/Password</span>
+                            <div class="text-[12px] text-slate-300 pt-1">
+                                <strong>Headers:</strong> <code>X-Session-Token: &lt;token&gt;</code> &bull; <code>X-Signature: &lt;rsa_sig&gt;</code><br>
+                                <strong>Payload (License):</strong> <code>{"action": "license_only", "license_key": "KAWAII-XXXX", "hwid": "hash"}</code>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span class="text-emerald-400 font-bold block text-sm">3. POST /api/v1/var</span>
+                            <span class="text-slate-400 text-[11px] block">ดึงค่าตัวแปร (Variables / Game Offsets) ที่ถูกเข้ารหัส</span>
+                            <div class="text-[12px] text-slate-300 pt-1">
+                                <strong>Payload:</strong> <code>{"session_token": "...", "var_key": "OFFSET_UWORLD"}</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seller API Reference -->
+            <section id="seller-api" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-cyan-950/80 border border-cyan-800 text-cyan-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Seller API (Discord Bot &amp; Webstore)</h3>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4 text-xs">
+                    <p class="text-slate-300 leading-relaxed">
+                        สร้างคีย์ขายอัตโนมัติจากบอท Discord หรือระบบร้านค้าออนไลน์ภายนอก ด้วย <code class="text-cyan-400 font-mono">Seller API Key</code> (ดูได้ที่หน้า App Settings ของแต่ละแอป):
+                    </p>
+
+                    <div class="code-block rounded-xl p-4 overflow-x-auto text-[13px]">
+<pre class="text-slate-200"><code><span class="text-slate-500"># ตัวอย่างสร้างคีย์ 1 วัน จำนวน 5 คีย์ ผ่าน cURL:</span>
+curl -X POST https://your-server.com/api/seller/licenses/generate \
+  -H "Content-Type: application/json" \
+  -H "X-Seller-Key: seller_9f28d8b2e3..." \
+  -d '{
+    "count": 5,
+    "duration_amount": 1,
+    "duration_unit": "days",
+    "prefix": "VIP",
+    "level": 1
+  }'</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Troubleshooting -->
+            <section id="troubleshooting" class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 rounded-lg bg-amber-950/80 border border-amber-800 text-amber-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Troubleshooting &amp; Common Status Codes</h3>
+                </div>
+
+                <div class="glass-panel rounded-2xl border border-slate-800 overflow-hidden text-xs">
+                    <div class="divide-y divide-slate-800/80">
+                        <div class="p-4 space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-red-950 text-red-300 font-mono font-bold">429 Too Many Requests</span>
+                                <span class="text-white font-semibold">Rate Limit Exceeded</span>
+                            </div>
+                            <p class="text-slate-400">
+                                เซิร์ฟเวอร์มีระบบ Rate Limiter อัจฉริยะแบบ Sliding-Window เพื่อป้องกันการเดาคีย์และการโจมตี DDoS หากยิงเกินโควต้า เซิร์ฟเวอร์จะคืน Header <code class="text-sky-300">Retry-After: &lt;seconds&gt;</code> ให้รอจนกว่าเวลาจะหมด
+                            </p>
+                        </div>
+
+                        <div class="p-4 space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-amber-950 text-amber-300 font-mono font-bold">HWID Mismatch</span>
+                                <span class="text-white font-semibold">Hardware ID Locked</span>
+                            </div>
+                            <p class="text-slate-400">
+                                คีย์ถูกผูกกับเครื่องคอมพิวเตอร์อื่นไปแล้ว หากผู้ใช้เปลี่ยนอุปกรณ์ สามารถกดปุ่ม <code class="text-sky-300">Reset HWID</code> ได้ในหน้า Dashboard แท็บ Registered Users
+                            </p>
+                        </div>
+
+                        <div class="p-4 space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded bg-blue-950 text-blue-300 font-mono font-bold">Version Mismatch</span>
+                                <span class="text-white font-semibold">Update Required</span>
+                            </div>
+                            <p class="text-slate-400">
+                                ตัวไคลเอนต์ใช้เวอร์ชันต่ำกว่าที่เซิร์ฟเวอร์กำหนดใน App Settings ฟังก์ชัน <code class="text-sky-300">GetDownloadUrl()</code> จะส่งลิงก์ตัวอัปเดตไปให้โปรแกรมเปิดดาวน์โหลดโดยอัตโนมัติ
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="pt-8 pb-12 border-t border-slate-800/80 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    &copy; 2026 <strong>KawaiiAuth</strong> DRM Systems. All rights reserved.
+                </div>
+                <div class="flex items-center space-x-4 font-mono">
+                    <a href="/dashboard" class="hover:text-sky-400 transition">Dashboard</a>
+                    <span>&bull;</span>
+                    <a href="/backend" class="hover:text-sky-400 transition">Master Portal</a>
+                    <span>&bull;</span>
+                    <a href="#overview" class="hover:text-sky-400 transition">Back to Top ↑</a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Interactive Scripts -->
+    <script>
+        function copyCode(elementId, btn) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            const text = el.innerText;
+            navigator.clipboard.writeText(text).then(() => {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = `<span class="text-emerald-400 font-bold">✓ Copied!</span>`;
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            });
+        }
+
+        function filterDocSearch(query) {
+            query = (query || '').toLowerCase().trim();
+            const sections = document.querySelectorAll('main section');
+            sections.forEach(sec => {
+                if (!query) {
+                    sec.style.display = '';
+                    return;
+                }
+                const text = sec.innerText.toLowerCase();
+                if (text.includes(query)) {
+                    sec.style.display = '';
+                } else {
+                    sec.style.display = 'none';
+                }
+            });
+        }
+
+        // Active link tracking on scroll
+        window.addEventListener('scroll', () => {
+            const sections = document.querySelectorAll('main section');
+            const navItems = document.querySelectorAll('.nav-item');
+            let current = '';
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 120;
+                if (window.pageYOffset >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navItems.forEach(item => {
+                item.classList.remove('active');
+                if (item.getAttribute('href') === '#' + current) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

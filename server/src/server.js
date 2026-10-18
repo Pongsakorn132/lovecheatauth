@@ -99,6 +99,15 @@ function requestHandler(req, res) {
         }
     }
 
+    // Client & Developer Documentation UI
+    if (url.pathname === '/docs' || url.pathname === '/doc' || url.pathname === '/docs.html' || url.pathname === '/documentation') {
+        const docsPath = path.join(__dirname, 'public/docs.html');
+        if (fs.existsSync(docsPath)) {
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            return fs.createReadStream(docsPath).pipe(res);
+        }
+    }
+
     // ========================================================
     // Rate Limiting Defense Gate (Early Interception before Body Accumulation)
     // ========================================================
@@ -228,6 +237,7 @@ server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`[KawaiiAuth Server] Active and listening on port ${PORT}`);
     console.log(`[Client Dashboard] http://localhost:${PORT}/dashboard`);
+    console.log(`[Documentation]    http://localhost:${PORT}/docs`);
     console.log(`[Master Backend]   http://localhost:${PORT}/backend`);
     console.log(`[Master Account]   User: admin | Pass: admin | PIN: 123456`);
     console.log(`[Default Client]   Key: CK-KAWAII-DEMO-2025 | PIN: 123456`);
