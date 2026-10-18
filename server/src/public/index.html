@@ -2518,7 +2518,14 @@
             const now = Math.floor(Date.now() / 1000);
             pageUsers.forEach(u => {
                 const tr = document.createElement('tr');
-                const hwidText = u.hwid ? `${escapeHtml(u.hwid.slice(0, 16))}...` : '<span class="text-amber-400">Unbound</span>';
+                const hwidText = u.hwid 
+                    ? `<div class="inline-flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-800">
+                         <code class="font-mono text-xs text-sky-200 select-all" title="${escapeHtml(u.hwid)}">${escapeHtml(u.hwid.slice(0, 16))}...</code>
+                         <button onclick="copyToClipboard('${escapeHtml(u.hwid)}', this)" class="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition shrink-0" title="Copy full HWID">
+                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+                         </button>
+                       </div>` 
+                    : '<span class="px-2 py-0.5 rounded text-[11px] bg-amber-950/60 text-amber-400 border border-amber-800/60 font-mono">Unbound</span>';
                 const isExpired = u.expires_at <= now;
                 const expireStr = `${new Date(u.expires_at * 1000).toLocaleDateString()} ${isExpired ? '<span class="text-red-400 text-[10px]">(Expired)</span>' : ''}`;
                 const bannedBadge = u.banned
