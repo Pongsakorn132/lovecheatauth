@@ -700,7 +700,7 @@ async function handleAdminRequest(req, res, url, body) {
     }
 
     if (pathname === '/api/admin/variables' && method === 'POST') {
-        const { app_id, var_key, var_value, authed_only } = body || {};
+        const { id: varId, app_id, var_key, var_value, authed_only } = body || {};
         if (!app_id) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
         if (!var_key || typeof var_key !== 'string' || !var_key.trim()) {
             return sendJson(res, 400, { success: false, message: 'Variable key is required' });
@@ -709,14 +709,40 @@ async function handleAdminRequest(req, res, url, body) {
             return sendJson(res, 400, { success: false, message: 'Variable value is required' });
         }
 
+        const trimmedKey = var_key.trim();
+
+        // 1. If updating an existing variable by ID (supports key renaming)
+        if (varId) {
+            const existing = db.prepare('SELECT id, var_key FROM variables WHERE id = ? AND app_id = ?').get(varId, app_id);
+            if (!existing) {
+                return sendJson(res, 404, { success: false, message: 'Variable not found' });
+            }
+
+            // Check if another variable already uses the new key
+            const duplicate = db.prepare('SELECT id FROM variables WHERE app_id = ? AND var_key = ? AND id != ?').get(app_id, trimmedKey, varId);
+            if (duplicate) {
+                return sendJson(res, 400, { success: false, message: `A variable with key '${trimmedKey}' already exists in this application` });
+            }
+
+            db.prepare(`
+                UPDATE variables 
+                SET var_key = ?, var_value = ?, authed_only = ?
+                WHERE id = ? AND app_id = ?
+            `).run(trimmedKey, String(var_value), authed_only ? 1 : 0, varId, app_id);
+
+            logAudit(app_id, 'VARIABLE_UPDATED', `Updated variable '${trimmedKey}' (previous key: '${existing.var_key}')`, clientIp);
+            return sendJson(res, 200, { success: true, message: `Variable '${trimmedKey}' updated successfully` });
+        }
+
+        // 2. Insert new variable (or update if matching app_id and var_key)
         const id = crypto.randomUUID();
         db.prepare(`
             INSERT INTO variables (id, app_id, var_key, var_value, authed_only)
             VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(app_id, var_key) DO UPDATE SET var_value = excluded.var_value, authed_only = excluded.authed_only
-        `).run(id, app_id, var_key.trim(), String(var_value), authed_only ? 1 : 0);
+        `).run(id, app_id, trimmedKey, String(var_value), authed_only ? 1 : 0);
 
-        logAudit(app_id, 'VARIABLE_SAVED', `Saved variable '${var_key.trim()}'`, clientIp);
+        logAudit(app_id, 'VARIABLE_SAVED', `Saved variable '${trimmedKey}'`, clientIp);
         return sendJson(res, 200, { success: true, message: 'Variable saved' });
     }
 

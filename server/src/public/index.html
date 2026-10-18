@@ -1130,8 +1130,8 @@
                 <input type="hidden" id="editVarId">
                 <div>
                     <label class="block text-xs font-medium text-slate-300 mb-1.5">Variable Key (ชื่อตัวแปร)</label>
-                    <input type="text" id="editVarKey" readonly class="w-full bg-slate-900/60 border border-slate-700/60 rounded-xl px-3.5 py-2.5 text-sky-300 text-sm font-mono opacity-80 cursor-not-allowed select-none">
-                    <p class="text-[10px] text-slate-500 mt-1 font-mono">Variable key is immutable. Modify the value below.</p>
+                    <input type="text" id="editVarKey" placeholder="e.g. payload_offset or OFFSET_UWORLD" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/30 transition placeholder-slate-500 font-mono">
+                    <p class="text-[10px] text-slate-400 mt-1 font-mono">สามารถแก้ไขชื่อ Key ได้ (หากเปลี่ยน Key อย่าลืมปรับชื่อในโค้ด Loader ให้ตรงกัน)</p>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-300 mb-1.5">Variable Value (Plaintext / JSON / Offset / Key)</label>
@@ -3039,6 +3039,7 @@
 
         async function submitEditVar() {
             if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
+            const id = document.getElementById('editVarId').value;
             const var_key = document.getElementById('editVarKey').value.trim();
             const var_value = document.getElementById('editVarValue').value;
             const authed_only = document.getElementById('editVarAuthedOnly').checked;
@@ -3047,7 +3048,7 @@
 
             const res = await api('/api/admin/variables', {
                 method: 'POST',
-                body: { app_id: currentAppId, var_key, var_value, authed_only }
+                body: { id, app_id: currentAppId, var_key, var_value, authed_only }
             });
 
             if (res.success) {
