@@ -78,8 +78,17 @@ function requestHandler(req, res) {
     const protocol = req.socket.encrypted ? 'https' : 'http';
     const url = new URL(req.url, `${protocol}://${host}`);
 
-    // Dashboard UI
-    if (url.pathname === '/' || url.pathname === '/dashboard') {
+    // 3D Preview & Landing Page
+    if (url.pathname === '/' || url.pathname === '/preview' || url.pathname === '/landing') {
+        const landingPath = path.join(__dirname, 'public/landing.html');
+        if (fs.existsSync(landingPath)) {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            return fs.createReadStream(landingPath).pipe(res);
+        }
+    }
+
+    // Client Dashboard UI
+    if (url.pathname === '/dashboard') {
         const htmlPath = path.join(__dirname, 'public/index.html');
         if (fs.existsSync(htmlPath)) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -146,10 +155,11 @@ const server = http.createServer(requestHandler);
 server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`[KawaiiAuth Server] Active and listening on port ${PORT}`);
-    console.log(`[Client Dashboard] http://localhost:${PORT}/dashboard`);
-    console.log(`[Master Backend]   http://localhost:${PORT}/backend`);
-    console.log(`[Master Account]   User: admin | Pass: admin | PIN: 123456`);
-    console.log(`[Default Client]   Key: CK-KAWAII-DEMO-2025 | PIN: 123456`);
+    console.log(`[3D Landing Preview] http://localhost:${PORT}/`);
+    console.log(`[Client Dashboard]   http://localhost:${PORT}/dashboard`);
+    console.log(`[Master Backend]     http://localhost:${PORT}/backend`);
+    console.log(`[Master Account]     User: admin | Pass: admin | PIN: 123456`);
+    console.log(`[Default Client]     Key: CK-KAWAII-DEMO-2025 | PIN: 123456`);
     console.log(`=======================================================`);
 });
 
