@@ -106,6 +106,10 @@
                         </span>
                     </label>
                     <button onclick="initiateClientConnect()" id="btnConnect" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white font-semibold rounded-lg text-xs transition shadow-lg shadow-blue-900/30 border border-sky-400/20">Connect</button>
+                    <button onclick="openChangePinModal()" id="btnOpenChangePin" class="px-3 py-1.5 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-700/70 text-amber-300 hover:text-white rounded-lg text-xs font-semibold transition shadow-sm hidden flex items-center gap-1.5" title="Change 6-digit Security PIN for this Client Key">
+                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        <span>Change PIN</span>
+                    </button>
                     <button onclick="disconnectClient()" id="btnDisconnect" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition shadow-sm hidden">Disconnect</button>
                 </div>
             </div>
@@ -628,42 +632,7 @@
                     </div>
                 </div>
 
-                <!-- 3. Change Security PIN -->
-                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2.5 rounded-xl bg-amber-950/80 border border-amber-800/80 text-amber-400 shrink-0">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-bold text-white">Security PIN Management</h4>
-                            <p class="text-xs text-slate-400">เปลี่ยนรหัสความปลอดภัย PIN 6 หลักสำหรับ Client Key ที่กำลังใช้งาน</p>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Current 6-Digit PIN (PIN เดิม)</label>
-                            <input type="password" id="settingCurrentPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-300 mb-1.5">New PIN (PIN ใหม่ 6 หลัก)</label>
-                                <input type="password" id="settingNewPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-300 mb-1.5">Confirm PIN (ยืนยัน PIN ใหม่)</label>
-                                <input type="password" id="settingConfirmPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
-                            </div>
-                        </div>
-                        <div class="pt-1">
-                            <button type="button" id="btnChangePin" onclick="submitChangeClientPin()" class="w-full py-2.5 bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 hover:from-amber-500 hover:via-orange-500 hover:to-yellow-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-amber-950/40 border border-amber-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                Update Security PIN
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 4. Seller API Key -->
+                <!-- 3. Seller API Key -->
                 <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5 lg:col-span-2">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
@@ -818,6 +787,69 @@
             <div class="flex justify-end gap-2.5 pt-2">
                 <button onclick="closeModal('clientPinModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
                 <button onclick="submitClientPinVerification()" class="px-5 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0">Verify PIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Change Client Key Security PIN -->
+    <div id="changeClientPinModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('changeClientPinModal')">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-md space-y-5 border border-amber-500/20 shadow-2xl shadow-amber-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+            <!-- Header -->
+            <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2.5 rounded-xl bg-amber-950/80 border border-amber-800/80 text-amber-400 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white tracking-wide">Client Security PIN</h3>
+                        <p class="text-xs text-slate-400">เปลี่ยนรหัสความปลอดภัย PIN 6 หลักสำหรับ Client Key</p>
+                    </div>
+                </div>
+                <button onclick="closeModal('changeClientPinModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="space-y-4">
+                <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-mono text-slate-400 block">Active Client Key</span>
+                        <span id="changePinTargetKeyDisplay" class="font-mono text-amber-300 font-bold text-xs tracking-wider block mt-0.5"></span>
+                    </div>
+                    <span class="px-2.5 py-1 rounded bg-amber-950/70 border border-amber-800/70 text-[10px] text-amber-300 font-mono">6-Digit PIN</span>
+                </div>
+
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Current 6-Digit PIN (PIN เดิม)</label>
+                        <input type="password" id="modalCurrentPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">New PIN (PIN ใหม่)</label>
+                            <input type="password" id="modalNewPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Confirm PIN (ยืนยัน PIN)</label>
+                            <input type="password" id="modalConfirmPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400" onkeydown="if(event.key==='Enter') submitChangeClientPinFromModal()">
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-amber-400/90 bg-amber-950/20 border border-amber-900/40 p-2.5 rounded-xl flex items-start gap-2">
+                    <span class="shrink-0 mt-0.5">⚠️</span>
+                    <span>PIN นี้ผูกกับ Client Key สำหรับล็อกอินเข้าจัดการแดชบอร์ด หากเปลี่ยนแล้วต้องใช้ PIN ใหม่ในการล็อกอินครั้งถัดไป</span>
+                </p>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex justify-end gap-2.5 pt-2">
+                <button type="button" onclick="closeModal('changeClientPinModal')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
+                <button type="button" id="btnSubmitChangePin" onclick="submitChangeClientPinFromModal()" class="px-5 py-2 bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 hover:from-amber-500 hover:via-orange-500 hover:to-yellow-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-amber-950/40 border border-amber-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Update Security PIN</span>
+                </button>
             </div>
         </div>
     </div>
@@ -1495,7 +1527,7 @@
                 return;
             }
             if (e.key === 'Escape') {
-                ['clientPinModal', 'newAppModal', 'genKeyModal', 'extendModal', 'newVarModal', 'editVarModal', 'newSubModal', 'editSubModal', 'newBlacklistModal'].forEach(id => {
+                ['clientPinModal', 'changeClientPinModal', 'newAppModal', 'genKeyModal', 'extendModal', 'newVarModal', 'editVarModal', 'newSubModal', 'editSubModal', 'newBlacklistModal'].forEach(id => {
                     const m = document.getElementById(id);
                     if (m && !m.classList.contains('hidden')) closeModal(id);
                 });
@@ -1589,10 +1621,12 @@
         function updateAuthUI() {
             const btnConnect = document.getElementById('btnConnect');
             const btnDisconnect = document.getElementById('btnDisconnect');
+            const btnOpenChangePin = document.getElementById('btnOpenChangePin');
             const keyInput = document.getElementById('clientKeyInput');
 
             if (isAuthorized) {
                 if (btnConnect) btnConnect.classList.add('hidden');
+                if (btnOpenChangePin) btnOpenChangePin.classList.remove('hidden');
                 if (btnDisconnect) btnDisconnect.classList.remove('hidden');
                 if (keyInput) {
                     keyInput.disabled = true;
@@ -1600,6 +1634,7 @@
                 }
             } else {
                 if (btnConnect) btnConnect.classList.remove('hidden');
+                if (btnOpenChangePin) btnOpenChangePin.classList.add('hidden');
                 if (btnDisconnect) btnDisconnect.classList.add('hidden');
                 if (keyInput) keyInput.disabled = false;
             }
@@ -3753,10 +3788,31 @@
             }
         }
 
-        async function submitChangeClientPin() {
-            const oldPin = (document.getElementById('settingCurrentPin')?.value || '').trim();
-            const newPin = (document.getElementById('settingNewPin')?.value || '').trim();
-            const confirmPin = (document.getElementById('settingConfirmPin')?.value || '').trim();
+                function openChangePinModal() {
+            if (!isAuthorized) {
+                customAlert('Please connect with a valid Client Key first.', { type: 'warning' });
+                return;
+            }
+            const displayEl = document.getElementById('changePinTargetKeyDisplay');
+            if (displayEl) {
+                displayEl.textContent = apiAdminKey || 'Active Client Key';
+            }
+            const curInput = document.getElementById('modalCurrentPin');
+            const newInput = document.getElementById('modalNewPin');
+            const confInput = document.getElementById('modalConfirmPin');
+            if (curInput) curInput.value = '';
+            if (newInput) newInput.value = '';
+            if (confInput) confInput.value = '';
+            openModal('changeClientPinModal');
+            setTimeout(() => {
+                if (curInput) curInput.focus();
+            }, 100);
+        }
+
+        async function submitChangeClientPinFromModal() {
+            const oldPin = (document.getElementById('modalCurrentPin')?.value || '').trim();
+            const newPin = (document.getElementById('modalNewPin')?.value || '').trim();
+            const confirmPin = (document.getElementById('modalConfirmPin')?.value || '').trim();
 
             if (!oldPin) {
                 return customAlert('Please enter your current 6-digit PIN', { type: 'warning' });
@@ -3777,7 +3833,7 @@
             );
             if (!ok) return;
 
-            const btn = document.getElementById('btnChangePin');
+            const btn = document.getElementById('btnSubmitChangePin');
             if (btn) {
                 btn.disabled = true;
                 btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Updating...`;
@@ -3796,9 +3852,7 @@
                 if (res && res.success) {
                     showToast(res.message || 'Security PIN updated successfully!', 'success');
                     apiAdminPin = newPin;
-                    document.getElementById('settingCurrentPin').value = '';
-                    document.getElementById('settingNewPin').value = '';
-                    document.getElementById('settingConfirmPin').value = '';
+                    closeModal('changeClientPinModal');
                     loadLogs();
                 } else {
                     customAlert(res?.message || 'Failed to update PIN', { type: 'error' });
@@ -3812,6 +3866,7 @@
                 }
             }
         }
+        const submitChangeClientPin = submitChangeClientPinFromModal;
 
         function openModal(id) {
             if (id === 'newAppModal' && !isAuthorized) {
