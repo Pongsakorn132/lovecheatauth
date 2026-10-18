@@ -30,13 +30,13 @@ namespace KawaiiAuth {
     // Server RSA Public Key (Used strictly for signature verification)
     static const char* SERVER_PUBLIC_KEY_PEM = 
         "-----BEGIN PUBLIC KEY-----\n"
-        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtM89CKg1mvXbUws2w75s\n"
-        "ktY8G+hpGSdP0Y03Jsxu9XqypEwji2b8kS5+EC1Ew0oQ3gFffTI5aAt306waqBe6\n"
-        "U4Fn1Qbs+uwy/yNYnqg73Tr0dJT2GxQg+OcX32cPRA/SzqRwpJ9BR2E/lnivflrC\n"
-        "UD3WERT5BqRbqbPF8nq/DQVkbUVdHQGsG7HaxyTHtgre5zTdZ/BkZHXMtsubEEgN\n"
-        "6xfh/gwkF6bNFZvygKJ9J1NHcNOa/wjX7oXjOfVQqy2UevJ7uK+tK+rZh6DlElPG\n"
-        "z82Z8BVMXlwEI6/xdUjSMhWNgW4i9S84Wxp9vjeB9tCnmd3hSREuxjoFxMjK6Wq0\n"
-        "/QIDAQAB\n"
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4EAHMcmfqIxAZXyJUtMh\n"
+        "1pIGwuHJU7CZErr82ePBrbwE25xI/jsW2ss/ftVLvT4cwmu+oeDygnIOQtnoIgpa\n"
+        "NLSE5ott4T5zPXuafP/lsFtSGZXHr3SXeqAg6DIZDrzeYIjop4cPR27FrPi9tQux\n"
+        "9Z1mmATj0M2fg3LJa4qkRoRYwCFSXhOuIjj+054hJX0SutJx60iGSxaczqA6fjEZ\n"
+        "Wuc9Gl+T3+xPnxgPikEE53AbuI0QrqZhvqGRnjoZfV0dMycZmUQbC54SMlURKL/D\n"
+        "JbG8MdnD1I8SHS8gDtktnPbd4ZYAAuRDWFntCMHyS5WpUoK5jVpJ05BYaYP+/rqY\n"
+        "bQIDAQAB\n"
         "-----END PUBLIC KEY-----\n";
 
     struct HttpResponse {
@@ -57,6 +57,12 @@ namespace KawaiiAuth {
         AuthResult m_last_response;
         uint64_t m_request_seq = 0;
         std::string m_last_error;
+
+        bool m_ignore_ssl_errors = false;
+        std::string m_latest_version;
+        std::string m_download_url;
+        bool m_update_required = false;
+        bool m_maintenance = false;
 
         HINTERNET m_hInternet = nullptr;
         HINTERNET m_hConnect = nullptr;
@@ -108,7 +114,8 @@ namespace KawaiiAuth {
             }
         }
 
-        explicit Impl(const Config& config) : m_config(config) {
+        explicit Impl(const Config& config) 
+            : m_config(config), m_ignore_ssl_errors(config.ignore_ssl_errors) {
             ParseServerUrl(m_config.api, m_host, m_port, m_use_ssl);
             m_hwid = ComputeHWID();
             m_hInternet = InternetOpenA(skCrypt("KawaiiAuth-SDK/1.0"), INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
@@ -429,6 +436,14 @@ namespace KawaiiAuth {
             HINTERNET hRequest = HttpOpenRequestA(m_hConnect, "POST", path.c_str(), nullptr, nullptr, nullptr, flags, 0);
             if (!hRequest) return response;
 
+            if (m_use_ssl && m_ignore_ssl_errors) {
+                DWORD secFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                                 SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                                 SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                                 SECURITY_FLAG_IGNORE_WRONG_USAGE;
+                InternetSetOptionA(hRequest, INTERNET_OPTION_SECURITY_FLAGS, &secFlags, sizeof(secFlags));
+            }
+
             std::string headers = skCrypt("Content-Type: application/json\r\n");
             if (!extra_header.empty()) {
                 headers += extra_header + "\r\n";
@@ -508,7 +523,8 @@ namespace KawaiiAuth {
                 { skCrypt("version"), m_config.version },
                 { skCrypt("client_hash"), textHash },
                 { skCrypt("timestamp"), ts },
-                { skCrypt("nonce"), nonce }
+                { skCrypt("nonce"), nonce },
+                { skCrypt("hwid"), m_hwid }
             };
 
             HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/init"), initPayload.dump());
@@ -526,6 +542,16 @@ namespace KawaiiAuth {
 
             try {
                 auto j = json::parse(httpResp.body);
+
+                if (j.value(skCrypt("outdated"), false)) {
+                    m_update_required = true;
+                    m_latest_version = j.value(skCrypt("latest_version"), "");
+                    m_download_url = j.value(skCrypt("download_url"), "");
+                }
+                if (j.value(skCrypt("maintenance"), false)) {
+                    m_maintenance = true;
+                }
+
                 if (!j.value(skCrypt("success"), false)) {
                     m_last_error = j.value(skCrypt("message"), skCrypt("Initialization rejected"));
                     m_last_response = { false, m_last_error };
@@ -896,16 +922,21 @@ namespace KawaiiAuth {
             return "";
         }
 
-        std::vector<uint8_t> DownloadFile(const std::string& file_name) {
-            if (m_session_token.empty()) return {};
+        ProtectedPayload FetchProtectedPayload(const std::string& payload_name) {
+            ProtectedPayload res;
+            res.name = payload_name;
+            if (m_session_token.empty()) {
+                res.message = skCrypt("Active authenticated session required. Call Init() first.");
+                return res;
+            }
 
             std::string nonce = GenerateNonce(16);
             uint64_t seq = ++m_request_seq;
             uint64_t ts = static_cast<uint64_t>(time(nullptr));
 
             json payload = {
-                { skCrypt("action"), skCrypt("download_file") },
-                { skCrypt("file_name"), file_name },
+                { skCrypt("action"), skCrypt("fetch_payload") },
+                { skCrypt("payload_name"), payload_name },
                 { skCrypt("timestamp"), ts },
                 { skCrypt("nonce"), nonce },
                 { skCrypt("seq"), seq }
@@ -917,22 +948,75 @@ namespace KawaiiAuth {
 
             HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
             if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
-                return {};
+                res.message = skCrypt("Gateway response signature verification failed");
+                return res;
             }
 
             try {
                 auto outer = json::parse(httpResp.body);
+                if (!outer.contains(skCrypt("data")) || outer[skCrypt("data")].is_null()) {
+                    res.message = outer.value(skCrypt("message"), skCrypt("Server rejected payload request"));
+                    return res;
+                }
                 std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
                 auto inner = json::parse(dec);
+
                 if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
-                    return {};
+                    res.message = skCrypt("Nonce verification failed (replay attack prevented)");
+                    return res;
                 }
-                if (inner.value(skCrypt("success"), false)) {
-                    std::string b64 = inner.value(skCrypt("file_data"), "");
-                    return Base64Decode(b64);
+
+                res.success = inner.value(skCrypt("success"), false);
+                res.message = inner.value(skCrypt("message"), "");
+                if (res.success) {
+                    std::string b64 = inner.value(skCrypt("payload_data"), "");
+                    if (b64.empty()) {
+                        b64 = inner.value(skCrypt("file_data"), "");
+                    }
+                    res.data = Base64Decode(b64);
+                    res.size = res.data.size();
+                    res.hash = inner.value(skCrypt("hash"), "");
+
+                    // Verify in-memory SHA-256 hash matches server signed hash
+                    std::string localHash = HashSHA256(std::string(res.data.begin(), res.data.end()));
+                    if (!res.hash.empty() && localHash != res.hash) {
+                        res.success = false;
+                        res.message = skCrypt("Payload hash verification failed (tampering detected)");
+                        res.data.clear();
+                        res.size = 0;
+                        return res;
+                    }
                 }
-            } catch (...) {}
-            return {};
+                return res;
+            } catch (...) {
+                res.message = skCrypt("Payload parsing or decryption failure");
+                return res;
+            }
+        }
+
+        std::vector<uint8_t> DownloadFile(const std::string& file_name) {
+            auto payload = FetchProtectedPayload(file_name);
+            return payload.success ? payload.data : std::vector<uint8_t>{};
+        }
+
+        void SetIgnoreSslErrors(bool ignore) {
+            m_ignore_ssl_errors = ignore;
+        }
+
+        const std::string& GetLatestVersion() const {
+            return m_latest_version;
+        }
+
+        const std::string& GetDownloadUrl() const {
+            return m_download_url;
+        }
+
+        bool IsUpdateRequired() const {
+            return m_update_required;
+        }
+
+        bool IsMaintenance() const {
+            return m_maintenance;
         }
 
         bool SendLog(const std::string& log_message) {

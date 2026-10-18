@@ -136,6 +136,7 @@ int main() {
 ### 4. การดึงข้อมูลและเนื้อหาจากเซิร์ฟเวอร์ (Assets & Variables)
 - `std::string KawaiiAuth::GetVariable(const std::string& var_key)`: ดึงค่าตัวแปรปลอดภัยจากเซิร์ฟเวอร์
 - `std::vector<uint8_t> KawaiiAuth::DownloadFile(const std::string& file_name)`: ดาวน์โหลดไฟล์ Binary จากเซิร์ฟเวอร์
+- `ProtectedPayload KawaiiAuth::FetchProtectedPayload(const std::string& payload_name)`: สตรีม Protected Binary Payload พร้อมตรวจจับ SHA-256 Tampering ใน Memory และรับข้อความแจ้งเตือนสถานะละเอียด
 - `bool KawaiiAuth::Log(const std::string& message)`: ส่งข้อความ Audit Log บันทึกลงเซิร์ฟเวอร์
 
 ### 5. ข้อมูลผู้ใช้ (User Information)

@@ -46,6 +46,7 @@ namespace KawaiiAuth {
         std::string version = "1.0";
         std::string api = "http://127.0.0.1:8080";
         bool enforce_integrity = false;
+        bool ignore_ssl_errors = false;
     };
 
     struct UserInfo {
@@ -54,6 +55,17 @@ namespace KawaiiAuth {
         uint64_t seconds_left = 0;
         int level = 0;
         std::string hwid;
+    };
+
+    struct ProtectedPayload {
+        bool success = false;
+        std::string message;
+        std::string name;
+        std::string hash;
+        size_t size = 0;
+        std::vector<uint8_t> data;
+
+        explicit operator bool() const { return success; }
     };
 
     struct AuthResult {
@@ -133,6 +145,11 @@ namespace KawaiiAuth {
     std::vector<uint8_t> DownloadFile(const std::string& file_name);
 
     /**
+     * @brief Fetch protected server-side payload with in-memory SHA-256 integrity verification
+     */
+    ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
+
+    /**
      * @brief Send an audit log message to the server
      */
     bool Log(const std::string& message);
@@ -152,6 +169,14 @@ namespace KawaiiAuth {
     std::string GetLastError();
     uint64_t GetSecondsLeft();
     std::string GetFormattedTimeLeft();
+
+    /**
+     * @brief Server metadata & update status
+     */
+    std::string GetLatestVersion();
+    std::string GetDownloadUrl();
+    bool IsUpdateRequired();
+    bool IsMaintenance();
 
 
     // ========================================================================
@@ -184,7 +209,10 @@ namespace KawaiiAuth {
 
         std::string FetchVariable(const std::string& var_key);
         std::vector<uint8_t> DownloadFile(const std::string& file_name);
+        ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
         bool SendLog(const std::string& log_message);
+
+        void SetIgnoreSslErrors(bool ignore);
 
         const std::string& GetHWID() const;
         const std::string& GetSessionToken() const;
@@ -192,6 +220,11 @@ namespace KawaiiAuth {
         UserInfo GetUser() const;
         uint64_t GetSecondsLeft() const;
         std::string GetFormattedTimeLeft() const;
+
+        const std::string& GetLatestVersion() const;
+        const std::string& GetDownloadUrl() const;
+        bool IsUpdateRequired() const;
+        bool IsMaintenance() const;
 
     private:
         class Impl;

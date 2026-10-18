@@ -71,8 +71,16 @@ namespace KawaiiAuth {
         return m_impl->DownloadFile(file_name);
     }
 
+    ProtectedPayload Client::FetchProtectedPayload(const std::string& payload_name) {
+        return m_impl->FetchProtectedPayload(payload_name);
+    }
+
     bool Client::SendLog(const std::string& log_message) {
         return m_impl->SendLog(log_message);
+    }
+
+    void Client::SetIgnoreSslErrors(bool ignore) {
+        m_impl->SetIgnoreSslErrors(ignore);
     }
 
     const std::string& Client::GetHWID() const {
@@ -97,6 +105,22 @@ namespace KawaiiAuth {
 
     std::string Client::GetFormattedTimeLeft() const {
         return m_impl->GetFormattedTimeLeft();
+    }
+
+    const std::string& Client::GetLatestVersion() const {
+        return m_impl->GetLatestVersion();
+    }
+
+    const std::string& Client::GetDownloadUrl() const {
+        return m_impl->GetDownloadUrl();
+    }
+
+    bool Client::IsUpdateRequired() const {
+        return m_impl->IsUpdateRequired();
+    }
+
+    bool Client::IsMaintenance() const {
+        return m_impl->IsMaintenance();
     }
 
 
@@ -199,6 +223,17 @@ namespace KawaiiAuth {
         return g_defaultClient->DownloadFile(file_name);
     }
 
+    ProtectedPayload FetchProtectedPayload(const std::string& payload_name) {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) {
+            ProtectedPayload p;
+            p.success = false;
+            p.message = "KawaiiAuth is not initialized. Call KawaiiAuth::Init() first.";
+            return p;
+        }
+        return g_defaultClient->FetchProtectedPayload(payload_name);
+    }
+
     bool Log(const std::string& message) {
         std::lock_guard<std::mutex> lock(g_authMutex);
         if (!g_defaultClient) return false;
@@ -242,6 +277,30 @@ namespace KawaiiAuth {
         std::lock_guard<std::mutex> lock(g_authMutex);
         if (!g_defaultClient) return "Expired / None";
         return g_defaultClient->GetFormattedTimeLeft();
+    }
+
+    std::string GetLatestVersion() {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return "";
+        return g_defaultClient->GetLatestVersion();
+    }
+
+    std::string GetDownloadUrl() {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return "";
+        return g_defaultClient->GetDownloadUrl();
+    }
+
+    bool IsUpdateRequired() {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return false;
+        return g_defaultClient->IsUpdateRequired();
+    }
+
+    bool IsMaintenance() {
+        std::lock_guard<std::mutex> lock(g_authMutex);
+        if (!g_defaultClient) return false;
+        return g_defaultClient->IsMaintenance();
     }
 
 } // namespace KawaiiAuth

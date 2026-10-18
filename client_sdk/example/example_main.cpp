@@ -78,7 +78,15 @@ int main() {
         std::cout << "[+] Protected Variable 'payload_offset': " << offset << std::endl;
     }
 
-    // 6. Send Audit Log
+    // 6. Fetch Protected In-Memory Binary Payload (with SHA-256 tamper verification)
+    auto payload = KawaiiAuth::FetchProtectedPayload("core_module.bin");
+    if (payload.success) {
+        std::cout << "[+] Protected Payload '" << payload.name << "' downloaded & verified (" << payload.size << " bytes, SHA-256: " << payload.hash.substr(0, 16) << "...)" << std::endl;
+    } else {
+        std::cout << "[!] Payload fetch note: " << payload.message << std::endl;
+    }
+
+    // 7. Send Audit Log
     KawaiiAuth::Log("Demo application authenticated successfully");
 
     std::cout << "\n==================================================" << std::endl;
