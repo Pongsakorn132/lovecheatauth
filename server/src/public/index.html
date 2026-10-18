@@ -463,14 +463,15 @@
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
-                            <th class="px-4 py-3">Payload / File Name</th>
+                            <th class="px-4 py-3">File ID (fileid)</th>
+                            <th class="px-4 py-3">File Name</th>
                             <th class="px-4 py-3">Storage Type</th>
                             <th class="px-4 py-3">Auth Required</th>
                             <th class="px-4 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="filesTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
-                        <tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No payloads configured yet</td></tr>
+                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No payloads configured yet</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1187,6 +1188,13 @@
                                 <span id="selectedFileNameText" class="font-mono text-xs text-white font-semibold truncate"></span>
                             </div>
                             <span id="selectedFileSizeBadge" class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 font-mono"></span>
+                        </div>
+                        <div class="flex items-center justify-between bg-slate-900/90 px-2.5 py-1.5 rounded border border-slate-800 text-xs">
+                            <span class="text-slate-400 text-[11px]">File ID (สำหรับ C++):</span>
+                            <div class="flex items-center gap-1.5 font-mono text-sky-400 font-semibold">
+                                <span id="selectedFileIdDisplay">-</span>
+                                <button type="button" onclick="event.stopPropagation(); navigator.clipboard.writeText(document.getElementById('newFileId').value); showToast('Copied File ID!', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File ID">📋</button>
+                            </div>
                         </div>
                         <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px]">
                             <span id="fileEncryptedStatusText" class="text-emerald-400 flex items-center gap-1">
@@ -1961,7 +1969,7 @@
             document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('subsTableBody').innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('varsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
-            document.getElementById('filesTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
+            document.getElementById('filesTableBody').innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             document.getElementById('logsTableBody').innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-gray-500">${escapeHtml(message)}</td></tr>`;
             const blBody = document.getElementById('blacklistsTableBody');
             if (blBody) blBody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">${escapeHtml(message)}</td></tr>`;
@@ -3260,6 +3268,9 @@
 
             const card = document.getElementById('fileSelectedCard');
             if (card) card.classList.add('hidden');
+
+            const idDisplay = document.getElementById('selectedFileIdDisplay');
+            if (idDisplay) idDisplay.textContent = '-';
         }
 
         async function encryptBufferAES256CBC(arrayBuffer, hexKey) {
@@ -3360,6 +3371,9 @@
             const sizeBadge = document.getElementById('selectedFileSizeBadge');
             if (sizeBadge) sizeBadge.textContent = formatBytes(file.size);
 
+            const idDisplay = document.getElementById('selectedFileIdDisplay');
+            if (idDisplay && idInput) idDisplay.textContent = idInput.value;
+
             const statusText = document.getElementById('fileEncryptedStatusText');
             if (statusText) {
                 statusText.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-spin"></span> กำลังแปลงเป็นคีย์และเข้ารหัสใน RAM...`;
@@ -3377,23 +3391,24 @@
 
         async function loadFiles() {
             if (!currentAppId) {
-                document.getElementById('filesTableBody').innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
+                document.getElementById('filesTableBody').innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
                 return;
             }
             const res = await api(`/api/admin/files?app_id=${currentAppId}`);
             const tbody = document.getElementById('filesTableBody');
             tbody.innerHTML = '';
             if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="4" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load files')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load files')}</td></tr>`;
                 return;
             }
             const files = res.files || [];
             if (files.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-500">No files or payloads configured yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No files or payloads configured yet</td></tr>';
                 return;
             }
             files.forEach(f => {
                 const tr = document.createElement('tr');
+                const displayFileId = f.file_id || f.id || '-';
                 const authedBadge = f.authed_only
                     ? '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950/60 text-amber-400 border border-amber-800">Authed Only</span>'
                     : '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-800">Public</span>';
@@ -3403,10 +3418,17 @@
                     : '<span class="px-2 py-0.5 rounded text-[10px] bg-sky-950/80 text-sky-400 border border-sky-800 font-mono font-semibold">Broker (0 MB)</span>';
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-semibold text-white font-mono flex items-center gap-2">
-                        <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span>${escapeHtml(f.file_name)}</span>
-                        <button onclick="navigator.clipboard.writeText('${escapeHtml(f.file_name)}'); showToast('Copied File Name!', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File Name">📋</button>
+                    <td class="px-4 py-3 font-semibold text-sky-400 font-mono">
+                        <div class="flex items-center gap-1.5">
+                            <span class="tracking-wide">${escapeHtml(displayFileId)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtml(displayFileId)}'); showToast('Copied File ID: ${escapeHtml(displayFileId)}', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File ID (use in C++)">📋</button>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-slate-200 font-mono">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <span>${escapeHtml(f.file_name)}</span>
+                        </div>
                     </td>
                     <td class="px-4 py-3">${sizeDisplay}</td>
                     <td class="px-4 py-3">${authedBadge}</td>

@@ -98,7 +98,7 @@ namespace KawaiiAuth {
             const std::string& custom_iv = ""
         );
         std::vector<uint8_t> UnlockBrokerFile(
-            const std::string& file_name_or_id,
+            const std::string& file_id,
             const std::string& file_path = "",
             const std::string& custom_iv = ""
         );
@@ -137,6 +137,7 @@ namespace KawaiiAuth {
         std::string m_hwid;
         Response m_last_response;
         uint64_t m_request_seq = 0;
+        std::string m_last_broker_filename;
 
         HINTERNET m_hInternet = nullptr;
         HINTERNET m_hConnect = nullptr;

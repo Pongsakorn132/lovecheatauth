@@ -1222,7 +1222,12 @@ namespace KawaiiAuth {
                 return "";
             }
             if (inner.value(skCrypt("success"), false)) {
-                return inner.value(skCrypt("decryption_key"), "");
+                if (inner.contains(skCrypt("file_name"))) {
+                    m_last_broker_filename = inner.value(skCrypt("file_name"), "");
+                }
+                std::string k = inner.value(skCrypt("decryption_key"), "");
+                if (k.empty()) k = inner.value(skCrypt("key"), "");
+                return k;
             }
         } catch (...) {}
         return FetchVariable(file_id);
@@ -1256,15 +1261,22 @@ namespace KawaiiAuth {
 
         std::string targetPath = file_path.empty() ? file_id : file_path;
         HANDLE hFile = CreateFileA(targetPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-        if (hFile == INVALID_HANDLE_VALUE) {
+        if (hFile == INVALID_HANDLE_VALUE && file_path.empty()) {
             if (targetPath.find('.') == std::string::npos) {
-                targetPath += ".bin";
-                hFile = CreateFileA(targetPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+                hFile = CreateFileA((targetPath + ".bin").c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
             }
-            if (hFile == INVALID_HANDLE_VALUE) {
-                SecureZeroMemory(&key[0], key.size());
-                return {};
+            if (hFile == INVALID_HANDLE_VALUE && !m_last_broker_filename.empty()) {
+                hFile = CreateFileA(m_last_broker_filename.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+                if (hFile == INVALID_HANDLE_VALUE) {
+                    size_t dotPos = m_last_broker_filename.find_last_of('.');
+                    std::string base = (dotPos != std::string::npos) ? m_last_broker_filename.substr(0, dotPos) : m_last_broker_filename;
+                    hFile = CreateFileA((base + ".bin").c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+                }
             }
+        }
+        if (hFile == INVALID_HANDLE_VALUE) {
+            SecureZeroMemory(&key[0], key.size());
+            return {};
         }
 
         LARGE_INTEGER fileSize;

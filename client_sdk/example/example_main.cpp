@@ -81,17 +81,18 @@ int main() {
     }
 
     // 5. Zero-Server-Footprint Protected Binary (Broker Model)
-    // The client NEVER touches or handles Decryption Keys - everything decrypts directly into RAM!
+    // Uses 'fileid' from Dashboard - The client NEVER touches or handles Decryption Keys!
     std::cout << "\n--- [Protected Payload / Broker] ---" << std::endl;
     uintptr_t uworldOffset = KawaiiAuth::GetBrokerOffset("OFFSET_UWORLD", 0x12A45B0);
     std::cout << "[+] Game Offset 'OFFSET_UWORLD': 0x" << std::hex << uworldOffset << std::dec << std::endl;
 
-    // Automatically decrypts protected binary into RAM without touching any Decryption Key!
-    std::vector<uint8_t> decryptedBin = KawaiiAuth::UnlockBrokerFile("core_module.bin");
+    // Automatically decrypts protected binary into RAM using 'fileid' without touching any Decryption Key!
+    // Example: fileid "core_module" corresponds to core_module.bin on disk
+    std::vector<uint8_t> decryptedBin = KawaiiAuth::UnlockBrokerFile("core_module", "core_module.bin");
     if (!decryptedBin.empty()) {
-        std::cout << "[+] Decrypted 'core_module.bin' in RAM (" << decryptedBin.size() << " bytes) without touching any keys!" << std::endl;
+        std::cout << "[+] Decrypted fileid 'core_module' (core_module.bin) in RAM (" << decryptedBin.size() << " bytes) without touching any keys!" << std::endl;
     } else {
-        std::cout << "[*] 'core_module.bin' not found on local disk or session unauthorized." << std::endl;
+        std::cout << "[*] Payload with fileid 'core_module' (core_module.bin) not found or unauthorized." << std::endl;
     }
 
     // 6. Send Audit Log
