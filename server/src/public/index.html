@@ -640,7 +640,42 @@
                     </div>
                 </div>
 
-                <!-- 3. Seller API Key -->
+                <!-- 3. Change Security PIN -->
+                <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 rounded-xl bg-amber-950/80 border border-amber-800/80 text-amber-400 shrink-0">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-white">Security PIN Management</h4>
+                            <p class="text-xs text-slate-400">เปลี่ยนรหัสความปลอดภัย PIN 6 หลักสำหรับ Client Key ที่กำลังใช้งาน</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Current 6-Digit PIN (PIN เดิม)</label>
+                            <input type="password" id="settingCurrentPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1.5">New PIN (PIN ใหม่ 6 หลัก)</label>
+                                <input type="password" id="settingNewPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-slate-300 mb-1.5">Confirm PIN (ยืนยัน PIN ใหม่)</label>
+                                <input type="password" id="settingConfirmPin" maxlength="6" inputmode="numeric" placeholder="••••••" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-sm font-mono tracking-widest focus:outline-none focus:border-amber-400">
+                            </div>
+                        </div>
+                        <div class="pt-1">
+                            <button type="button" id="btnChangePin" onclick="submitChangeClientPin()" class="w-full py-2.5 bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 hover:from-amber-500 hover:via-orange-500 hover:to-yellow-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-amber-950/40 border border-amber-400/20 transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                Update Security PIN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. Seller API Key -->
                 <div class="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5 lg:col-span-2">
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div class="flex items-center gap-3">
@@ -3524,6 +3559,66 @@
                 loadLogs();
             } else {
                 customAlert(res?.message || 'Failed to refresh seller key', { type: 'error' });
+            }
+        }
+
+        async function submitChangeClientPin() {
+            const oldPin = (document.getElementById('settingCurrentPin')?.value || '').trim();
+            const newPin = (document.getElementById('settingNewPin')?.value || '').trim();
+            const confirmPin = (document.getElementById('settingConfirmPin')?.value || '').trim();
+
+            if (!oldPin) {
+                return customAlert('Please enter your current 6-digit PIN', { type: 'warning' });
+            }
+            if (!newPin || newPin.length !== 6 || !/^\d{6}$/.test(newPin)) {
+                return customAlert('New PIN must be exactly 6 numeric digits (0-9)', { type: 'warning' });
+            }
+            if (newPin !== confirmPin) {
+                return customAlert('New PIN and confirmation PIN do not match', { type: 'warning' });
+            }
+            if (oldPin === newPin) {
+                return customAlert('New PIN must be different from current PIN', { type: 'warning' });
+            }
+
+            const ok = await customConfirm(
+                'Are you sure you want to change your Security PIN?\nYou will need to use this new 6-digit PIN for future dashboard logins.',
+                { title: 'Change Security PIN', confirmText: 'Update PIN' }
+            );
+            if (!ok) return;
+
+            const btn = document.getElementById('btnChangePin');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<span class="animate-spin inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full"></span> Updating...`;
+            }
+
+            try {
+                const res = await api('/api/admin/client-key/change-pin', {
+                    method: 'POST',
+                    body: {
+                        old_pin: oldPin,
+                        new_pin: newPin,
+                        confirm_pin: confirmPin
+                    }
+                });
+
+                if (res && res.success) {
+                    showToast(res.message || 'Security PIN updated successfully!', 'success');
+                    apiAdminPin = newPin;
+                    document.getElementById('settingCurrentPin').value = '';
+                    document.getElementById('settingNewPin').value = '';
+                    document.getElementById('settingConfirmPin').value = '';
+                    loadLogs();
+                } else {
+                    customAlert(res?.message || 'Failed to update PIN', { type: 'error' });
+                }
+            } catch (err) {
+                customAlert('Failed to update PIN due to a network error', { type: 'error' });
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Update Security PIN`;
+                }
             }
         }
 

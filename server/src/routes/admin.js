@@ -303,6 +303,60 @@ async function handleAdminRequest(req, res, url, body) {
         });
     }
 
+    // Client Key: Change Security PIN (/api/admin/client-key/change-pin)
+    if (pathname === '/api/admin/client-key/change-pin' && method === 'POST') {
+        const { old_pin, new_pin, confirm_pin } = body || {};
+        if (!old_pin || !new_pin) {
+            return sendJson(res, 400, { success: false, message: 'Current PIN and New PIN are required' });
+        }
+        const cleanOld = String(old_pin).trim();
+        const cleanNew = String(new_pin).trim();
+        const cleanConfirm = String(confirm_pin || '').trim();
+
+        if (!/^\d{6}$/.test(cleanNew)) {
+            return sendJson(res, 400, { success: false, message: 'New PIN must be exactly 6 digits (0-9)' });
+        }
+        if (confirm_pin && cleanNew !== cleanConfirm) {
+            return sendJson(res, 400, { success: false, message: 'New PIN and confirmation PIN do not match' });
+        }
+
+        // Identify client key from session or header
+        let targetClientKey = null;
+        if (clientSession) {
+            const sess = db.prepare('SELECT client_key FROM client_auth_sessions WHERE session_token = ?').get(clientSession);
+            if (sess) targetClientKey = sess.client_key;
+        }
+        if (!targetClientKey && clientKey) {
+            targetClientKey = clientKey;
+        }
+
+        if (!targetClientKey) {
+            return sendJson(res, 401, { success: false, message: 'Unauthorized client session' });
+        }
+
+        const ck = db.prepare('SELECT * FROM client_keys WHERE key = ?').get(targetClientKey);
+        if (!ck) {
+            return sendJson(res, 404, { success: false, message: 'Client Key not found' });
+        }
+
+        if (ck.pin !== cleanOld) {
+            return sendJson(res, 401, { success: false, message: 'Current PIN is incorrect' });
+        }
+
+        if (cleanOld === cleanNew) {
+            return sendJson(res, 400, { success: false, message: 'New PIN must be different from current PIN' });
+        }
+
+        db.prepare('UPDATE client_keys SET pin = ? WHERE id = ?').run(cleanNew, ck.id);
+
+        logAudit(null, 'PIN_CHANGE', `Client Key '${targetClientKey.substring(0, 12)}...' changed security PIN`, clientIp);
+
+        return sendJson(res, 200, {
+            success: true,
+            message: 'Security PIN updated successfully'
+        });
+    }
+
     // List Subscriptions: /api/admin/subscriptions
     if (pathname === '/api/admin/subscriptions' && method === 'GET') {
         const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
