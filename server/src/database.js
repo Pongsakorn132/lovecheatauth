@@ -244,6 +244,35 @@ try {
     console.error('[DB Migration Error - Files columns]', e);
 }
 
+// Migration: Allow NULL for file_data in files table (Broker 0 MB mode)
+try {
+    const filesMeta = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'files'").get();
+    if (filesMeta && filesMeta.sql && filesMeta.sql.includes('file_data BLOB NOT NULL')) {
+        db.exec('PRAGMA foreign_keys = OFF;');
+        db.exec(`
+            CREATE TABLE files_new (
+                id TEXT PRIMARY KEY,
+                app_id TEXT NOT NULL,
+                file_id TEXT,
+                file_name TEXT NOT NULL,
+                file_data BLOB,
+                decryption_key TEXT,
+                authed_only INTEGER NOT NULL DEFAULT 1,
+                min_level INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
+            );
+            INSERT INTO files_new (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
+            SELECT id, app_id, COALESCE(file_id, id), file_name, file_data, decryption_key, authed_only, min_level FROM files;
+            DROP TABLE files;
+            ALTER TABLE files_new RENAME TO files;
+        `);
+        db.exec('PRAGMA foreign_keys = ON;');
+        console.log('[KawaiiAuth] Migrated files table: file_data now allows NULL for Broker 0 MB payloads');
+    }
+} catch (e) {
+    console.error('[DB Migration Error - files table nullable]', e);
+}
+
 // Seed default subscription for every app if missing
 try {
     const nodeCrypto = require('node:crypto');

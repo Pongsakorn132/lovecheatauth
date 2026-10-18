@@ -800,13 +800,25 @@ async function handleAdminRequest(req, res, url, body) {
 
         const dbId = crypto.randomUUID();
 
-        // Remove existing file with same file_id or file_name in this app
-        db.prepare('DELETE FROM files WHERE app_id = ? AND (file_id = ? OR file_name = ?)').run(targetAppId, safeFileId, safeName);
+        try {
+            // Remove existing file with same file_id or file_name in this app
+            db.prepare('DELETE FROM files WHERE app_id = ? AND (file_id = ? OR file_name = ?)').run(targetAppId, safeFileId, safeName);
 
-        db.prepare(`
-            INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(dbId, targetAppId, safeFileId, safeName, buffer, finalDecryptionKey, authed_only ? 1 : 0, min_level ? Number(min_level) : 1);
+            db.prepare(`
+                INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(dbId, targetAppId, safeFileId, safeName, buffer, finalDecryptionKey, authed_only ? 1 : 0, min_level ? Number(min_level) : 1);
+        } catch (dbErr) {
+            console.error('[Admin Save File Error]', dbErr);
+            if (dbErr.message && dbErr.message.includes('NOT NULL constraint failed: files.file_data')) {
+                db.prepare(`
+                    INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `).run(dbId, targetAppId, safeFileId, safeName, Buffer.alloc(0), finalDecryptionKey, authed_only ? 1 : 0, min_level ? Number(min_level) : 1);
+            } else {
+                return sendJson(res, 500, { success: false, message: 'Database error: ' + dbErr.message });
+            }
+        }
 
         const sizeDesc = buffer ? `${(buffer.length / 1024).toFixed(1)} KB` : 'Broker Mode (0 KB)';
         logAudit(targetAppId, 'FILE_UPLOADED', `Configured file '${safeName}' [fileid: ${safeFileId}] (${sizeDesc})`, clientIp);

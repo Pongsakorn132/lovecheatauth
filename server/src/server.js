@@ -167,7 +167,7 @@ function requestHandler(req, res) {
         }
     });
 
-    req.on('end', () => {
+    req.on('end', async () => {
         if (bodyTooLarge) return;
         let body = {};
         if (bodyData) {
@@ -181,26 +181,35 @@ function requestHandler(req, res) {
 
         try {
             if (url.pathname.startsWith('/api/v1/')) {
-                return handleApiRequest(req, res, url, body);
+                return await handleApiRequest(req, res, url, body);
             }
 
             if (url.pathname.startsWith('/api/master/') || url.pathname.startsWith('/api/auth/')) {
-                return handleMasterRequest(req, res, url, body);
+                return await handleMasterRequest(req, res, url, body);
             }
 
             if (url.pathname.startsWith('/api/admin/') || url.pathname.startsWith('/api/seller/')) {
-                return handleAdminRequest(req, res, url, body);
+                return await handleAdminRequest(req, res, url, body);
             }
 
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ success: false, message: 'Route not found' }));
         } catch (error) {
             console.error('[Server Error]', error);
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, message: 'Internal Server Error', error: error.message }));
+            if (!res.headersSent) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, message: 'Internal Server Error', error: error.message }));
+            }
         }
     });
 }
+
+process.on('uncaughtException', (err) => {
+    console.error('[Server Uncaught Exception]', err);
+});
+process.on('unhandledRejection', (reason) => {
+    console.error('[Server Unhandled Rejection]', reason);
+});
 
 const server = http.createServer(requestHandler);
 
