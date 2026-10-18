@@ -15,6 +15,30 @@
 #include "KawaiiAuth.h"
 #include <iostream>
 #include <string>
+#include <fstream>
+
+static std::string Trim(const std::string& str) {
+    size_t first = str.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) return "";
+    size_t last = str.find_last_not_of(" \t\r\n");
+    return str.substr(first, (last - first + 1));
+}
+
+static std::string LoadSavedKey() {
+    std::ifstream file("license.key");
+    if (!file.is_open()) return "";
+    std::string key;
+    std::getline(file, key);
+    return Trim(key);
+}
+
+static void SaveKey(const std::string& key) {
+    if (key.empty()) return;
+    std::ofstream file("license.key", std::ios::trunc);
+    if (file.is_open()) {
+        file << key << std::endl;
+    }
+}
 
 int main() {
     std::cout << "==================================================" << std::endl;
@@ -43,12 +67,19 @@ int main() {
     }
     std::cout << "[+] Initialized with server! HWID: " << KawaiiAuth::GetHWID().substr(0, 16) << "..." << std::endl;
 
-    // 3. Authenticate with License Key
-    std::cout << "\nEnter License Key (or press Enter for demo key KAWAII-DEMO-KEY1): ";
+    // 3. Authenticate with License Key (with Remember Key system)
+    std::string savedKey = LoadSavedKey();
+    if (!savedKey.empty()) {
+        std::cout << "\nEnter License Key [Press Enter for saved: " << savedKey << "]: ";
+    } else {
+        std::cout << "\nEnter License Key (or press Enter for demo key KAWAII-DEMO-KEY1): ";
+    }
+
     std::string licenseKey;
     std::getline(std::cin, licenseKey);
+    licenseKey = Trim(licenseKey);
     if (licenseKey.empty()) {
-        licenseKey = "KAWAII-DEMO-KEY1";
+        licenseKey = !savedKey.empty() ? savedKey : "KAWAII-DEMO-KEY1";
     }
 
     std::cout << "[*] Authenticating with key: " << licenseKey << "..." << std::endl;
@@ -58,6 +89,8 @@ int main() {
         std::cout << "[!] Login failed: " << result.message << std::endl;
         return 1;
     }
+
+    SaveKey(licenseKey);
 
     std::cout << "[+] Authentication SUCCESSFUL!" << std::endl;
     std::cout << "    User / Key  : " << result.user.username << std::endl;

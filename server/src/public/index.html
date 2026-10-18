@@ -91,7 +91,16 @@
                 </a>
                 <div class="flex items-center gap-2 text-xs text-slate-400 font-mono">
                     <span class="text-slate-300">Client Key:</span>
-                    <input type="password" id="clientKeyInput" placeholder="Enter Client Key..." onkeydown="if(event.key==='Enter') initiateClientConnect()" class="bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-lg text-white text-xs w-48 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 font-mono transition placeholder-slate-500">
+                    <div class="relative flex items-center">
+                        <input type="password" id="clientKeyInput" placeholder="Enter Client Key..." onkeydown="if(event.key==='Enter') initiateClientConnect()" class="bg-slate-900/90 border border-slate-700/80 pl-3 pr-8 py-1.5 rounded-lg text-white text-xs w-48 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400/40 font-mono transition placeholder-slate-500">
+                        <button type="button" onclick="toggleClientKeyVisibility()" id="btnToggleKeyVisibility" class="absolute right-2 text-slate-500 hover:text-slate-300 transition" title="Show/Hide Client Key">
+                            <svg id="eyeIcon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </button>
+                    </div>
+                    <label class="flex items-center gap-1.5 text-slate-400 hover:text-slate-300 cursor-pointer select-none text-[11px]" title="Remember this Client Key on this browser">
+                        <input type="checkbox" id="rememberClientKey" checked onchange="onRememberKeyChanged()" class="rounded bg-slate-900 border-slate-700 text-sky-500 focus:ring-0 w-3.5 h-3.5 accent-sky-500">
+                        <span class="hidden sm:inline text-slate-300">Remember</span>
+                    </label>
                     <button onclick="initiateClientConnect()" id="btnConnect" class="px-4 py-1.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white font-semibold rounded-lg text-xs transition shadow-lg shadow-blue-900/30 border border-sky-400/20">Connect</button>
                     <button onclick="disconnectClient()" id="btnDisconnect" class="px-3.5 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition shadow-sm hidden">Disconnect</button>
                 </div>
@@ -1570,8 +1579,19 @@
             pendingConnectKey = '';
             isAuthorized = false;
             currentAppId = null;
+
+            const rememberCheckbox = document.getElementById('rememberClientKey');
+            const shouldRemember = rememberCheckbox ? rememberCheckbox.checked : (localStorage.getItem('kawaii_remember_client_key') !== 'false');
+            const savedKey = localStorage.getItem('kawaii_saved_client_key');
+
             const keyInput = document.getElementById('clientKeyInput');
-            if (keyInput) keyInput.value = '';
+            if (keyInput) {
+                if (shouldRemember && savedKey) {
+                    keyInput.value = savedKey;
+                } else {
+                    keyInput.value = '';
+                }
+            }
             localStorage.removeItem('kawaii_session_token');
             sessionStorage.removeItem('kawaii_pin_unlocked');
             localStorage.removeItem('kawaii_client_key');
@@ -1671,6 +1691,12 @@
 
                 if (res.success && res.require_pin) {
                     pendingConnectKey = key;
+                    const rememberCheckbox = document.getElementById('rememberClientKey');
+                    const shouldRemember = rememberCheckbox ? rememberCheckbox.checked : (localStorage.getItem('kawaii_remember_client_key') !== 'false');
+                    if (shouldRemember && key) {
+                        localStorage.setItem('kawaii_saved_client_key', key);
+                        localStorage.setItem('kawaii_remember_client_key', 'true');
+                    }
                     if (res.session_token) {
                         apiSessionToken = res.session_token;
                         localStorage.setItem('kawaii_session_token', apiSessionToken);
@@ -1782,6 +1808,17 @@
                     sessionStorage.setItem('kawaii_pin_unlocked', '1');
                     localStorage.removeItem('kawaii_client_key');
                     localStorage.removeItem('kawaii_client_pin');
+
+                    const rememberCheckbox = document.getElementById('rememberClientKey');
+                    const shouldRemember = rememberCheckbox ? rememberCheckbox.checked : (localStorage.getItem('kawaii_remember_client_key') !== 'false');
+                    if (shouldRemember && apiAdminKey) {
+                        localStorage.setItem('kawaii_saved_client_key', apiAdminKey);
+                        localStorage.setItem('kawaii_remember_client_key', 'true');
+                    } else {
+                        localStorage.removeItem('kawaii_saved_client_key');
+                        localStorage.setItem('kawaii_remember_client_key', 'false');
+                    }
+
                     isAuthorized = true;
                     closeModal('clientPinModal');
                     updateAuthUI();
@@ -3670,9 +3707,17 @@
             isAuthorized = false;
             apiAdminKey = '';
             apiAdminPin = '';
+            const rememberCheckbox = document.getElementById('rememberClientKey');
+            const shouldRemember = rememberCheckbox ? rememberCheckbox.checked : (localStorage.getItem('kawaii_remember_client_key') !== 'false');
+            const savedKey = localStorage.getItem('kawaii_saved_client_key');
+
             const keyInputEl = document.getElementById('clientKeyInput');
             if (keyInputEl) {
-                keyInputEl.value = '';
+                if (shouldRemember && savedKey) {
+                    keyInputEl.value = savedKey;
+                } else {
+                    keyInputEl.value = '';
+                }
             }
             localStorage.removeItem('kawaii_client_key');
             localStorage.removeItem('kawaii_client_pin');
@@ -3749,7 +3794,53 @@
             }
         }
 
-        // Initialize session check on page load
+        function initClientKeyMemory() {
+            const keyInput = document.getElementById('clientKeyInput');
+            const rememberCheckbox = document.getElementById('rememberClientKey');
+            const shouldRemember = localStorage.getItem('kawaii_remember_client_key') !== 'false';
+            const savedKey = localStorage.getItem('kawaii_saved_client_key');
+
+            if (rememberCheckbox) {
+                rememberCheckbox.checked = shouldRemember;
+            }
+            if (keyInput && shouldRemember && savedKey) {
+                keyInput.value = savedKey;
+            }
+        }
+
+        function onRememberKeyChanged() {
+            const rememberCheckbox = document.getElementById('rememberClientKey');
+            const keyInput = document.getElementById('clientKeyInput');
+            const isChecked = rememberCheckbox ? rememberCheckbox.checked : false;
+
+            localStorage.setItem('kawaii_remember_client_key', isChecked ? 'true' : 'false');
+            if (isChecked) {
+                const key = (keyInput ? keyInput.value : '').trim();
+                if (key) {
+                    localStorage.setItem('kawaii_saved_client_key', key);
+                    showToast('Client Key will be remembered on this browser', 'info');
+                }
+            } else {
+                localStorage.removeItem('kawaii_saved_client_key');
+                showToast('Client Key memory cleared', 'info');
+            }
+        }
+
+        function toggleClientKeyVisibility() {
+            const input = document.getElementById('clientKeyInput');
+            const icon = document.getElementById('eyeIcon');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                if (icon) icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"/>';
+            } else {
+                input.type = 'password';
+                if (icon) icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+            }
+        }
+
+        // Initialize Client Key memory and session check on page load
+        initClientKeyMemory();
         checkAuthSession();
     </script>
 </body>
