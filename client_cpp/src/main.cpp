@@ -62,10 +62,14 @@ int main() {
     std::cout << "[+] HWID Locked  : " << (resp.user.hwid.empty() ? "None" : resp.user.hwid.substr(0, 16) + "...") << "\n";
     std::cout << "[+] ====================================================\n\n";
 
-    // 4. Demonstrate Key & Offset Broker / Variable Access
-    std::cout << "[*] Fetching secure broker offset...\n";
-    uintptr_t offset = auth.GetBrokerOffset("payload_offset", 0x1A4F0);
-    std::cout << "    -> payload_offset = 0x" << std::hex << offset << std::dec << "\n";
+    // 4. Demonstrate Downloading Payload by File ID
+    std::cout << "[*] Fetching secure file payload with File ID...\n";
+    std::vector<uint8_t> payload = auth.DownloadFile("n.txt");
+    if (!payload.empty()) {
+        std::cout << "    [+] Downloaded payload successfully (" << payload.size() << " bytes) in RAM!\n";
+    } else {
+        std::cout << "    [-] No payload downloaded (or not configured yet)\n";
+    }
 
     std::cout << "\n[+] Loader ready. Protected application running.\n\n";
     system("pause");

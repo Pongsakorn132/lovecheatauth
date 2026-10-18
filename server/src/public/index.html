@@ -467,6 +467,7 @@
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
+                            <th class="px-4 py-3">File ID (สำหรับ C++)</th>
                             <th class="px-4 py-3">File Name</th>
                             <th class="px-4 py-3">Direct Download URL</th>
                             <th class="px-4 py-3">Storage Type</th>
@@ -475,7 +476,7 @@
                         </tr>
                     </thead>
                     <tbody id="filesTableBody" class="divide-y divide-slate-800/50 font-mono text-xs text-slate-300">
-                        <tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No payloads configured yet</td></tr>
+                        <tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No payloads configured yet</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1178,10 +1179,26 @@
             </div>
 
             <div class="space-y-4 text-sm">
-                <!-- 1. Direct Download URL Input -->
+                <!-- 1. File ID Input (for C++) -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-200">
+                            File ID <span class="text-sky-400 font-mono">(สำหรับ C++ เช่น core_module หรือ n_txt)</span>
+                        </label>
+                        <button type="button" onclick="generateNewFileId()" class="text-[11px] text-sky-400 hover:text-sky-300 font-mono flex items-center gap-1 transition">
+                            🎲 สุ่ม File ID
+                        </button>
+                    </div>
+                    <input type="text" id="newFileId" placeholder="e.g. core_module หรือ n_txt" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-sky-400 placeholder:text-slate-600">
+                    <p class="text-[10px] text-slate-400 font-mono">
+                        💡 ในโค้ด C++ เรียกใช้: <code class="text-sky-300">KawaiiAuth::DownloadFile("FileID")</code>
+                    </p>
+                </div>
+
+                <!-- 2. Direct Download URL Input -->
                 <div class="space-y-2">
                     <label class="block text-xs font-semibold text-slate-200">
-                        Direct Download URL <span class="text-sky-400 font-mono">(Cloudflare R2 / AWS S3 / Direct Link)</span>
+                        Direct Download URL <span class="text-sky-400 font-mono">(Cloudflare R2 / CDN / Direct Link)</span>
                     </label>
                     <div class="relative">
                         <input type="url" id="newFileDownloadUrl" oninput="onCdnUrlChanged(this.value)" placeholder="https://pub-f76bfee4682d40bebce65d48f3e96bd5.r2.dev/FF/n.txt" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-sky-400 placeholder:text-slate-600 pr-10">
@@ -1192,11 +1209,11 @@
                     </p>
                 </div>
 
-                <!-- 2. Detected File Name Display -->
+                <!-- 3. Detected File Name Display -->
                 <div id="detectedFileNameBox" class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex items-center justify-between">
                     <div class="flex items-center gap-2 overflow-hidden">
                         <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        <span class="text-xs text-slate-400">ชื่อไฟล์:</span>
+                        <span class="text-xs text-slate-400">ชื่อไฟล์ตรวจพบ:</span>
                         <span id="detectedFileNameText" class="font-mono text-xs text-sky-300 font-semibold truncate">ยังไม่ได้ระบุลิงก์</span>
                     </div>
                     <span id="detectedStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">0 MB Storage</span>
@@ -1205,7 +1222,7 @@
                 <!-- Hidden Field for Auto-Extracted File Name -->
                 <input type="hidden" id="newFileName">
 
-                <!-- 3. Require Authentication Checkbox -->
+                <!-- 4. Require Authentication Checkbox -->
                 <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
                     <div>
                         <label for="newFileAuthedOnly" class="text-xs font-semibold text-slate-200 cursor-pointer">Require Authentication</label>
@@ -3196,13 +3213,7 @@
             }
         }
 
-        // Files & Payloads Management (Supports File ID & Key & Offset Broker)
-        let uploadedFileBase64 = '';
-        let uploadedFileSize = 0;
-        let currentRawFileBuffer = null;
-        let currentEncryptedBlob = null;
-        let currentEncryptedFileName = '';
-
+        // Files & Payloads Management (Direct URL & File ID)
         function generateRandomFileId() {
             const arr = new Uint8Array(4);
             crypto.getRandomValues(arr);
@@ -3214,22 +3225,6 @@
             const input = document.getElementById('newFileId');
             if (input) input.value = id;
             showToast('Generated random File ID: ' + id, 'info');
-        }
-
-        function generateRandomDecryptionKey() {
-            const arr = new Uint8Array(32);
-            crypto.getRandomValues(arr);
-            return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        async function generateNewFileKey() {
-            const hex = generateRandomDecryptionKey();
-            const input = document.getElementById('newFileDecryptionKey');
-            if (input) input.value = hex;
-            if (currentRawFileBuffer) {
-                await encryptAndPrepareFile(currentRawFileBuffer, hex);
-            }
-            showToast('Generated new AES-256 Decryption Key', 'info');
         }
 
         function extractFileNameFromUrl(url) {
@@ -3252,9 +3247,13 @@
             const name = extractFileNameFromUrl(url);
             const textEl = document.getElementById('detectedFileNameText');
             const hiddenEl = document.getElementById('newFileName');
+            const idInput = document.getElementById('newFileId');
             if (name) {
                 if (textEl) textEl.textContent = name;
                 if (hiddenEl) hiddenEl.value = name;
+                if (idInput && !idInput.value.trim()) {
+                    idInput.value = name;
+                }
             } else {
                 if (textEl) textEl.textContent = 'ยังไม่ได้ระบุลิงก์';
                 if (hiddenEl) hiddenEl.value = '';
@@ -3270,6 +3269,9 @@
         }
 
         function resetNewFileModal() {
+            const idInput = document.getElementById('newFileId');
+            if (idInput) idInput.value = '';
+
             const urlInput = document.getElementById('newFileDownloadUrl');
             if (urlInput) urlInput.value = '';
 
@@ -3285,24 +3287,25 @@
 
         async function loadFiles() {
             if (!currentAppId) {
-                document.getElementById('filesTableBody').innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
+                document.getElementById('filesTableBody').innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No application selected</td></tr>';
                 return;
             }
             const res = await api(`/api/admin/files?app_id=${currentAppId}`);
             const tbody = document.getElementById('filesTableBody');
             tbody.innerHTML = '';
             if (!res || !res.success) {
-                tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load files')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="px-4 py-6 text-center text-red-400">${escapeHtml(res && res.message ? res.message : 'Failed to load files')}</td></tr>`;
                 return;
             }
             const files = res.files || [];
             if (files.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No payloads configured yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-500">No payloads configured yet</td></tr>';
                 return;
             }
             files.forEach(f => {
                 const tr = document.createElement('tr');
-                const fileName = f.file_name || f.file_id || 'payload.bin';
+                const fileId = f.file_id || f.id;
+                const fileName = f.file_name || fileId;
                 const authedBadge = f.authed_only
                     ? '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950/60 text-amber-400 border border-amber-800">Authed Only</span>'
                     : '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-800">Public</span>';
@@ -3311,7 +3314,7 @@
 
                 const urlDisplay = f.download_url 
                     ? `<div class="flex items-center gap-1.5 font-mono text-xs text-sky-400">
-                         <a href="${escapeHtml(f.download_url)}" target="_blank" class="truncate max-w-[280px] hover:underline" title="${escapeHtml(f.download_url)}">${escapeHtml(f.download_url)}</a>
+                         <a href="${escapeHtml(f.download_url)}" target="_blank" class="truncate max-w-[240px] hover:underline" title="${escapeHtml(f.download_url)}">${escapeHtml(f.download_url)}</a>
                          <button onclick="navigator.clipboard.writeText('${escapeHtml(f.download_url)}'); showToast('Copied Download URL!', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy URL">📋</button>
                        </div>`
                     : '<span class="text-slate-500 font-mono text-xs">-</span>';
@@ -3319,16 +3322,16 @@
                 tr.innerHTML = `
                     <td class="px-4 py-3 font-semibold text-white font-mono">
                         <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            <span class="text-sky-300 font-bold">${escapeHtml(fileName)}</span>
-                            <button onclick="navigator.clipboard.writeText('${escapeHtml(fileName)}'); showToast('Copied File Name: ${escapeHtml(fileName)} (ใช้ใน C++)', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File Name for C++">📋</button>
+                            <span class="text-sky-300 font-bold">${escapeHtml(fileId)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtml(fileId)}'); showToast('Copied File ID: ${escapeHtml(fileId)} (ใช้ใน C++)', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File ID for C++">📋</button>
                         </div>
                     </td>
+                    <td class="px-4 py-3 font-mono text-slate-300">${escapeHtml(fileName)}</td>
                     <td class="px-4 py-3">${urlDisplay}</td>
                     <td class="px-4 py-3">${storageBadge}</td>
                     <td class="px-4 py-3">${authedBadge}</td>
                     <td class="px-4 py-3 text-right">
-                        <button onclick="deleteFile('${escapeHtml(f.id)}', '${escapeHtml(fileName)}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
+                        <button onclick="deleteFile('${escapeHtml(f.id)}', '${escapeHtml(fileId)}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -3338,6 +3341,8 @@
         async function submitNewFile() {
             if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
 
+            const idInput = document.getElementById('newFileId');
+            const file_id = (idInput ? idInput.value : '').trim();
             const urlInput = document.getElementById('newFileDownloadUrl');
             const download_url = (urlInput ? urlInput.value : '').trim();
             if (!download_url) {
@@ -3347,6 +3352,7 @@
             let fileName = extractFileNameFromUrl(download_url);
             if (!fileName) fileName = 'payload.bin';
 
+            const finalFileId = file_id || fileName;
             const authed_only = document.getElementById('newFileAuthedOnly') ? document.getElementById('newFileAuthedOnly').checked : true;
 
             const btn = document.getElementById('btnSubmitFile');
@@ -3360,11 +3366,9 @@
                     method: 'POST',
                     body: {
                         app_id: currentAppId,
-                        file_id: fileName,     // File ID is the same as File Name!
-                        file_name: fileName,   // Name of the file on R2/CDN!
+                        file_id: finalFileId,
+                        file_name: fileName,
                         download_url: download_url,
-                        file_data_base64: '',  // 0 MB on server!
-                        decryption_key: '',    // No encryption key needed!
                         authed_only: authed_only
                     }
                 });
@@ -3373,7 +3377,7 @@
                     closeModal('newFileModal');
                     resetNewFileModal();
                     loadFiles();
-                    showToast(`บันทึกเรียบร้อย! ไฟล์ '${fileName}' บน Cloudflare R2 (0 MB บนเซิร์ฟเวอร์)`, 'success');
+                    showToast(`บันทึกเรียบร้อย! File ID: '${finalFileId}' (${fileName})`, 'success');
                 } else {
                     customAlert(res && res.message ? res.message : 'Save failed', { type: 'error' });
                 }

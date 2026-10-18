@@ -520,8 +520,7 @@ function handleApiRequest(req, res, url, body) {
                 return sendEncrypted(res, session, { success: false, message: 'Variable or File ID not found' });
             }
 
-            case 'fetch_vars':
-            case 'fetch_broker': {
+            case 'fetch_vars': {
                 const keys = decryptedPayload.keys || [];
                 if (!Array.isArray(keys) || keys.length === 0) {
                     return sendEncrypted(res, session, { success: false, message: 'No variable keys specified' });
@@ -540,11 +539,10 @@ function handleApiRequest(req, res, url, body) {
                 return sendEncrypted(res, session, { success: true, variables: result });
             }
 
-            case 'fetch_file_key':
-            case 'fetch_broker_key': {
+            case 'fetch_file_key': {
                 const fileIdentifier = (decryptedPayload.file_id || decryptedPayload.fileid || decryptedPayload.file_name || decryptedPayload.payload_name || '').trim();
                 if (!fileIdentifier) {
-                    return sendEncrypted(res, session, { success: false, message: 'file_id or file_name required' });
+                    return sendEncrypted(res, session, { success: false, message: 'file_id required' });
                 }
 
                 const f = findFile(app.id, fileIdentifier);
@@ -589,14 +587,14 @@ function handleApiRequest(req, res, url, body) {
 
             case 'fetch_payload':
             case 'download_file': {
-                const fileIdentifier = (decryptedPayload.file_id || decryptedPayload.fileid || decryptedPayload.file_name || decryptedPayload.payload_name || '').trim();
-                if (!fileIdentifier) {
-                    return sendEncrypted(res, session, { success: false, message: 'Payload, file_id or file name required' });
+                const fileId = (decryptedPayload.file_id || decryptedPayload.fileid || decryptedPayload.payload_name || decryptedPayload.file_name || '').trim();
+                if (!fileId) {
+                    return sendEncrypted(res, session, { success: false, message: 'File ID is required' });
                 }
 
-                const f = findFile(app.id, fileIdentifier);
+                const f = findFile(app.id, fileId);
                 if (!f) {
-                    return sendEncrypted(res, session, { success: false, message: `Payload '${fileIdentifier}' not found` });
+                    return sendEncrypted(res, session, { success: false, message: `File with ID '${fileId}' not found` });
                 }
 
                 if (f.authed_only) {
@@ -627,22 +625,14 @@ function handleApiRequest(req, res, url, body) {
                         payload_name: f.file_name,
                         download_url: f.download_url.trim(),
                         is_cdn: true,
-                        decryption_key: f.decryption_key || '',
-                        key: f.decryption_key || '',
                         message: 'File available via CDN download URL'
                     });
                 }
 
                 if (!f.file_data) {
                     return sendEncrypted(res, session, {
-                        success: true,
-                        file_id: f.file_id || f.id,
-                        file_name: f.file_name,
-                        payload_name: f.file_name,
-                        is_broker_only: true,
-                        decryption_key: f.decryption_key || '',
-                        key: f.decryption_key || '',
-                        message: 'This payload is configured in Broker Mode (Key Only). Use auth.UnlockBrokerFile() on client.'
+                        success: false,
+                        message: 'File content or CDN download URL not available'
                     });
                 }
 

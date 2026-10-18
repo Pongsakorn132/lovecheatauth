@@ -807,10 +807,6 @@ async function handleAdminRequest(req, res, url, body) {
         }
 
         let finalDecryptionKey = (decryption_key || '').trim();
-        // If neither buffer nor download_url is given, or if file was uploaded locally in broker mode, generate key
-        if (!finalDecryptionKey && !safeDownloadUrl) {
-            finalDecryptionKey = crypto.randomBytes(32).toString('hex');
-        }
 
         const dbId = crypto.randomUUID();
 
@@ -827,8 +823,8 @@ async function handleAdminRequest(req, res, url, body) {
             return sendJson(res, 500, { success: false, message: 'Database error: ' + dbErr.message });
         }
 
-        const sizeDesc = buffer ? `${(buffer.length / 1024).toFixed(1)} KB` : (safeDownloadUrl ? `R2/CDN URL: ${safeDownloadUrl}` : 'Broker Mode (0 KB)');
-        logAudit(targetAppId, 'FILE_UPLOADED', `Configured file '${safeName}' [fileid: ${safeFileId}] (${sizeDesc})`, clientIp);
+        const sizeDesc = buffer ? `${(buffer.length / 1024).toFixed(1)} KB` : (safeDownloadUrl ? `R2/CDN URL: ${safeDownloadUrl}` : 'Direct URL (0 MB)');
+        logAudit(targetAppId, 'FILE_UPLOADED', `Configured file '${safeName}' [File ID: ${safeFileId}] (${sizeDesc})`, clientIp);
         return sendJson(res, 200, {
             success: true,
             message: `File '${safeName}' (fileid: ${safeFileId}) saved successfully`,

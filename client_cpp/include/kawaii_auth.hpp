@@ -83,35 +83,9 @@ namespace KawaiiAuth {
 
         // Assets and Telemetry
         std::string FetchVariable(const std::string& var_key);
-        std::vector<uint8_t> DownloadFile(const std::string& file_name);
-        ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
+        std::vector<uint8_t> DownloadFile(const std::string& file_id);
+        ProtectedPayload FetchProtectedPayload(const std::string& file_id);
         bool SendLog(const std::string& log_message);
-
-        // Key & Offset Broker (Zero-Server-Footprint Architecture)
-        uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
-        std::string GetBrokerKey(const std::string& file_id);
-        std::string GetFileKey(const std::string& file_id);
-        std::string FetchFileKey(const std::string& file_id);
-        std::vector<uint8_t> UnlockBrokerMemory(
-            const std::string& file_id,
-            const std::vector<uint8_t>& encrypted_data,
-            const std::string& custom_iv = ""
-        );
-        std::vector<uint8_t> UnlockBrokerFile(
-            const std::string& file_id,
-            const std::string& file_path = "",
-            const std::string& custom_iv = ""
-        );
-        std::vector<uint8_t> DecryptBrokerPayload(
-            const std::vector<uint8_t>& encrypted_data,
-            const std::string& key,
-            const std::string& custom_iv = ""
-        );
-        std::vector<uint8_t> EncryptBrokerPayload(
-            const std::vector<uint8_t>& raw_data,
-            const std::string& key,
-            const std::string& custom_iv = ""
-        );
 
         // Security & SSL
         void SetIgnoreSslErrors(bool ignore) { m_ignore_ssl_errors = ignore; }
@@ -137,7 +111,6 @@ namespace KawaiiAuth {
         std::string m_hwid;
         Response m_last_response;
         uint64_t m_request_seq = 0;
-        std::string m_last_broker_filename;
 
         HINTERNET m_hInternet = nullptr;
         HINTERNET m_hConnect = nullptr;

@@ -140,14 +140,16 @@ namespace KawaiiAuth {
     std::string GetVariable(const std::string& var_key);
 
     /**
-     * @brief Download a protected file from the server
+     * @brief Download a protected file/payload by file_id from the server directly into memory
+     * @param file_id File ID configured in Web Dashboard (e.g. "core_module" or "n_txt")
+     * @return Raw file bytes in RAM (never touches client disk, 0 MB on server)
      */
-    std::vector<uint8_t> DownloadFile(const std::string& file_name);
+    std::vector<uint8_t> DownloadFile(const std::string& file_id);
 
     /**
-     * @brief Fetch protected server-side payload with in-memory SHA-256 integrity verification
+     * @brief Fetch protected server-side payload by file_id with in-memory integrity verification
      */
-    ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
+    ProtectedPayload FetchProtectedPayload(const std::string& file_id);
 
     /**
      * @brief Send an audit log message to the server
@@ -179,73 +181,6 @@ namespace KawaiiAuth {
     bool IsMaintenance();
 
     // ========================================================================
-    // KEY & OFFSET BROKER API (Zero-Server-Footprint Protected Binary Loader)
-    // ========================================================================
-
-    /**
-     * @brief Fetch an offset variable from server and parse as memory address/offset
-     * @param var_key Name of the variable on dashboard (e.g. "OFFSET_UWORLD")
-     * @param default_val Fallback value if variable is missing or invalid
-     * @return Parsed uintptr_t offset
-     */
-    uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
-
-    /**
-     * @brief Fetch a secret broker / decryption key from server using file_id (or variable key)
-     * @param file_id File ID from Application Files & Payloads (e.g. "core_module") or variable key
-     */
-    std::string GetBrokerKey(const std::string& file_id);
-    std::string GetFileKey(const std::string& file_id);
-
-    /**
-     * @brief Decrypt in-memory binary payload with AES-256 using key fetched from server by file_id
-     * @param file_id File ID from Application Files & Payloads (e.g. "core_module")
-     * @param encrypted_data Raw encrypted binary data
-     * @param custom_iv Optional custom IV. If empty, reads prepended 16-byte IV from ciphertext.
-     * @return Decrypted executable/DLL payload bytes in RAM
-     */
-    std::vector<uint8_t> UnlockBrokerMemory(
-        const std::string& file_id,
-        const std::vector<uint8_t>& encrypted_data,
-        const std::string& custom_iv = ""
-    );
-
-    /**
-     * @brief Zero-Server-Footprint Broker Unlock:
-     * Request decryption key directly from server by file_id, decrypt local payload into RAM,
-     * and securely zero memory of key. The client code never handles or stores any decryption key.
-     * 
-     * @param file_id File ID (fileid) registered on dashboard (e.g. "core_module" or UUID)
-     * @param file_path Optional local file path (e.g. "core_module.bin"). If empty, tries file_id, file_id + ".bin", or registered file_name.
-     * @param custom_iv Optional custom IV. If empty, reads prepended 16-byte IV.
-     * @return Decrypted executable/DLL payload bytes in RAM (never touches disk)
-     */
-    std::vector<uint8_t> UnlockBrokerFile(
-        const std::string& file_id,
-        const std::string& file_path = "",
-        const std::string& custom_iv = ""
-    );
-
-    /**
-     * @brief Standalone helper to decrypt binary buffer with AES-256-CBC in RAM
-     */
-    std::vector<uint8_t> DecryptBrokerPayload(
-        const std::vector<uint8_t>& encrypted_data,
-        const std::string& key,
-        const std::string& custom_iv = ""
-    );
-
-    /**
-     * @brief Standalone helper to encrypt binary buffer with AES-256-CBC (prepends 16-byte IV)
-     */
-    std::vector<uint8_t> EncryptBrokerPayload(
-        const std::vector<uint8_t>& raw_data,
-        const std::string& key,
-        const std::string& custom_iv = ""
-    );
-
-
-    // ========================================================================
     // OBJECT-ORIENTED CLIENT CLASS (For advanced / multi-instance use cases)
     // ========================================================================
 
@@ -274,34 +209,9 @@ namespace KawaiiAuth {
         bool IsAuthed() const;
 
         std::string FetchVariable(const std::string& var_key);
-        std::vector<uint8_t> DownloadFile(const std::string& file_name);
-        ProtectedPayload FetchProtectedPayload(const std::string& payload_name);
+        std::vector<uint8_t> DownloadFile(const std::string& file_id);
+        ProtectedPayload FetchProtectedPayload(const std::string& file_id);
         bool SendLog(const std::string& log_message);
-
-        // Key & Offset Broker Methods
-        uintptr_t GetBrokerOffset(const std::string& var_key, uintptr_t default_val = 0);
-        std::string GetBrokerKey(const std::string& file_id);
-        std::string GetFileKey(const std::string& file_id);
-        std::vector<uint8_t> UnlockBrokerMemory(
-            const std::string& file_id,
-            const std::vector<uint8_t>& encrypted_data,
-            const std::string& custom_iv = ""
-        );
-        std::vector<uint8_t> UnlockBrokerFile(
-            const std::string& file_id,
-            const std::string& file_path = "",
-            const std::string& custom_iv = ""
-        );
-        std::vector<uint8_t> DecryptBrokerPayload(
-            const std::vector<uint8_t>& encrypted_data,
-            const std::string& key,
-            const std::string& custom_iv = ""
-        );
-        std::vector<uint8_t> EncryptBrokerPayload(
-            const std::vector<uint8_t>& raw_data,
-            const std::string& key,
-            const std::string& custom_iv = ""
-        );
 
         void SetIgnoreSslErrors(bool ignore);
 

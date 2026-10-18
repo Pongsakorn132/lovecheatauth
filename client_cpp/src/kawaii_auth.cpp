@@ -918,14 +918,14 @@ namespace KawaiiAuth {
         return buffer;
     }
 
-    std::vector<uint8_t> Client::DownloadFile(const std::string& file_name) {
-        auto payload = FetchProtectedPayload(file_name);
+    std::vector<uint8_t> Client::DownloadFile(const std::string& file_id) {
+        auto payload = FetchProtectedPayload(file_id);
         return payload.success ? payload.data : std::vector<uint8_t>{};
     }
 
-    ProtectedPayload Client::FetchProtectedPayload(const std::string& payload_name) {
+    ProtectedPayload Client::FetchProtectedPayload(const std::string& file_id) {
         ProtectedPayload res;
-        res.name = payload_name;
+        res.name = file_id;
         if (m_session_token.empty()) {
             res.message = skCrypt("Active authenticated session required");
             return res;
@@ -937,7 +937,8 @@ namespace KawaiiAuth {
 
         json payload = {
             { skCrypt("action"), skCrypt("fetch_payload") },
-            { skCrypt("payload_name"), payload_name },
+            { skCrypt("file_id"), file_id },
+            { skCrypt("payload_name"), file_id },
             { skCrypt("timestamp"), ts },
             { skCrypt("nonce"), nonce },
             { skCrypt("seq"), seq }
@@ -979,20 +980,7 @@ namespace KawaiiAuth {
                         return res;
                     }
 
-                    std::string decKey = inner.value(skCrypt("decryption_key"), "");
-                    if (decKey.empty()) decKey = inner.value(skCrypt("key"), "");
-
-                    if (!decKey.empty()) {
-                        auto decrypted = DecryptBrokerPayload(cdnData, decKey);
-                        if (!decrypted.empty()) {
-                            res.data = std::move(decrypted);
-                        } else {
-                            res.data = std::move(cdnData);
-                        }
-                    } else {
-                        res.data = std::move(cdnData);
-                    }
-
+                    res.data = std::move(cdnData);
                     res.size = res.data.size();
                     res.hash = HashSHA256(std::string(res.data.begin(), res.data.end()));
                     res.success = true;
@@ -1051,310 +1039,5 @@ namespace KawaiiAuth {
         return true;
     }
 
-    // ========================================================================
-    // Key & Offset Broker Implementation (Zero-Server-Footprint Architecture)
-    // ========================================================================
-
-    static bool IsAllHexStr(const std::string& s) {
-        if (s.empty()) return false;
-        for (char c : s) {
-            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    std::vector<uint8_t> Client::DecryptBrokerPayload(
-        const std::vector<uint8_t>& encryptedData,
-        const std::string& keyStr,
-        const std::string& customIvStr
-    ) {
-        if (encryptedData.empty() || keyStr.empty()) return {};
-
-        // 1. Derive 32-byte AES key
-        std::vector<uint8_t> keyBytes;
-        if (keyStr.length() == 64 && IsAllHexStr(keyStr)) {
-            keyBytes = HexToBytes(keyStr);
-        } else if (keyStr.length() == 32) {
-            keyBytes.assign(keyStr.begin(), keyStr.end());
-        } else {
-            std::string hashHex = HashSHA256(keyStr);
-            keyBytes = HexToBytes(hashHex);
-        }
-
-        if (keyBytes.size() != 32) return {};
-
-        // 2. Determine IV and Ciphertext bytes
-        std::vector<uint8_t> ivBytes;
-        std::vector<uint8_t> cipherBytes;
-
-        if (!customIvStr.empty()) {
-            if (customIvStr.length() == 32 && IsAllHexStr(customIvStr)) {
-                ivBytes = HexToBytes(customIvStr);
-            } else if (customIvStr.length() == 16) {
-                ivBytes.assign(customIvStr.begin(), customIvStr.end());
-            } else {
-                std::string ivHash = HashSHA256(customIvStr);
-                ivBytes = HexToBytes(ivHash.substr(0, 32));
-            }
-            cipherBytes = encryptedData;
-        } else {
-            // Default: check if first 16 bytes are the prepended IV
-            if (encryptedData.size() > 16) {
-                ivBytes.assign(encryptedData.begin(), encryptedData.begin() + 16);
-                cipherBytes.assign(encryptedData.begin() + 16, encryptedData.end());
-            } else {
-                return {};
-            }
-        }
-
-        if (cipherBytes.empty() || (cipherBytes.size() % 16 != 0)) {
-            if (encryptedData.size() % 16 == 0 && customIvStr.empty()) {
-                std::string kHash = HashSHA256(keyStr);
-                ivBytes = HexToBytes(kHash.substr(0, 32));
-                cipherBytes = encryptedData;
-            } else {
-                return {};
-            }
-        }
-
-        BCRYPT_ALG_HANDLE hAlg = nullptr;
-        BCRYPT_KEY_HANDLE hKey = nullptr;
-        std::vector<uint8_t> decrypted;
-
-        if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_AES_ALGORITHM, nullptr, 0) == 0) {
-            BCryptSetProperty(hAlg, BCRYPT_CHAINING_MODE, (PUCHAR)BCRYPT_CHAIN_MODE_CBC, sizeof(BCRYPT_CHAIN_MODE_CBC), 0);
-
-            DWORD keyObjSize = 0, dataLen = 0;
-            BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&keyObjSize, sizeof(DWORD), &dataLen, 0);
-            std::vector<uint8_t> keyObj(keyObjSize);
-
-            if (BCryptGenerateSymmetricKey(hAlg, &hKey, keyObj.data(), keyObjSize, keyBytes.data(), static_cast<ULONG>(keyBytes.size()), 0) == 0) {
-                std::vector<uint8_t> ivBuf = ivBytes;
-                DWORD plainLen = 0;
-                NTSTATUS status = BCryptDecrypt(hKey, cipherBytes.data(), static_cast<ULONG>(cipherBytes.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), nullptr, 0, &plainLen, BCRYPT_BLOCK_PADDING);
-                if (status == 0 && plainLen > 0) {
-                    decrypted.resize(plainLen);
-                    ivBuf = ivBytes;
-                    status = BCryptDecrypt(hKey, cipherBytes.data(), static_cast<ULONG>(cipherBytes.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), decrypted.data(), plainLen, &plainLen, BCRYPT_BLOCK_PADDING);
-                    if (status != 0) {
-                        decrypted.clear();
-                    }
-                }
-                BCryptDestroyKey(hKey);
-            }
-            BCryptCloseAlgorithmProvider(hAlg, 0);
-        }
-        return decrypted;
-    }
-
-    std::vector<uint8_t> Client::EncryptBrokerPayload(
-        const std::vector<uint8_t>& rawData,
-        const std::string& keyStr,
-        const std::string& customIvStr
-    ) {
-        if (rawData.empty() || keyStr.empty()) return {};
-
-        std::vector<uint8_t> keyBytes;
-        if (keyStr.length() == 64 && IsAllHexStr(keyStr)) {
-            keyBytes = HexToBytes(keyStr);
-        } else if (keyStr.length() == 32) {
-            keyBytes.assign(keyStr.begin(), keyStr.end());
-        } else {
-            std::string hashHex = HashSHA256(keyStr);
-            keyBytes = HexToBytes(hashHex);
-        }
-
-        std::vector<uint8_t> ivBytes(16);
-        bool prependIv = false;
-        if (!customIvStr.empty()) {
-            if (customIvStr.length() == 32 && IsAllHexStr(customIvStr)) {
-                ivBytes = HexToBytes(customIvStr);
-            } else if (customIvStr.length() == 16) {
-                ivBytes.assign(customIvStr.begin(), customIvStr.end());
-            } else {
-                std::string ivHash = HashSHA256(customIvStr);
-                ivBytes = HexToBytes(ivHash.substr(0, 32));
-            }
-        } else {
-            if (BCryptGenRandom(nullptr, ivBytes.data(), 16, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0) {
-                for (size_t i = 0; i < 16; ++i) ivBytes[i] = static_cast<uint8_t>(rand() & 0xFF);
-            }
-            prependIv = true;
-        }
-
-        BCRYPT_ALG_HANDLE hAlg = nullptr;
-        BCRYPT_KEY_HANDLE hKey = nullptr;
-        std::vector<uint8_t> result;
-
-        if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_AES_ALGORITHM, nullptr, 0) == 0) {
-            BCryptSetProperty(hAlg, BCRYPT_CHAINING_MODE, (PUCHAR)BCRYPT_CHAIN_MODE_CBC, sizeof(BCRYPT_CHAIN_MODE_CBC), 0);
-
-            DWORD keyObjSize = 0, dataLen = 0;
-            BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&keyObjSize, sizeof(DWORD), &dataLen, 0);
-            std::vector<uint8_t> keyObj(keyObjSize);
-
-            if (BCryptGenerateSymmetricKey(hAlg, &hKey, keyObj.data(), keyObjSize, keyBytes.data(), static_cast<ULONG>(keyBytes.size()), 0) == 0) {
-                std::vector<uint8_t> ivBuf = ivBytes;
-                DWORD cipherLen = 0;
-                NTSTATUS status = BCryptEncrypt(hKey, (PUCHAR)rawData.data(), static_cast<ULONG>(rawData.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), nullptr, 0, &cipherLen, BCRYPT_BLOCK_PADDING);
-                if (status == 0 && cipherLen > 0) {
-                    std::vector<uint8_t> cipherBuf(cipherLen);
-                    ivBuf = ivBytes;
-                    status = BCryptEncrypt(hKey, (PUCHAR)rawData.data(), static_cast<ULONG>(rawData.size()), nullptr, ivBuf.data(), static_cast<ULONG>(ivBuf.size()), cipherBuf.data(), cipherLen, &cipherLen, BCRYPT_BLOCK_PADDING);
-                    if (status == 0) {
-                        if (prependIv) {
-                            result.reserve(16 + cipherLen);
-                            result.insert(result.end(), ivBytes.begin(), ivBytes.end());
-                            result.insert(result.end(), cipherBuf.begin(), cipherBuf.end());
-                        } else {
-                            result = std::move(cipherBuf);
-                        }
-                    }
-                }
-                BCryptDestroyKey(hKey);
-            }
-            BCryptCloseAlgorithmProvider(hAlg, 0);
-        }
-        return result;
-    }
-
-    uintptr_t Client::GetBrokerOffset(const std::string& var_key, uintptr_t default_val) {
-        std::string valStr = FetchVariable(var_key);
-        if (valStr.empty()) return default_val;
-        try {
-            size_t idx = 0;
-            unsigned long long parsed = std::stoull(valStr, &idx, 0);
-            return static_cast<uintptr_t>(parsed);
-        } catch (...) {
-            return default_val;
-        }
-    }
-
-    std::string Client::FetchFileKey(const std::string& file_id) {
-        if (m_session_token.empty()) return "";
-
-        std::string nonce = GenerateNonce(16);
-        uint64_t seq = ++m_request_seq;
-        uint64_t ts = static_cast<uint64_t>(time(nullptr));
-
-        json payload = {
-            { skCrypt("action"), skCrypt("fetch_file_key") },
-            { skCrypt("file_id"), file_id },
-            { skCrypt("timestamp"), ts },
-            { skCrypt("nonce"), nonce },
-            { skCrypt("seq"), seq }
-        };
-
-        std::string enc = EncryptAES256(payload.dump());
-        json reqBody = { { skCrypt("data"), enc } };
-        std::string header = std::string(skCrypt("X-Session-Token: ")) + m_session_token;
-
-        HttpResponse httpResp = SendHttpRequest(skCrypt("/api/v1/action"), reqBody.dump(), header);
-        if (httpResp.body.empty() || !VerifyServerSignature(httpResp.body, httpResp.timestamp, httpResp.signature)) {
-            return FetchVariable(file_id);
-        }
-
-        try {
-            auto outer = json::parse(httpResp.body);
-            std::string dec = DecryptAES256(outer.value(skCrypt("data"), ""));
-            auto inner = json::parse(dec);
-            if (inner.contains(skCrypt("req_nonce")) && inner[skCrypt("req_nonce")] != nonce) {
-                return "";
-            }
-            if (inner.value(skCrypt("success"), false)) {
-                if (inner.contains(skCrypt("file_name"))) {
-                    m_last_broker_filename = inner.value(skCrypt("file_name"), "");
-                }
-                std::string k = inner.value(skCrypt("decryption_key"), "");
-                if (k.empty()) k = inner.value(skCrypt("key"), "");
-                return k;
-            }
-        } catch (...) {}
-        return FetchVariable(file_id);
-    }
-
-    std::string Client::GetFileKey(const std::string& file_id) {
-        return FetchFileKey(file_id);
-    }
-
-    std::string Client::GetBrokerKey(const std::string& file_id) {
-        return FetchFileKey(file_id);
-    }
-
-    std::vector<uint8_t> Client::UnlockBrokerMemory(
-        const std::string& file_id,
-        const std::vector<uint8_t>& encrypted_data,
-        const std::string& custom_iv
-    ) {
-        std::string key = FetchFileKey(file_id);
-        if (key.empty()) return {};
-        return DecryptBrokerPayload(encrypted_data, key, custom_iv);
-    }
-
-    std::vector<uint8_t> Client::UnlockBrokerFile(
-        const std::string& file_id,
-        const std::string& file_path,
-        const std::string& custom_iv
-    ) {
-        std::string key = FetchFileKey(file_id);
-
-        std::string targetPath = file_path.empty() ? file_id : file_path;
-        HANDLE hFile = CreateFileA(targetPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-        if (hFile == INVALID_HANDLE_VALUE && file_path.empty()) {
-            if (targetPath.find('.') == std::string::npos) {
-                hFile = CreateFileA((targetPath + ".bin").c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-            }
-            if (hFile == INVALID_HANDLE_VALUE && !m_last_broker_filename.empty()) {
-                hFile = CreateFileA(m_last_broker_filename.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-                if (hFile == INVALID_HANDLE_VALUE) {
-                    size_t dotPos = m_last_broker_filename.find_last_of('.');
-                    std::string base = (dotPos != std::string::npos) ? m_last_broker_filename.substr(0, dotPos) : m_last_broker_filename;
-                    hFile = CreateFileA((base + ".bin").c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-                }
-            }
-        }
-        if (hFile == INVALID_HANDLE_VALUE) {
-            // Smart Fallback: If not found on local disk, fetch payload from server/CDN directly into RAM
-            auto serverPayload = FetchProtectedPayload(file_id);
-            if (serverPayload.success && !serverPayload.data.empty()) {
-                if (!key.empty()) {
-                    auto dec = DecryptBrokerPayload(serverPayload.data, key, custom_iv);
-                    SecureZeroMemory(&key[0], key.size());
-                    if (!dec.empty()) return dec;
-                }
-                if (!key.empty()) SecureZeroMemory(&key[0], key.size());
-                return serverPayload.data;
-            }
-            if (!key.empty()) SecureZeroMemory(&key[0], key.size());
-            return {};
-        }
-
-        if (key.empty()) {
-            CloseHandle(hFile);
-            return {};
-        }
-
-        LARGE_INTEGER fileSize;
-        if (!GetFileSizeEx(hFile, &fileSize) || fileSize.QuadPart <= 0 || fileSize.QuadPart > 500 * 1024 * 1024) {
-            CloseHandle(hFile);
-            SecureZeroMemory(&key[0], key.size());
-            return {};
-        }
-
-        std::vector<uint8_t> buffer(static_cast<size_t>(fileSize.QuadPart));
-        DWORD bytesRead = 0;
-        if (!ReadFile(hFile, buffer.data(), static_cast<DWORD>(buffer.size()), &bytesRead, nullptr) || bytesRead != buffer.size()) {
-            CloseHandle(hFile);
-            SecureZeroMemory(&key[0], key.size());
-            return {};
-        }
-        CloseHandle(hFile);
-
-        auto dec = DecryptBrokerPayload(buffer, key, custom_iv);
-        SecureZeroMemory(&key[0], key.size());
-        return dec;
-    }
-
+    
 }
