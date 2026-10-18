@@ -15,10 +15,7 @@ if %errorlevel% neq 0 (
 )
 
 echo [*] Checking port 8080 availability...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8080 ^| findstr LISTENING') do (
-    echo [*] Freeing port 8080 (Terminating existing PID: %%a)...
-    taskkill /f /pid %%a >nul 2>nul
-)
+powershell -NoProfile -Command "Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
 
 echo [+] Launching Web Dashboard in default browser...
 start "" "http://localhost:8080/dashboard"
