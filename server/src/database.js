@@ -225,34 +225,12 @@ try {
     console.error('[DB Migration Error - Subscriptions]', e);
 }
 
-// Migration: add min_level to files if missing
-try {
-    const fileInfo = db.prepare("PRAGMA table_info(files)").all();
-    const hasMinLevel = fileInfo.some(col => col.name === 'min_level');
-    if (!hasMinLevel) {
-        db.exec("ALTER TABLE files ADD COLUMN min_level INTEGER NOT NULL DEFAULT 1;");
-    }
-    const hasFileId = fileInfo.some(col => col.name === 'file_id');
-    if (!hasFileId) {
-        db.exec("ALTER TABLE files ADD COLUMN file_id TEXT;");
-    }
-    const hasDecryptionKey = fileInfo.some(col => col.name === 'decryption_key');
-    if (!hasDecryptionKey) {
-        db.exec("ALTER TABLE files ADD COLUMN decryption_key TEXT;");
-    }
-    const hasDownloadUrl = fileInfo.some(col => col.name === 'download_url');
-    if (!hasDownloadUrl) {
-        db.exec("ALTER TABLE files ADD COLUMN download_url TEXT;");
-    }
-    db.exec("UPDATE files SET file_id = id WHERE file_id IS NULL OR file_id = '';");
-} catch (e) {
-    console.error('[DB Migration Error - Files columns]', e);
-}
-
 // Migration: Allow NULL for file_data in files table (Broker 0 MB mode)
 try {
     const filesMeta = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'files'").get();
     if (filesMeta && filesMeta.sql && filesMeta.sql.includes('file_data BLOB NOT NULL')) {
+        const fileInfo = db.prepare("PRAGMA table_info(files)").all();
+        const hasDownloadUrl = fileInfo.some(col => col.name === 'download_url');
         db.exec('PRAGMA foreign_keys = OFF;');
         db.exec(`
             CREATE TABLE files_new (
@@ -262,12 +240,24 @@ try {
                 file_name TEXT NOT NULL,
                 file_data BLOB,
                 decryption_key TEXT,
+                download_url TEXT,
                 authed_only INTEGER NOT NULL DEFAULT 1,
                 min_level INTEGER NOT NULL DEFAULT 1,
                 FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
             );
-            INSERT INTO files_new (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
-            SELECT id, app_id, COALESCE(file_id, id), file_name, file_data, decryption_key, authed_only, min_level FROM files;
+        `);
+        if (hasDownloadUrl) {
+            db.exec(`
+                INSERT INTO files_new (id, app_id, file_id, file_name, file_data, decryption_key, download_url, authed_only, min_level)
+                SELECT id, app_id, COALESCE(file_id, id), file_name, file_data, decryption_key, download_url, authed_only, min_level FROM files;
+            `);
+        } else {
+            db.exec(`
+                INSERT INTO files_new (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
+                SELECT id, app_id, COALESCE(file_id, id), file_name, file_data, decryption_key, authed_only, min_level FROM files;
+            `);
+        }
+        db.exec(`
             DROP TABLE files;
             ALTER TABLE files_new RENAME TO files;
         `);
@@ -276,6 +266,27 @@ try {
     }
 } catch (e) {
     console.error('[DB Migration Error - files table nullable]', e);
+}
+
+// Migration: Ensure all columns exist in files table (min_level, file_id, decryption_key, download_url)
+try {
+    const fileInfo = db.prepare("PRAGMA table_info(files)").all();
+    const cols = new Set(fileInfo.map(col => col.name));
+    if (!cols.has('min_level')) {
+        db.exec("ALTER TABLE files ADD COLUMN min_level INTEGER NOT NULL DEFAULT 1;");
+    }
+    if (!cols.has('file_id')) {
+        db.exec("ALTER TABLE files ADD COLUMN file_id TEXT;");
+    }
+    if (!cols.has('decryption_key')) {
+        db.exec("ALTER TABLE files ADD COLUMN decryption_key TEXT;");
+    }
+    if (!cols.has('download_url')) {
+        db.exec("ALTER TABLE files ADD COLUMN download_url TEXT;");
+    }
+    db.exec("UPDATE files SET file_id = id WHERE file_id IS NULL OR file_id = '';");
+} catch (e) {
+    console.error('[DB Migration Error - Files columns]', e);
 }
 
 // Seed default subscription for every app if missing
