@@ -151,6 +151,7 @@ namespace KawaiiAuth {
         std::string EncryptAES256(const std::string& plaintext);
         std::string DecryptAES256(const std::string& ciphertext_b64);
         HttpResponse SendHttpRequest(const std::string& path, const std::string& post_data, const std::string& extra_header = "");
+        std::vector<uint8_t> DownloadUrlToMemory(const std::string& url);
     };
 
 }

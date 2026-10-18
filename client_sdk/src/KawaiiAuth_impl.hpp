@@ -923,6 +923,49 @@ namespace KawaiiAuth {
             return "";
         }
 
+        std::vector<uint8_t> DownloadUrlToMemory(const std::string& url) {
+            if (url.empty()) return {};
+
+            HINTERNET hInternet = m_hInternet;
+            bool ownInternet = false;
+            if (!hInternet) {
+                hInternet = InternetOpenA(skCrypt("KawaiiAuth-CDN/1.0"), INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0);
+                ownInternet = true;
+            }
+            if (!hInternet) return {};
+
+            DWORD flags = INTERNET_FLAG_RELOAD | INTERNET_FLAG_NO_CACHE_WRITE | INTERNET_FLAG_KEEP_CONNECTION;
+            bool isHttps = (url.rfind("https://", 0) == 0);
+            if (isHttps) {
+                flags |= INTERNET_FLAG_SECURE | INTERNET_FLAG_IGNORE_CERT_CN_INVALID | INTERNET_FLAG_IGNORE_CERT_DATE_INVALID;
+            }
+
+            HINTERNET hUrl = InternetOpenUrlA(hInternet, url.c_str(), nullptr, 0, flags, 0);
+            if (!hUrl) {
+                if (ownInternet) InternetCloseHandle(hInternet);
+                return {};
+            }
+
+            if (isHttps && m_ignore_ssl_errors) {
+                DWORD secFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+                                 SECURITY_FLAG_IGNORE_CERT_DATE_INVALID |
+                                 SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+                                 SECURITY_FLAG_IGNORE_WRONG_USAGE;
+                InternetSetOptionA(hUrl, INTERNET_OPTION_SECURITY_FLAGS, &secFlags, sizeof(secFlags));
+            }
+
+            std::vector<uint8_t> buffer;
+            char chunk[16384];
+            DWORD bytesRead = 0;
+            while (InternetReadFile(hUrl, chunk, sizeof(chunk), &bytesRead) && bytesRead > 0) {
+                buffer.insert(buffer.end(), reinterpret_cast<uint8_t*>(chunk), reinterpret_cast<uint8_t*>(chunk) + bytesRead);
+            }
+
+            InternetCloseHandle(hUrl);
+            if (ownInternet) InternetCloseHandle(hInternet);
+            return buffer;
+        }
+
         ProtectedPayload FetchProtectedPayload(const std::string& payload_name) {
             ProtectedPayload res;
             res.name = payload_name;
@@ -970,6 +1013,36 @@ namespace KawaiiAuth {
                 res.success = inner.value(skCrypt("success"), false);
                 res.message = inner.value(skCrypt("message"), "");
                 if (res.success) {
+                    std::string cdnUrl = inner.value(skCrypt("download_url"), "");
+                    if (!cdnUrl.empty()) {
+                        std::vector<uint8_t> cdnData = DownloadUrlToMemory(cdnUrl);
+                        if (cdnData.empty()) {
+                            res.success = false;
+                            res.message = skCrypt("Failed to stream payload from CDN URL");
+                            return res;
+                        }
+
+                        std::string decKey = inner.value(skCrypt("decryption_key"), "");
+                        if (decKey.empty()) decKey = inner.value(skCrypt("key"), "");
+
+                        if (!decKey.empty()) {
+                            auto decrypted = DecryptBrokerPayload(cdnData, decKey);
+                            if (!decrypted.empty()) {
+                                res.data = std::move(decrypted);
+                            } else {
+                                res.data = std::move(cdnData);
+                            }
+                        } else {
+                            res.data = std::move(cdnData);
+                        }
+
+                        res.size = res.data.size();
+                        res.hash = HashSHA256(std::string(res.data.begin(), res.data.end()));
+                        res.success = true;
+                        res.message = skCrypt("CDN payload streamed into RAM successfully");
+                        return res;
+                    }
+
                     std::string b64 = inner.value(skCrypt("payload_data"), "");
                     if (b64.empty()) {
                         b64 = inner.value(skCrypt("file_data"), "");
@@ -1295,7 +1368,6 @@ namespace KawaiiAuth {
             const std::string& custom_iv = ""
         ) {
             std::string key = FetchFileKey(file_id);
-            if (key.empty()) return {};
 
             std::string targetPath = file_path.empty() ? file_id : file_path;
             HANDLE hFile = CreateFileA(targetPath.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -1313,7 +1385,7 @@ namespace KawaiiAuth {
                 }
             }
             if (hFile == INVALID_HANDLE_VALUE) {
-                // Smart Fallback: If not found on local disk, fetch payload from server into RAM
+                // Smart Fallback: If not found on local disk, fetch payload from server/CDN directly into RAM
                 auto serverPayload = FetchProtectedPayload(file_id);
                 if (serverPayload.success && !serverPayload.data.empty()) {
                     if (!key.empty()) {
@@ -1324,7 +1396,12 @@ namespace KawaiiAuth {
                     if (!key.empty()) SecureZeroMemory(&key[0], key.size());
                     return serverPayload.data;
                 }
-                SecureZeroMemory(&key[0], key.size());
+                if (!key.empty()) SecureZeroMemory(&key[0], key.size());
+                return {};
+            }
+
+            if (key.empty()) {
+                CloseHandle(hFile);
                 return {};
             }
 

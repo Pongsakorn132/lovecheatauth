@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS files (
     file_name TEXT NOT NULL,
     file_data BLOB,
     decryption_key TEXT,
+    download_url TEXT,
     authed_only INTEGER NOT NULL DEFAULT 1,
     min_level INTEGER NOT NULL DEFAULT 1,
     FOREIGN KEY(app_id) REFERENCES apps(id) ON DELETE CASCADE
@@ -238,6 +239,10 @@ try {
     const hasDecryptionKey = fileInfo.some(col => col.name === 'decryption_key');
     if (!hasDecryptionKey) {
         db.exec("ALTER TABLE files ADD COLUMN decryption_key TEXT;");
+    }
+    const hasDownloadUrl = fileInfo.some(col => col.name === 'download_url');
+    if (!hasDownloadUrl) {
+        db.exec("ALTER TABLE files ADD COLUMN download_url TEXT;");
     }
     db.exec("UPDATE files SET file_id = id WHERE file_id IS NULL OR file_id = '';");
 } catch (e) {

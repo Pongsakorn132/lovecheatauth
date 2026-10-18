@@ -81,18 +81,18 @@ int main() {
         std::cout << "[!] Warning: Session invalid: " << session.message << std::endl;
     }
 
-    // 5. Download / Load payload by fileid from Server and save as cxwq.txt
+    // 5. Download / Load payload by File Name from Direct URL (e.g. Cloudflare R2) and save as cxwq.txt
     std::cout << "\n--- [Payload Download & Save Test] ---" << std::endl;
     uintptr_t uworldOffset = KawaiiAuth::GetBrokerOffset("OFFSET_UWORLD", 0x12A45B0);
     std::cout << "[+] Game Offset 'OFFSET_UWORLD': 0x" << std::hex << uworldOffset << std::dec << std::endl;
 
-    // Use fileid from Dashboard to download directly from server into RAM
-    std::string targetFileId = "50f97ae8-f73b-4ba4-8296-9ac14779a173";
-    std::cout << "[*] Downloading payload with fileid: " << targetFileId << "..." << std::endl;
+    // Use File Name (e.g. "n.txt") to stream directly into RAM
+    std::string targetFileName = "n.txt";
+    std::cout << "[*] Downloading payload: " << targetFileName << "..." << std::endl;
 
-    std::vector<uint8_t> fileBytes = KawaiiAuth::DownloadFile(targetFileId);
+    std::vector<uint8_t> fileBytes = KawaiiAuth::DownloadFile(targetFileName);
     if (fileBytes.empty()) {
-        fileBytes = KawaiiAuth::UnlockBrokerFile(targetFileId);
+        fileBytes = KawaiiAuth::UnlockBrokerFile(targetFileName);
     }
 
     if (!fileBytes.empty()) {
@@ -108,7 +108,7 @@ int main() {
             std::cout << "[!] Failed to open 'cxwq.txt' for writing." << std::endl;
         }
     } else {
-        std::cout << "[!] Failed to download payload with fileid: " << targetFileId << std::endl;
+        std::cout << "[!] Failed to download payload: " << targetFileName << std::endl;
     }
 
     // 6. Send Audit Log

@@ -3,6 +3,21 @@ const db = require('../database');
 const { sendDiscordWebhook } = require('../utils/webhook');
 const { rateLimiter, LIMITS } = require('../utils/rate_limiter');
 
+function findFile(appId, identifier) {
+    if (!identifier) return null;
+    const raw = String(identifier).trim();
+    const dotVariant = raw.replace(/_/g, '.');
+    const underVariant = raw.replace(/\./g, '_');
+    return db.prepare(`
+        SELECT * FROM files 
+        WHERE app_id = ? 
+          AND (file_id = ? OR id = ? OR file_name = ? 
+               OR file_id = ? OR file_name = ? 
+               OR file_id = ? OR file_name = ?)
+        LIMIT 1
+    `).get(appId, raw, raw, raw, dotVariant, dotVariant, underVariant, underVariant);
+}
+
 function handleApiRequest(req, res, url, body) {
     const pathname = url.pathname;
     const clientIp = rateLimiter.getClientIp(req);
@@ -490,7 +505,7 @@ function handleApiRequest(req, res, url, body) {
                 }
 
                 // If not found in variables, fallback to Application Files by file_id or file_name
-                const f = db.prepare('SELECT file_id, file_name, decryption_key, authed_only, min_level, file_data FROM files WHERE app_id = ? AND (file_id = ? OR id = ? OR file_name = ?)').get(app.id, var_key, var_key, var_key);
+                const f = findFile(app.id, var_key);
                 if (f) {
                     if (f.authed_only && !session.user_id) {
                         return sendEncrypted(res, session, { success: false, message: 'Authentication required for this payload' });
@@ -532,7 +547,7 @@ function handleApiRequest(req, res, url, body) {
                     return sendEncrypted(res, session, { success: false, message: 'file_id or file_name required' });
                 }
 
-                const f = db.prepare('SELECT * FROM files WHERE app_id = ? AND (file_id = ? OR id = ? OR file_name = ?)').get(app.id, fileIdentifier, fileIdentifier, fileIdentifier);
+                const f = findFile(app.id, fileIdentifier);
                 if (!f) {
                     return sendEncrypted(res, session, { success: false, message: `File ID '${fileIdentifier}' not found in Application Files` });
                 }
@@ -566,6 +581,7 @@ function handleApiRequest(req, res, url, body) {
                     success: true,
                     file_id: f.file_id || f.id,
                     file_name: f.file_name,
+                    download_url: f.download_url || '',
                     decryption_key: key,
                     key: key
                 });
@@ -578,7 +594,7 @@ function handleApiRequest(req, res, url, body) {
                     return sendEncrypted(res, session, { success: false, message: 'Payload, file_id or file name required' });
                 }
 
-                const f = db.prepare('SELECT * FROM files WHERE app_id = ? AND (file_id = ? OR id = ? OR file_name = ?)').get(app.id, fileIdentifier, fileIdentifier, fileIdentifier);
+                const f = findFile(app.id, fileIdentifier);
                 if (!f) {
                     return sendEncrypted(res, session, { success: false, message: `Payload '${fileIdentifier}' not found` });
                 }
@@ -601,6 +617,20 @@ function handleApiRequest(req, res, url, body) {
                             message: `Access denied: requires Tier Level ${reqLevel} (your tier: ${user.sub_level})`
                         });
                     }
+                }
+
+                if (f.download_url && f.download_url.trim()) {
+                    return sendEncrypted(res, session, {
+                        success: true,
+                        file_id: f.file_id || f.id,
+                        file_name: f.file_name,
+                        payload_name: f.file_name,
+                        download_url: f.download_url.trim(),
+                        is_cdn: true,
+                        decryption_key: f.decryption_key || '',
+                        key: f.decryption_key || '',
+                        message: 'File available via CDN download URL'
+                    });
                 }
 
                 if (!f.file_data) {

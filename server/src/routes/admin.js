@@ -766,7 +766,7 @@ async function handleAdminRequest(req, res, url, body) {
         const appId = isSeller ? sellerApp.id : url.searchParams.get('app_id');
         if (!appId) return sendJson(res, 400, { success: false, message: 'Missing app_id parameter' });
         const files = db.prepare(`
-            SELECT id, app_id, COALESCE(file_id, id) as file_id, file_name, LENGTH(file_data) as file_size, decryption_key, authed_only, min_level 
+            SELECT id, app_id, COALESCE(file_id, id) as file_id, file_name, LENGTH(file_data) as file_size, decryption_key, download_url, authed_only, min_level 
             FROM files 
             WHERE app_id = ? 
             ORDER BY file_name ASC
@@ -775,15 +775,28 @@ async function handleAdminRequest(req, res, url, body) {
     }
 
     if (pathname === '/api/admin/files' && method === 'POST') {
-        const { app_id, file_id, fileid, file_name, file_data_base64, decryption_key, authed_only, min_level } = body || {};
+        const { app_id, file_id, fileid, file_name, file_data_base64, download_url, decryption_key, authed_only, min_level } = body || {};
         const targetAppId = isSeller ? sellerApp.id : app_id;
         if (!targetAppId) return sendJson(res, 400, { success: false, message: 'Missing app_id' });
-        if (!file_name || typeof file_name !== 'string' || !file_name.trim()) {
+
+        const safeDownloadUrl = (download_url && typeof download_url === 'string') ? download_url.trim() : null;
+
+        let safeName = (file_name || '').trim();
+        if (!safeName && safeDownloadUrl) {
+            try {
+                const u = new URL(safeDownloadUrl);
+                const parts = u.pathname.split('/').filter(Boolean);
+                safeName = parts.length ? parts[parts.length - 1] : 'r2_payload.bin';
+            } catch (_) {
+                safeName = 'r2_payload.bin';
+            }
+        }
+
+        if (!safeName) {
             return sendJson(res, 400, { success: false, message: 'File name is required' });
         }
 
-        const safeName = file_name.trim();
-        const safeFileId = (file_id || fileid || safeName.replace(/[^a-zA-Z0-9_-]/g, '_')).trim();
+        const safeFileId = (file_id || fileid || safeName).trim();
 
         let buffer = null;
         if (file_data_base64 && typeof file_data_base64 === 'string' && file_data_base64.trim()) {
@@ -794,7 +807,8 @@ async function handleAdminRequest(req, res, url, body) {
         }
 
         let finalDecryptionKey = (decryption_key || '').trim();
-        if (!finalDecryptionKey) {
+        // If neither buffer nor download_url is given, or if file was uploaded locally in broker mode, generate key
+        if (!finalDecryptionKey && !safeDownloadUrl) {
             finalDecryptionKey = crypto.randomBytes(32).toString('hex');
         }
 
@@ -805,22 +819,15 @@ async function handleAdminRequest(req, res, url, body) {
             db.prepare('DELETE FROM files WHERE app_id = ? AND (file_id = ? OR file_name = ?)').run(targetAppId, safeFileId, safeName);
 
             db.prepare(`
-                INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `).run(dbId, targetAppId, safeFileId, safeName, buffer, finalDecryptionKey, authed_only ? 1 : 0, min_level ? Number(min_level) : 1);
+                INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, download_url, authed_only, min_level)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `).run(dbId, targetAppId, safeFileId, safeName, buffer, finalDecryptionKey, safeDownloadUrl, authed_only ? 1 : 0, min_level ? Number(min_level) : 1);
         } catch (dbErr) {
             console.error('[Admin Save File Error]', dbErr);
-            if (dbErr.message && dbErr.message.includes('NOT NULL constraint failed: files.file_data')) {
-                db.prepare(`
-                    INSERT INTO files (id, app_id, file_id, file_name, file_data, decryption_key, authed_only, min_level)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                `).run(dbId, targetAppId, safeFileId, safeName, Buffer.alloc(0), finalDecryptionKey, authed_only ? 1 : 0, min_level ? Number(min_level) : 1);
-            } else {
-                return sendJson(res, 500, { success: false, message: 'Database error: ' + dbErr.message });
-            }
+            return sendJson(res, 500, { success: false, message: 'Database error: ' + dbErr.message });
         }
 
-        const sizeDesc = buffer ? `${(buffer.length / 1024).toFixed(1)} KB` : 'Broker Mode (0 KB)';
+        const sizeDesc = buffer ? `${(buffer.length / 1024).toFixed(1)} KB` : (safeDownloadUrl ? `R2/CDN URL: ${safeDownloadUrl}` : 'Broker Mode (0 KB)');
         logAudit(targetAppId, 'FILE_UPLOADED', `Configured file '${safeName}' [fileid: ${safeFileId}] (${sizeDesc})`, clientIp);
         return sendJson(res, 200, {
             success: true,
@@ -830,6 +837,7 @@ async function handleAdminRequest(req, res, url, body) {
                 file_id: safeFileId,
                 file_name: safeName,
                 file_size: buffer ? buffer.length : 0,
+                download_url: safeDownloadUrl,
                 decryption_key: finalDecryptionKey,
                 authed_only: authed_only ? 1 : 0
             }

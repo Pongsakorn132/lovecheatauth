@@ -453,18 +453,18 @@
             <div class="flex items-center justify-between">
                 <div>
                     <h3 class="text-lg font-semibold text-white">Application Files & Payloads</h3>
-                    <p class="text-xs text-slate-400">ฝากไฟล์ DLL หรือไบนารีเข้ารหัสสำหรับดาวน์โหลดเข้า Memory ของ Client</p>
+                    <p class="text-xs text-slate-400">ฝากลิงก์ไฟล์ Direct Download URL (Cloudflare R2 / CDN) สำหรับดาวน์โหลดเข้า Memory ของ Client (0 MB บนเซิร์ฟเวอร์)</p>
                 </div>
                 <button id="btnAddFile" onclick="openNewFileModal()" class="px-4 py-2 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-lg text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">
-                    + Upload Protected Payload
+                    + Add File URL (Cloudflare R2 / CDN)
                 </button>
             </div>
             <div class="glass-panel rounded-xl overflow-hidden">
                 <table class="w-full text-left text-sm">
                     <thead class="bg-slate-950/90 text-xs font-mono text-slate-400 uppercase border-b border-slate-800/80">
                         <tr>
-                            <th class="px-4 py-3">File ID (fileid)</th>
                             <th class="px-4 py-3">File Name</th>
+                            <th class="px-4 py-3">Direct Download URL</th>
                             <th class="px-4 py-3">Storage Type</th>
                             <th class="px-4 py-3">Auth Required</th>
                             <th class="px-4 py-3 text-right">Actions</th>
@@ -1127,87 +1127,65 @@
         </div>
     </div>
 
-    <!-- Modal: New File / Payload Upload -->
+    <!-- Modal: Application File & Protected Payload (Direct URL Only) -->
     <div id="newFileModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center hidden z-50 transition-opacity duration-200" onclick="if(event.target === this) closeModal('newFileModal')">
-        <div class="glass-panel p-6 rounded-2xl w-full max-w-lg space-y-4 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
+        <div class="glass-panel p-6 rounded-2xl w-full max-w-lg space-y-5 border border-sky-500/20 shadow-2xl shadow-blue-950/80 transform transition-all duration-200 scale-95 opacity-0 modal-card" onclick="event.stopPropagation()">
             <div class="flex items-start justify-between gap-3">
                 <div class="flex items-center gap-3">
                     <div class="p-2.5 rounded-xl bg-blue-950/80 border border-blue-700/80 text-sky-400 shrink-0">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
                     </div>
                     <div>
-                        <h3 class="text-base font-bold text-white tracking-wide">Upload Protected Payload</h3>
-                        <p class="text-xs text-slate-400">โมเดล Key Broker (0 MB) - แปลงไฟล์เป็นคีย์ถอดรหัส ไม่เก็บไฟล์บนเซิร์ฟเวอร์หรือดิสก์เครื่องลูก</p>
+                        <h3 class="text-base font-bold text-white tracking-wide">Application File & Protected Payload</h3>
+                        <p class="text-xs text-slate-400">ระบบคลาวด์ R2 / CDN (0 MB บนเซิร์ฟเวอร์ โหลดตรงเข้า RAM)</p>
                     </div>
                 </div>
                 <button onclick="closeModal('newFileModal')" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition" title="Close">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            <div class="space-y-3.5 text-sm">
-                <!-- 1. File Upload Drop Zone (User อัพโหลดไฟล์มาก่อน) -->
-                <div id="fileDropZone" class="border-2 border-dashed border-sky-500/40 hover:border-sky-400/80 bg-slate-900/60 rounded-xl p-4 text-center cursor-pointer transition relative group" onclick="document.getElementById('newFileInput').click()" ondragover="event.preventDefault(); this.classList.add('border-sky-400', 'bg-sky-950/40');" ondragleave="event.preventDefault(); this.classList.remove('border-sky-400', 'bg-sky-950/40');" ondrop="event.preventDefault(); this.classList.remove('border-sky-400', 'bg-sky-950/40'); if(event.dataTransfer.files.length) { document.getElementById('newFileInput').files = event.dataTransfer.files; onFileSelected(document.getElementById('newFileInput')); }">
-                    <input type="file" id="newFileInput" onchange="onFileSelected(this)" class="hidden">
-                    <div id="fileUploadPrompt" class="space-y-1.5">
-                        <div class="w-10 h-10 mx-auto rounded-xl bg-sky-950/80 border border-sky-800/80 flex items-center justify-center text-sky-400 group-hover:scale-110 transition">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        </div>
-                        <p class="text-xs font-semibold text-slate-200">คลิกหรือลากไฟล์ DLL / EXE / ไบนารีมาวางที่นี่</p>
-                        <p class="text-[11px] text-slate-400">ระบบจะดึงชื่อไฟล์ สุ่มคีย์ AES-256 และเข้ารหัสในแรมอัตโนมัติ (ไม่เก็บไฟล์ลงเซิร์ฟเวอร์)</p>
+
+            <div class="space-y-4 text-sm">
+                <!-- 1. Direct Download URL Input -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold text-slate-200">
+                        Direct Download URL <span class="text-sky-400 font-mono">(Cloudflare R2 / AWS S3 / Direct Link)</span>
+                    </label>
+                    <div class="relative">
+                        <input type="url" id="newFileDownloadUrl" oninput="onCdnUrlChanged(this.value)" placeholder="https://pub-f76bfee4682d40bebce65d48f3e96bd5.r2.dev/FF/n.txt" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-sky-400 placeholder:text-slate-600 pr-10">
+                        <button type="button" onclick="navigator.clipboard.readText().then(t => { document.getElementById('newFileDownloadUrl').value = t; onCdnUrlChanged(t); })" class="absolute right-2.5 top-2.5 text-slate-500 hover:text-white text-xs p-1" title="Paste from clipboard">📋</button>
                     </div>
-                    <div id="fileSelectedCard" class="hidden text-left bg-slate-950/80 p-3 rounded-lg border border-sky-500/30 space-y-2">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2 overflow-hidden">
-                                <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                <span id="selectedFileNameText" class="font-mono text-xs text-white font-semibold truncate"></span>
-                            </div>
-                            <span id="selectedFileSizeBadge" class="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 font-mono"></span>
-                        </div>
-                        <div class="flex items-center justify-between bg-slate-900/90 px-2.5 py-1.5 rounded border border-slate-800 text-xs">
-                            <span class="text-slate-400 text-[11px]">File ID (สำหรับ C++):</span>
-                            <div class="flex items-center gap-1.5 font-mono text-sky-400 font-semibold">
-                                <span id="selectedFileIdDisplay">-</span>
-                                <button type="button" onclick="event.stopPropagation(); navigator.clipboard.writeText(document.getElementById('newFileId').value); showToast('Copied File ID!', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File ID">📋</button>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-1 border-t border-slate-800/80 text-[11px]">
-                            <span id="fileEncryptedStatusText" class="text-emerald-400 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                                เข้ารหัสใน Browser RAM สำเร็จ (Broker 0 MB)
-                            </span>
-                            <button type="button" onclick="event.stopPropagation(); downloadEncryptedFile()" id="btnDownloadEncrypted" class="px-2.5 py-1 bg-sky-950 hover:bg-sky-900 border border-sky-700 text-sky-300 text-xs rounded transition flex items-center gap-1 font-mono">
-                                <span>⬇️ โหลดไฟล์ .bin</span>
-                            </button>
-                        </div>
-                    </div>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">
+                        🚀 ไคลเอนต์ C++ จะสตรีมไฟล์จากลิงก์นี้ตรงเข้า RAM ทันที (Zero-Disk) เซิร์ฟเวอร์ไม่เสียพื้นที่จัดเก็บ (0 MB)
+                    </p>
                 </div>
 
-                <!-- Hidden Auto-Managed Fields (File ID, File Name, Decryption Key) -->
-                <input type="hidden" id="newFileId">
+                <!-- 2. Detected File Name Display -->
+                <div id="detectedFileNameBox" class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl flex items-center justify-between">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-xs text-slate-400">ชื่อไฟล์:</span>
+                        <span id="detectedFileNameText" class="font-mono text-xs text-sky-300 font-semibold truncate">ยังไม่ได้ระบุลิงก์</span>
+                    </div>
+                    <span id="detectedStatusBadge" class="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">0 MB Storage</span>
+                </div>
+
+                <!-- Hidden Field for Auto-Extracted File Name -->
                 <input type="hidden" id="newFileName">
-                <input type="hidden" id="newFileDecryptionKey">
 
-                <!-- 5. Broker Mode Banner -->
-                <div class="p-3 bg-sky-950/40 border border-sky-800/60 rounded-xl flex items-start gap-2.5">
-                    <span class="text-sky-400 text-base mt-0.5">🛡️</span>
-                    <div class="text-[11px] text-slate-300 space-y-0.5">
-                        <p class="font-semibold text-sky-300">โหมดจัดเก็บ: Key & Offset Broker (0 MB บน Server)</p>
-                        <p class="text-slate-400">ระบบจะไม่เก็บไฟล์ดิบลงบน Server (พื้นที่ 0 MB) และตัว Client จะถอดรหัสเข้า RAM ตรงๆ ไม่มีการเขียนไฟล์ดิบลงดิสก์เครื่องลูก</p>
-                    </div>
-                </div>
-
-                <!-- 6. Require Authentication -->
+                <!-- 3. Require Authentication Checkbox -->
                 <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/60 flex items-center justify-between">
                     <div>
                         <label for="newFileAuthedOnly" class="text-xs font-semibold text-slate-200 cursor-pointer">Require Authentication</label>
-                        <p class="text-[11px] text-slate-400">อนุญาตให้ดึงกุญแจถอดรหัสได้เฉพาะ Client ที่ยืนยันตัวตนสำเร็จแล้วเท่านั้น</p>
+                        <p class="text-[11px] text-slate-400">อนุญาตให้เข้าถึงไฟล์ได้เฉพาะ Client ที่ยืนยันตัวตนสำเร็จแล้วเท่านั้น</p>
                     </div>
                     <input type="checkbox" id="newFileAuthedOnly" checked class="round-checkbox">
                 </div>
             </div>
-            <div class="flex justify-end gap-2.5 pt-2">
+
+            <div class="flex justify-end gap-2.5 pt-2 border-t border-slate-800/80">
                 <button onclick="closeModal('newFileModal')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700 transition">Cancel</button>
-                <button onclick="submitNewFile()" id="btnSubmitFile" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">Save & Download Payload</button>
+                <button onclick="submitNewFile()" id="btnSubmitFile" class="px-5 py-2.5 bg-gradient-to-r from-blue-600 via-sky-600 to-cyan-500 hover:from-blue-500 hover:via-sky-500 hover:to-cyan-400 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-900/40 border border-sky-400/20 transition">Save File URL</button>
             </div>
         </div>
     </div>
@@ -3219,6 +3197,35 @@
             showToast('Generated new AES-256 Decryption Key', 'info');
         }
 
+        function extractFileNameFromUrl(url) {
+            const raw = (url || '').trim();
+            if (!raw) return '';
+            try {
+                const u = new URL(raw);
+                const parts = u.pathname.split('/').filter(Boolean);
+                if (parts.length > 0) return decodeURIComponent(parts[parts.length - 1]);
+            } catch (_) {
+                const slashIdx = raw.lastIndexOf('/');
+                if (slashIdx !== -1 && slashIdx < raw.length - 1) {
+                    return raw.substring(slashIdx + 1);
+                }
+            }
+            return '';
+        }
+
+        function onCdnUrlChanged(url) {
+            const name = extractFileNameFromUrl(url);
+            const textEl = document.getElementById('detectedFileNameText');
+            const hiddenEl = document.getElementById('newFileName');
+            if (name) {
+                if (textEl) textEl.textContent = name;
+                if (hiddenEl) hiddenEl.value = name;
+            } else {
+                if (textEl) textEl.textContent = 'ยังไม่ได้ระบุลิงก์';
+                if (hiddenEl) hiddenEl.value = '';
+            }
+        }
+
         function openNewFileModal() {
             if (!isAuthorized || !currentAppId) {
                 return customAlert('Please connect with a valid Client Key and select an application first.', { type: 'warning' });
@@ -3228,147 +3235,17 @@
         }
 
         function resetNewFileModal() {
-            currentRawFileBuffer = null;
-            currentEncryptedBlob = null;
-            currentEncryptedFileName = '';
-            uploadedFileBase64 = '';
-
-            const fileInput = document.getElementById('newFileInput');
-            if (fileInput) fileInput.value = '';
-
-            const idInput = document.getElementById('newFileId');
-            if (idInput) idInput.value = generateRandomFileId();
+            const urlInput = document.getElementById('newFileDownloadUrl');
+            if (urlInput) urlInput.value = '';
 
             const nameInput = document.getElementById('newFileName');
             if (nameInput) nameInput.value = '';
 
-            const keyInput = document.getElementById('newFileDecryptionKey');
-            if (keyInput) keyInput.value = generateRandomDecryptionKey();
+            const textEl = document.getElementById('detectedFileNameText');
+            if (textEl) textEl.textContent = 'ยังไม่ได้ระบุลิงก์';
 
-            const prompt = document.getElementById('fileUploadPrompt');
-            if (prompt) prompt.classList.remove('hidden');
-
-            const card = document.getElementById('fileSelectedCard');
-            if (card) card.classList.add('hidden');
-
-            const idDisplay = document.getElementById('selectedFileIdDisplay');
-            if (idDisplay) idDisplay.textContent = '-';
-        }
-
-        async function encryptBufferAES256CBC(arrayBuffer, hexKey) {
-            const cleanKey = (hexKey || '').trim();
-            if (cleanKey.length !== 64) {
-                throw new Error('Key must be 64 hex characters (32 bytes AES-256)');
-            }
-            const keyBytes = new Uint8Array(32);
-            for (let i = 0; i < 32; i++) {
-                keyBytes[i] = parseInt(cleanKey.substr(i * 2, 2), 16);
-            }
-            const iv = crypto.getRandomValues(new Uint8Array(16));
-            const cryptoKey = await crypto.subtle.importKey(
-                'raw',
-                keyBytes,
-                { name: 'AES-CBC' },
-                false,
-                ['encrypt']
-            );
-            const ciphertext = await crypto.subtle.encrypt(
-                { name: 'AES-CBC', iv: iv },
-                cryptoKey,
-                arrayBuffer
-            );
-            const combined = new Uint8Array(iv.length + ciphertext.byteLength);
-            combined.set(iv, 0);
-            combined.set(new Uint8Array(ciphertext), iv.length);
-            return combined;
-        }
-
-        async function encryptAndPrepareFile(arrayBuffer, hexKey) {
-            try {
-                const encryptedBytes = await encryptBufferAES256CBC(arrayBuffer, hexKey);
-                currentEncryptedBlob = new Blob([encryptedBytes], { type: 'application/octet-stream' });
-
-                const nameInput = document.getElementById('newFileName');
-                const rawName = (nameInput && nameInput.value.trim()) || 'payload.bin';
-                const baseName = rawName.replace(/\.[^/.]+$/, '');
-                currentEncryptedFileName = baseName + '.bin';
-
-                const statusText = document.getElementById('fileEncryptedStatusText');
-                if (statusText) {
-                    statusText.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> เข้ารหัสใน Browser RAM สำเร็จ (${formatBytes(encryptedBytes.length)})`;
-                }
-                const btn = document.getElementById('btnDownloadEncrypted');
-                if (btn) {
-                    btn.innerHTML = `<span>⬇️ โหลด ${escapeHtml(currentEncryptedFileName)}</span>`;
-                }
-            } catch (err) {
-                console.error('[Broker Encryption Error]', err);
-            }
-        }
-
-        function downloadEncryptedFile() {
-            if (!currentEncryptedBlob) {
-                return customAlert('กรุณาเลือกไฟล์เพื่อเข้ารหัสก่อนดาวน์โหลด', { type: 'warning' });
-            }
-            const url = URL.createObjectURL(currentEncryptedBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = currentEncryptedFileName || 'protected_payload.bin';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-            showToast('เริ่มดาวน์โหลดไฟล์เข้ารหัสแล้ว!', 'success');
-        }
-
-        async function onFileSelected(input) {
-            const file = input.files && input.files[0];
-            if (!file) return;
-
-            // 1. File Name (ชื่อไฟล์อ้างอิง) ให้เอาตามชื่อไฟล์ที่อัพโหลด
-            const nameInput = document.getElementById('newFileName');
-            if (nameInput) nameInput.value = file.name;
-
-            // 2. File ID (fileid) ให้สุ่มไม่ต้องตั้งเอง
-            const idInput = document.getElementById('newFileId');
-            if (idInput && !idInput.value.trim()) {
-                idInput.value = generateRandomFileId();
-            }
-
-            // 3. Decryption Key (กุญแจถอดรหัส AES-256) ให้สุ่มเลย
-            const keyInput = document.getElementById('newFileDecryptionKey');
-            if (keyInput && (!keyInput.value.trim() || keyInput.value.trim().length !== 64)) {
-                keyInput.value = generateRandomDecryptionKey();
-            }
-
-            // UI updates
-            const prompt = document.getElementById('fileUploadPrompt');
-            if (prompt) prompt.classList.add('hidden');
-            const card = document.getElementById('fileSelectedCard');
-            if (card) card.classList.remove('hidden');
-
-            const nameText = document.getElementById('selectedFileNameText');
-            if (nameText) nameText.textContent = file.name;
-
-            const sizeBadge = document.getElementById('selectedFileSizeBadge');
-            if (sizeBadge) sizeBadge.textContent = formatBytes(file.size);
-
-            const idDisplay = document.getElementById('selectedFileIdDisplay');
-            if (idDisplay && idInput) idDisplay.textContent = idInput.value;
-
-            const statusText = document.getElementById('fileEncryptedStatusText');
-            if (statusText) {
-                statusText.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-spin"></span> กำลังแปลงเป็นคีย์และเข้ารหัสใน RAM...`;
-            }
-
-            // Read file in memory and encrypt
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                currentRawFileBuffer = e.target.result;
-                const key = document.getElementById('newFileDecryptionKey').value.trim();
-                await encryptAndPrepareFile(currentRawFileBuffer, key);
-            };
-            reader.readAsArrayBuffer(file);
+            const authCheck = document.getElementById('newFileAuthedOnly');
+            if (authCheck) authCheck.checked = true;
         }
 
         async function loadFiles() {
@@ -3385,37 +3262,38 @@
             }
             const files = res.files || [];
             if (files.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No files or payloads configured yet</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-6 text-center text-slate-500">No payloads configured yet</td></tr>';
                 return;
             }
             files.forEach(f => {
                 const tr = document.createElement('tr');
-                const displayFileId = f.file_id || f.id || '-';
+                const fileName = f.file_name || f.file_id || 'payload.bin';
                 const authedBadge = f.authed_only
                     ? '<span class="px-2 py-0.5 rounded text-[10px] bg-amber-950/60 text-amber-400 border border-amber-800">Authed Only</span>'
                     : '<span class="px-2 py-0.5 rounded text-[10px] bg-emerald-950/60 text-emerald-400 border border-emerald-800">Public</span>';
 
-                const sizeDisplay = (f.file_size && f.file_size > 0)
-                    ? `<span class="text-slate-300 font-mono text-xs">${formatBytes(f.file_size)}</span>`
-                    : '<span class="px-2 py-0.5 rounded text-[10px] bg-sky-950/80 text-sky-400 border border-sky-800 font-mono font-semibold">Broker (0 MB)</span>';
+                const storageBadge = '<span class="px-2 py-0.5 rounded text-[10px] bg-purple-950/80 text-purple-300 border border-purple-800 font-mono font-semibold">☁️ R2 / CDN (0 MB)</span>';
+
+                const urlDisplay = f.download_url 
+                    ? `<div class="flex items-center gap-1.5 font-mono text-xs text-sky-400">
+                         <a href="${escapeHtml(f.download_url)}" target="_blank" class="truncate max-w-[280px] hover:underline" title="${escapeHtml(f.download_url)}">${escapeHtml(f.download_url)}</a>
+                         <button onclick="navigator.clipboard.writeText('${escapeHtml(f.download_url)}'); showToast('Copied Download URL!', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy URL">📋</button>
+                       </div>`
+                    : '<span class="text-slate-500 font-mono text-xs">-</span>';
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-semibold text-sky-400 font-mono">
-                        <div class="flex items-center gap-1.5">
-                            <span class="tracking-wide">${escapeHtml(displayFileId)}</span>
-                            <button onclick="navigator.clipboard.writeText('${escapeHtml(displayFileId)}'); showToast('Copied File ID: ${escapeHtml(displayFileId)}', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File ID (use in C++)">📋</button>
-                        </div>
-                    </td>
-                    <td class="px-4 py-3 font-medium text-slate-200 font-mono">
+                    <td class="px-4 py-3 font-semibold text-white font-mono">
                         <div class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                            <span>${escapeHtml(f.file_name)}</span>
+                            <svg class="w-4 h-4 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            <span class="text-sky-300 font-bold">${escapeHtml(fileName)}</span>
+                            <button onclick="navigator.clipboard.writeText('${escapeHtml(fileName)}'); showToast('Copied File Name: ${escapeHtml(fileName)} (ใช้ใน C++)', 'info')" class="text-slate-500 hover:text-white p-0.5 transition" title="Copy File Name for C++">📋</button>
                         </div>
                     </td>
-                    <td class="px-4 py-3">${sizeDisplay}</td>
+                    <td class="px-4 py-3">${urlDisplay}</td>
+                    <td class="px-4 py-3">${storageBadge}</td>
                     <td class="px-4 py-3">${authedBadge}</td>
                     <td class="px-4 py-3 text-right">
-                        <button onclick="deleteFile('${escapeHtml(f.id)}', '${escapeHtml(f.file_name)}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
+                        <button onclick="deleteFile('${escapeHtml(f.id)}', '${escapeHtml(fileName)}')" class="px-2.5 py-1 bg-red-950/50 hover:bg-red-900 border border-red-800/60 text-red-300 text-xs rounded transition">Delete</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -3424,31 +3302,17 @@
 
         async function submitNewFile() {
             if (!currentAppId) return customAlert('Please select an application first', { type: 'warning' });
-            const fileIdInput = document.getElementById('newFileId');
-            const nameInput = document.getElementById('newFileName');
-            const keyInput = document.getElementById('newFileDecryptionKey');
 
-            let file_id = (fileIdInput ? fileIdInput.value : '').trim();
-            let file_name = (nameInput ? nameInput.value : '').trim();
-            let decryption_key = (keyInput ? keyInput.value : '').trim();
-            const authed_only = document.getElementById('newFileAuthedOnly').checked;
+            const urlInput = document.getElementById('newFileDownloadUrl');
+            const download_url = (urlInput ? urlInput.value : '').trim();
+            if (!download_url) {
+                return customAlert('กรุณาระบุ Direct Download URL ของไฟล์บน Cloudflare R2 หรือ CDN', { type: 'warning' });
+            }
 
-            if (!file_id) {
-                file_id = generateRandomFileId();
-                if (fileIdInput) fileIdInput.value = file_id;
-            }
-            if (!decryption_key) {
-                decryption_key = generateRandomDecryptionKey();
-                if (keyInput) keyInput.value = decryption_key;
-            }
-            if (!file_name) {
-                if (currentEncryptedFileName) {
-                    file_name = currentEncryptedFileName;
-                    if (nameInput) nameInput.value = file_name;
-                } else {
-                    return customAlert('กรุณาเลือกไฟล์เพื่ออัปโหลด หรือระบุชื่อไฟล์อ้างอิง', { type: 'warning' });
-                }
-            }
+            let fileName = extractFileNameFromUrl(download_url);
+            if (!fileName) fileName = 'payload.bin';
+
+            const authed_only = document.getElementById('newFileAuthedOnly') ? document.getElementById('newFileAuthedOnly').checked : true;
 
             const btn = document.getElementById('btnSubmitFile');
             if (btn) {
@@ -3457,29 +3321,24 @@
             }
 
             try {
-                // Broker Model: Save metadata + decryption key only (Zero file storage on server!)
                 const res = await api('/api/admin/files', {
                     method: 'POST',
                     body: {
                         app_id: currentAppId,
-                        file_id: file_id,
-                        file_name: file_name,
-                        file_data_base64: '', // Server stores 0 MB!
-                        decryption_key: decryption_key,
+                        file_id: fileName,     // File ID is the same as File Name!
+                        file_name: fileName,   // Name of the file on R2/CDN!
+                        download_url: download_url,
+                        file_data_base64: '',  // 0 MB on server!
+                        decryption_key: '',    // No encryption key needed!
                         authed_only: authed_only
                     }
                 });
 
                 if (res && res.success) {
-                    // Auto-download encrypted binary for client distribution if file was uploaded
-                    if (currentEncryptedBlob) {
-                        downloadEncryptedFile();
-                    }
-
                     closeModal('newFileModal');
                     resetNewFileModal();
                     loadFiles();
-                    showToast('บันทึกเรียบร้อย! โหมด Broker (0 MB บนเซิร์ฟเวอร์)', 'success');
+                    showToast(`บันทึกเรียบร้อย! ไฟล์ '${fileName}' บน Cloudflare R2 (0 MB บนเซิร์ฟเวอร์)`, 'success');
                 } else {
                     customAlert(res && res.message ? res.message : 'Save failed', { type: 'error' });
                 }
@@ -3488,7 +3347,7 @@
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = 'Save & Download Payload';
+                    btn.textContent = 'Save File URL';
                 }
             }
         }
