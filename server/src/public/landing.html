@@ -244,13 +244,13 @@
 
                     <!-- Code Switcher Tabs -->
                     <div class="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs font-mono font-medium">
-                        <button onclick="switchCodeTab('tab-cpp')" id="btn-tab-cpp" class="px-3 py-1 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-700/60 transition">
+                        <button onclick="switchCodeTab('code-tab-cpp')" id="btn-tab-cpp" class="px-3 py-1 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-700/60 transition cursor-pointer">
                             C++ Loader
                         </button>
-                        <button onclick="switchCodeTab('tab-payload')" id="btn-tab-payload" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">
+                        <button onclick="switchCodeTab('code-tab-payload')" id="btn-tab-payload" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition cursor-pointer">
                             In-Memory Stream
                         </button>
-                        <button onclick="switchCodeTab('tab-crypto')" id="btn-tab-crypto" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition">
+                        <button onclick="switchCodeTab('code-tab-crypto')" id="btn-tab-crypto" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition cursor-pointer">
                             RSA-2048 Handshake
                         </button>
                     </div>
@@ -305,24 +305,22 @@
 
                     <!-- TAB 2: In-Memory Payload Streaming -->
                     <pre id="code-tab-payload" class="hidden text-slate-300"><code><span class="token-comment">// ============================================================================</span>
-<span class="token-comment">// ZERO-DISK IN-MEMORY BINARY STREAMING (ANTI-PIRACY & ANTI-LEAK)</span>
+<span class="token-comment">// ZERO-DISK IN-MEMORY FILE &amp; PAYLOAD STREAMING (0 MB ON SERVER / ANTI-LEAK)</span>
 <span class="token-comment">// ============================================================================</span>
 
-<span class="token-comment">// 4. Request Protected Encrypted Binary Directly From Gateway Into RAM</span>
-<span class="token-type">KawaiiAuth::ProtectedPayload</span> payload = auth.<span class="token-func">FetchProtectedPayload</span>(<span class="token-string">"core_module.bin"</span>);
+<span class="token-comment">// 4. Stream Protected Payload Directly Into RAM via File ID</span>
+<span class="token-type">std::vector</span>&lt;<span class="token-type">uint8_t</span>&gt; payload = <span class="token-type">KawaiiAuth</span>::<span class="token-func">DownloadFile</span>(<span class="token-string">"file_8d6759a7"</span>);
 
-<span class="token-keyword">if</span> (payload.success &amp;&amp; !payload.data.<span class="token-func">empty</span>()) {
-    <span class="token-comment">// Payload has been decrypted in RAM using dynamic AES-256 session key</span>
-    <span class="token-comment">// and SHA-256 integrity hash is matched with server RSA signature.</span>
-    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[+] Verified Payload: "</span> &lt;&lt; payload.name 
-              &lt;&lt; <span class="token-string">" ("</span> &lt;&lt; payload.size &lt;&lt; <span class="token-string">" bytes in memory)"</span> &lt;&lt; <span class="token-type">std::endl</span>;
-    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[+] SHA-256 Hash: "</span> &lt;&lt; payload.hash &lt;&lt; <span class="token-type">std::endl</span>;
+<span class="token-keyword">if</span> (!payload.<span class="token-func">empty</span>()) {
+    <span class="token-comment">// File streamed directly from Cloudflare R2 / CDN straight into RAM (Zero-Disk)</span>
+    <span class="token-comment">// Server holds 0 MB storage, and zero bytes touch the client's hard drive or SSD.</span>
+    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[+] Streamed Payload: "</span> &lt;&lt; payload.<span class="token-func">size</span>() &lt;&lt; <span class="token-string">" bytes in RAM"</span> &lt;&lt; <span class="token-type">std::endl</span>;
 
     <span class="token-comment">// Execute payload directly in RAM (RunPE / Process Hollowing or Manual Map)</span>
-    <span class="token-comment">// Zero bytes touch the hard drive or SSD. When application closes, RAM clears.</span>
-    <span class="token-func">LaunchInMemoryModule</span>(payload.data.<span class="token-func">data</span>(), payload.data.<span class="token-func">size</span>());
+    <span class="token-comment">// When application closes, RAM clears completely without leaving residual traces.</span>
+    <span class="token-func">LaunchInMemoryModule</span>(payload.<span class="token-func">data</span>(), payload.<span class="token-func">size</span>());
 } <span class="token-keyword">else</span> {
-    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[-] Payload streaming denied: "</span> &lt;&lt; payload.message &lt;&lt; <span class="token-type">std::endl</span>;
+    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[-] Payload streaming denied or download failed"</span> &lt;&lt; <span class="token-type">std::endl</span>;
 }</code></pre>
 
                     <!-- TAB 3: Cryptographic Handshake -->
@@ -492,7 +490,10 @@
         }
 
         // Code Tab Switcher
-        function switchCodeTab(tabId) {
+        function switchCodeTab(target) {
+            const codeId = target.startsWith('code-') ? target : 'code-' + target;
+            const btnId = target.startsWith('code-') ? target.replace('code-', 'btn-') : (target.startsWith('btn-') ? target : 'btn-' + target);
+
             ['code-tab-cpp', 'code-tab-payload', 'code-tab-crypto'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('hidden');
@@ -506,10 +507,11 @@
                 }
             });
 
-            const activeCode = document.getElementById(tabId);
-            if (activeCode) activeCode.classList.remove('hidden');
+            const activeCode = document.getElementById(codeId);
+            if (activeCode) {
+                activeCode.classList.remove('hidden');
+            }
 
-            const btnId = tabId.replace('code-', 'btn-');
             const activeBtn = document.getElementById(btnId);
             if (activeBtn) {
                 activeBtn.classList.remove('text-slate-400');
