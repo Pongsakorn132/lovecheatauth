@@ -185,7 +185,7 @@
         <div class="text-center max-w-3xl mx-auto space-y-6 mb-16">
             <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-medium shadow-lg shadow-cyan-950/50">
                 <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-                <span>ENTERPRISE DIGITAL RIGHTS MANAGEMENT &amp; ZERO-DISK STREAMING</span>
+                <span>ENTERPRISE DIGITAL RIGHTS MANAGEMENT &amp; CLOUD FILE DISTRIBUTION</span>
             </div>
             
             <h1 class="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.1]">
@@ -196,7 +196,7 @@
             </h1>
 
             <p class="text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-                ระบบจัดการสิทธิ์และป้องกันการแคร็กระดับสูง อุโมงค์เข้ารหัส <span class="text-cyan-300 font-mono font-semibold">RSA-2048 + AES-256</span> พร้อมระบบสตรีมโค้ดและไบนารีลับเข้า <span class="text-purple-300 font-mono font-semibold">RAM โดยตรง 100%</span> ป้องกันการขโมยไฟล์และบายพาสออฟไลน์
+                ระบบจัดการสิทธิ์และป้องกันการแคร็กระดับสูง อุโมงค์เข้ารหัส <span class="text-cyan-300 font-mono font-semibold">RSA-2048 + AES-256</span> พร้อมระบบดาวน์โหลดไฟล์ผ่าน <span class="text-purple-300 font-mono font-semibold">Cloudflare R2 / CDN (เซิร์ฟเวอร์ 0 MB)</span> จัดการสิทธิ์ด้วย File ID ป้องกันการบายพาสออฟไลน์
             </p>
 
             <div class="pt-2 flex flex-wrap items-center justify-center gap-4">
@@ -225,7 +225,7 @@
             <div class="hidden lg:block absolute -bottom-6 -right-10 z-30 pointer-events-none">
                 <div class="glass-panel px-4 py-2.5 rounded-2xl border border-purple-400/30 text-xs font-mono font-bold text-purple-300 shadow-xl shadow-purple-950/60 flex items-center gap-2.5 animate-float" style="animation-delay: -3s;">
                     <span class="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
-                    <span>Zero-Disk RAM Decryption Verified</span>
+                    <span>Cloudflare R2 / CDN (0 MB Server)</span>
                 </div>
             </div>
 
@@ -248,7 +248,7 @@
                             C++ Loader
                         </button>
                         <button onclick="switchCodeTab('code-tab-payload')" id="btn-tab-payload" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition cursor-pointer">
-                            In-Memory Stream
+                            Download File
                         </button>
                         <button onclick="switchCodeTab('code-tab-crypto')" id="btn-tab-crypto" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition cursor-pointer">
                             RSA-2048 Handshake
@@ -303,24 +303,24 @@
     <span class="token-keyword">return</span> <span class="token-num">0</span>;
 }</code></pre>
 
-                    <!-- TAB 2: In-Memory Payload Streaming -->
+                    <!-- TAB 2: Cloud CDN File Download -->
                     <pre id="code-tab-payload" class="hidden text-slate-300"><code><span class="token-comment">// ============================================================================</span>
-<span class="token-comment">// ZERO-DISK IN-MEMORY FILE &amp; PAYLOAD STREAMING (0 MB ON SERVER / ANTI-LEAK)</span>
+<span class="token-comment">// APPLICATION FILE DOWNLOAD VIA CLOUDFLARE R2 / CDN (0 MB ON SERVER)</span>
 <span class="token-comment">// ============================================================================</span>
 
-<span class="token-comment">// 4. Stream Protected Payload Directly Into RAM via File ID</span>
-<span class="token-type">std::vector</span>&lt;<span class="token-type">uint8_t</span>&gt; payload = <span class="token-type">KawaiiAuth</span>::<span class="token-func">DownloadFile</span>(<span class="token-string">"file_8d6759a7"</span>);
+<span class="token-comment">// 4. Download file bytes directly via File ID (Zero server storage load)</span>
+<span class="token-type">std::vector</span>&lt;<span class="token-type">uint8_t</span>&gt; fileData = <span class="token-type">KawaiiAuth</span>::<span class="token-func">DownloadFile</span>(<span class="token-string">"file_8d6759a7"</span>);
 
-<span class="token-keyword">if</span> (!payload.<span class="token-func">empty</span>()) {
-    <span class="token-comment">// File streamed directly from Cloudflare R2 / CDN straight into RAM (Zero-Disk)</span>
-    <span class="token-comment">// Server holds 0 MB storage, and zero bytes touch the client's hard drive or SSD.</span>
-    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[+] Streamed Payload: "</span> &lt;&lt; payload.<span class="token-func">size</span>() &lt;&lt; <span class="token-string">" bytes in RAM"</span> &lt;&lt; <span class="token-type">std::endl</span>;
+<span class="token-keyword">if</span> (!fileData.<span class="token-func">empty</span>()) {
+    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[+] Downloaded file: "</span> &lt;&lt; fileData.<span class="token-func">size</span>() &lt;&lt; <span class="token-string">" bytes"</span> &lt;&lt; <span class="token-type">std::endl</span>;
 
-    <span class="token-comment">// Execute payload directly in RAM (RunPE / Process Hollowing or Manual Map)</span>
-    <span class="token-comment">// When application closes, RAM clears completely without leaving residual traces.</span>
-    <span class="token-func">LaunchInMemoryModule</span>(payload.<span class="token-func">data</span>(), payload.<span class="token-func">size</span>());
+    <span class="token-comment">// Save file to disk or process config/binary in code:</span>
+    <span class="token-type">std::ofstream</span> outFile(<span class="token-string">"downloaded_asset.bin"</span>, <span class="token-type">std::ios</span>::binary);
+    outFile.<span class="token-func">write</span>(<span class="token-keyword">reinterpret_cast</span>&lt;<span class="token-keyword">const</span> <span class="token-keyword">char</span>*&gt;(fileData.<span class="token-func">data</span>()), fileData.<span class="token-func">size</span>());
+    outFile.<span class="token-func">close</span>();
+    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[+] File saved successfully!"</span> &lt;&lt; <span class="token-type">std::endl</span>;
 } <span class="token-keyword">else</span> {
-    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[-] Payload streaming denied or download failed"</span> &lt;&lt; <span class="token-type">std::endl</span>;
+    <span class="token-type">std::cout</span> &lt;&lt; <span class="token-string">"[-] Download failed or unauthorized"</span> &lt;&lt; <span class="token-type">std::endl</span>;
 }</code></pre>
 
                     <!-- TAB 3: Cryptographic Handshake -->
@@ -358,7 +358,7 @@
                         <span>Protocol: RSA-2048 + AES-256-CBC</span>
                     </div>
                     <div class="text-slate-500">
-                        Zero-Disk Memory Footprint &bull; Monotonic Seq Shield
+                        Cloud CDN Distribution (0 MB Server) &bull; Monotonic Seq Shield
                     </div>
                 </div>
 
@@ -383,9 +383,9 @@
                     <div class="w-12 h-12 rounded-xl bg-cyan-950/80 border border-cyan-800 text-cyan-400 flex items-center justify-center mb-5 group-hover:scale-110 transition shadow-lg shadow-cyan-950/50">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
                     </div>
-                    <h3 class="text-base font-bold text-white mb-2">Zero-Disk RAM Streaming</h3>
+                    <h3 class="text-base font-bold text-white mb-2">Cloud CDN File Download</h3>
                     <p class="text-xs text-slate-400 leading-relaxed">
-                        ไฟล์โปรแกรมและโมดูลจริงถูกส่งตรงเข้า RAM ไม่มีการวางไฟล์ .exe หรือ .dll ลงบนฮาร์ดดิสก์ ป้องกันการก๊อปปี้ไปแจกฟรี 100%
+                        กำหนดลิงก์ดาวน์โหลดไฟล์ผ่าน Cloudflare R2 หรือ CDN ให้ไคลเอนต์ C++ ดาวน์โหลดด้วย File ID ได้ทันที โดยเซิร์ฟเวอร์ไม่เสียพื้นที่จัดเก็บ (0 MB Storage)
                     </p>
                 </div>
 
@@ -433,7 +433,7 @@
                     พร้อมควบคุมและปล่อยใช้งานโปรแกรมของคุณแล้วหรือยัง?
                 </h2>
                 <p class="text-slate-300 text-sm leading-relaxed">
-                    เข้าสู่หน้าแดชบอร์ดบริหารจัดการแอปพลิเคชัน สร้างคีย์ใบอนุญาต ตรวจสอบผู้ใช้ หรือจัดการไฟล์ไบนารีลับได้ทันที
+                    เข้าสู่หน้าแดชบอร์ดบริหารจัดการแอปพลิเคชัน สร้างคีย์ใบอนุญาต ตรวจสอบผู้ใช้ หรือจัดการลิงก์ไฟล์ดาวน์โหลดผ่าน CDN ได้ทันที
                 </p>
                 <div class="flex flex-wrap items-center justify-center gap-4 pt-2">
                     <a href="/dashboard" class="px-8 py-3.5 rounded-xl text-sm font-bold text-slate-950 bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 hover:shadow-cyan-500/40 hover:shadow-2xl transition transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
