@@ -81,8 +81,17 @@ function requestHandler(req, res) {
     const protocol = req.socket.encrypted ? 'https' : 'http';
     const url = new URL(req.url, `${protocol}://${host}`);
 
-    // Dashboard UI
-    if (url.pathname === '/' || url.pathname === '/dashboard') {
+    // Landing Page UI (/ or /landing)
+    if (url.pathname === '/' || url.pathname === '/landing' || url.pathname === '/landing.html') {
+        const landingPath = path.join(__dirname, 'public/landing.html');
+        if (fs.existsSync(landingPath)) {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            return fs.createReadStream(landingPath).pipe(res);
+        }
+    }
+
+    // Client Dashboard UI (/dashboard)
+    if (url.pathname === '/dashboard' || url.pathname === '/dashboard.html') {
         const htmlPath = path.join(__dirname, 'public/index.html');
         if (fs.existsSync(htmlPath)) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -236,6 +245,7 @@ server.on('error', (err) => {
 server.listen(PORT, () => {
     console.log(`=======================================================`);
     console.log(`[KawaiiAuth Server] Active and listening on port ${PORT}`);
+    console.log(`[Landing Portal]   http://localhost:${PORT}/`);
     console.log(`[Client Dashboard] http://localhost:${PORT}/dashboard`);
     console.log(`[Documentation]    http://localhost:${PORT}/docs`);
     console.log(`[Master Backend]   http://localhost:${PORT}/backend`);
